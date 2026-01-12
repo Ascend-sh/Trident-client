@@ -1,0 +1,23 @@
+{
+  "name": "torqen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:server": "bun --watch server/app.js",
+    "start:server": "bun server/app.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun server/db/migrate.js",
+    "db:studio": "drizzle-kit studio",
+    "dev:client": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "cli:users": "bun server/modules/cli.js users",
+    "cli:sessions": "bun server/modules/cli.js sessions"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1",
+    "elysia": "^1.4.21"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8"
+  }
+}

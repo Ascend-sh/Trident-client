@@ -1,0 +1,6 @@
+.env
+server/db/data/torqen.sqlite
+misc
+node_modules
+.DS_Store
+*.log
