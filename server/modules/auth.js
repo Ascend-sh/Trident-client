@@ -1,9 +1,10 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { sessions, users } from '../db/schema.js';
 import { pteroApplicationRequest } from '../utils/importer.js';
 import { HTTP_STATUS, badGateway, badRequest, ok, unauthorized, unprocessable } from '../middlewares/error-handler.js';
 import { signJwt, verifyJwt } from '../utils/jwt.js';
+import { authLogger } from '../middlewares/logger.js';
 
 const COOKIE_NAME = 'torqen_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -49,7 +50,31 @@ async function createPterodactylUser({ username, email, password, firstName = 's
 }
 
 function publicUser(row) {
-  return { id: row.id, username: row.username, email: row.email, createdAt: row.createdAt };
+  return {
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    isAdmin: Boolean(row.isAdmin),
+    createdAt: row.createdAt
+  };
+}
+
+async function fetchPteroAdminByEmail(email) {
+  try {
+    const res = await pteroApplicationRequest({
+      path: '/api/application/users',
+      method: 'GET',
+      query: { 'filter[email]': email }
+    });
+
+    const data = res?.data;
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    const attrs = data[0]?.attributes;
+    return attrs ? Boolean(attrs.root_admin) : null;
+  } catch {
+    return null;
+  }
 }
 
 function parseBearer(header) {
@@ -98,14 +123,24 @@ async function sessionFromJwt(token) {
   const sid = payload?.sid;
   if (!sid) return null;
 
-  const now = new Date();
   const found = await db
     .select()
     .from(sessions)
-    .where(and(eq(sessions.id, String(sid)), gt(sessions.expiresAt, now)))
+    .where(eq(sessions.id, String(sid)))
     .limit(1);
 
-  return found[0] ?? null;
+  const session = found[0] ?? null;
+  if (!session) return null;
+
+  const nowMs = Date.now();
+  const expiresMs = new Date(session.expiresAt).getTime();
+  if (expiresMs <= nowMs) {
+    await db.delete(sessions).where(eq(sessions.id, String(sid)));
+    authLogger.info('session_expired', { meta: { sessionId: sid, userId: session.userId, expiresAt: session.expiresAt } });
+    return null;
+  }
+
+  return session;
 }
 
 export async function logout({ token }) {
@@ -172,6 +207,12 @@ export async function login({ email, password }) {
   const okPassword = await Bun.password.verify(cleanPassword, user.password);
   if (!okPassword) {
     return unauthorized('invalid_credentials');
+  }
+
+  const panelIsAdmin = await fetchPteroAdminByEmail(cleanEmail);
+  if (panelIsAdmin !== null && Boolean(user.isAdmin) !== panelIsAdmin) {
+    await db.update(users).set({ isAdmin: panelIsAdmin }).where(eq(users.id, user.id));
+    user.isAdmin = panelIsAdmin;
   }
 
   const session = await createSession(user.id);

@@ -11,11 +11,15 @@
     "dev:client": "npm --prefix client run dev",
     "build:client": "npm --prefix client run build",
     "cli:users": "bun server/modules/cli.js users",
-    "cli:sessions": "bun server/modules/cli.js sessions"
+    "cli:sessions": "bun server/modules/cli.js sessions",
+    "cli:user-delete": "bun server/modules/cli.js user-delete",
+    "cli:status": "bun server/modules/cli.js status"
   },
   "dependencies": {
+    "chalk": "^5.6.2",
     "drizzle-orm": "^0.45.1",
-    "elysia": "^1.4.21"
+    "elysia": "^1.4.21",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.8"

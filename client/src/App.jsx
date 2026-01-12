@@ -4,11 +4,15 @@ import Auth from "./pages/auth";
 import Servers from "./pages/user/servers";
 import Sidebar from "./components/navigation/sidebar";
 import Header from "./components/navigation/header";
+import GlobalLoader from "./components/loader/global-loader";
 import { account } from "./utils/auth";
 
 const AppLayout = () => {
+  const [showLoader, setShowLoader] = useState(true);
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#091416" }}>
+      {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

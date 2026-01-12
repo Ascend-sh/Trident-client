@@ -26,19 +26,14 @@ Torqen is a Bun-powered dashboard and API with a React (Vite) client and a SQLit
 - `server/db/` SQLite + Drizzle schema/migrations
 - `client/` Frontend (React + Vite)
 
-## Quick Start
+## Quick Start (Production)
+
+This section describes the recommended setup for running Torqen in production.
 
 ### 1) Install dependencies
 
-Backend dependencies:
-
 ```bash
 bun install
-```
-
-Client dependencies:
-
-```bash
 npm --prefix client install
 ```
 
@@ -66,16 +61,49 @@ Optional variables:
 bun run db:migrate
 ```
 
-### 4) Start the server
+### 4) Build the client
+
+```bash
+npm --prefix client run build
+```
+
+### 5) Start the server
 
 ```bash
 bun run start:server
 ```
 
-### 5) Start the client
+## Development Setup
+
+### 1) Install dependencies
 
 ```bash
-npm --prefix client run dev
+bun install
+npm --prefix client install
+```
+
+### 2) Configure environment
+
+```bash
+cp .env_example .env
+```
+
+### 3) Run database migrations
+
+```bash
+bun run db:migrate
+```
+
+### 4) Run the server (watch mode)
+
+```bash
+bun run dev:server
+```
+
+### 5) Run the client (Vite dev server)
+
+```bash
+bun run dev:client
 ```
 
 ## Authentication

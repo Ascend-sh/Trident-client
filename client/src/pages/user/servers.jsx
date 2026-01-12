@@ -1,15 +1,33 @@
 import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Gift, MessageCircle, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CenterModal from "../../components/modals/center-modal";
+import { account } from "../../utils/auth";
 
 export default function Servers() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
+    const [user, setUser] = useState(null);
     const [serverData, setServerData] = useState({
         name: "",
         location: null,
         software: null
     });
+
+    useEffect(() => {
+        let cancelled = false;
+
+        account()
+            .then((res) => {
+                if (!cancelled) setUser(res?.user || null);
+            })
+            .catch(() => {
+                if (!cancelled) setUser(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const locations = [
         { id: "us-east", name: "US East", country: "US", flag: "https://flagcdn.com/w80/us.png" },
@@ -52,7 +70,7 @@ export default function Servers() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-5">
                     <div>
-                        <h1 className="text-lg font-semibold text-white mb-0.5">Welcome back, Username</h1>
+                        <h1 className="text-lg font-semibold text-white mb-0.5">Welcome back, {user?.username || "User"}</h1>
                         <p className="text-xs text-white/50">Manage and monitor your servers</p>
                     </div>
                     <button 
