@@ -1,6 +1,19 @@
 # Torqen
 
+[![Bun](https://img.shields.io/badge/runtime-bun-black)](https://bun.sh/)
+[![Elysia](https://img.shields.io/badge/backend-elysiajs-0b1020)](https://elysiajs.com/)
+[![React](https://img.shields.io/badge/frontend-react-20232a)](https://react.dev/)
+[![Drizzle](https://img.shields.io/badge/orm-drizzle-0c0c0c)](https://orm.drizzle.team/)
+[![SQLite](https://img.shields.io/badge/database-sqlite-07405e)](https://www.sqlite.org/)
+
 Torqen is a Bun-powered dashboard and API with a React (Vite) client and a SQLite database managed via Drizzle.
+
+> [!NOTE]
+> This project is under active development and the API and UI are subject to change.
+
+> [!IMPORTANT]
+> Cookie auth requires `TORQEN_JWT_SECRET` to be set in your `.env`.
+
 
 ## Requirements
 
@@ -96,10 +109,12 @@ bun run cli:sessions
 ## Development Notes
 
 - The client API is mounted under `/api/v1/client`.
-- If you do not have Pterodactyl configured, registration may fail depending on how the integration is used.
+
+> [!WARNING]
+> If you do not have Pterodactyl configured, registration may fail depending on how the integration is used.
 
 ## Maintainers
 
-| Name | GitHub |
-|------|--------|
-| Mason | https://github.com/Masondeguy |
+| Maintainer |
+|-----------|
+| <a href="https://github.com/Masondeguy"><img src="https://github.com/Masondeguy.png?size=60" width="60" height="60" alt="Masondeguy" /><br /><sub><b>@Masondeguy</b></sub></a> |
