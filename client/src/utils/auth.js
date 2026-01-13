@@ -1,5 +1,13 @@
 const API_BASE = "/api/v1/client";
 
+let accountCache = null;
+let accountPromise = null;
+
+function clearAccountCache() {
+    accountCache = null;
+    accountPromise = null;
+}
+
 async function request(path, { method = "GET", body } = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
         method,
@@ -28,17 +36,39 @@ async function request(path, { method = "GET", body } = {}) {
 }
 
 export function login({ email, password }) {
+    clearAccountCache();
     return request("/login", { method: "POST", body: { email, password } });
 }
 
 export function register({ username, email, password }) {
+    clearAccountCache();
     return request("/register", { method: "POST", body: { username, email, password } });
 }
 
-export function account() {
-    return request("/account");
+export function account({ force = false } = {}) {
+    if (force) clearAccountCache();
+    if (accountCache) return Promise.resolve(accountCache);
+    if (accountPromise) return accountPromise;
+
+    accountPromise = request("/account")
+        .then((data) => {
+            accountCache = data;
+            return data;
+        })
+        .catch((err) => {
+            if (err?.status === 401) {
+                clearAccountCache();
+            }
+            throw err;
+        })
+        .finally(() => {
+            accountPromise = null;
+        });
+
+    return accountPromise;
 }
 
 export function logout() {
+    clearAccountCache();
     return request("/logout", { method: "POST" });
 }

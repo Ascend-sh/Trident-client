@@ -46,11 +46,11 @@ const Sidebar = () => {
     ];
 
     const adminItems = [
-        { path: "/admin/overview", label: "Overview", icon: LayoutDashboard },
-        { path: "/admin/customizations", label: "Customizations", icon: Palette },
-        { path: "/admin/locations", label: "Locations", icon: Earth },
-        { path: "/admin/nodes", label: "Nodes", icon: HardDrive },
-        { path: "/admin/software", label: "Software", icon: Package },
+        { path: "/app/admin/overview", label: "Overview", icon: LayoutDashboard },
+        { path: "/app/admin/customizations", label: "Customizations", icon: Palette },
+        { path: "/app/admin/locations", label: "Locations", icon: Earth },
+        { path: "/app/admin/nodes", label: "Nodes", icon: HardDrive },
+        { path: "/app/admin/software", label: "Software", icon: Package },
     ];
 
     return (

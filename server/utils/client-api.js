@@ -5,6 +5,7 @@ import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js
 import { authLogger } from "../middlewares/logger.js";
 import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies.js";
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
+import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 
 export const clientApi = new Elysia({ name: "client-api" })
   .use(errorHandler)
@@ -176,6 +177,124 @@ export const clientApi = new Elysia({ name: "client-api" })
     }
 
     const out = ok({ currencyName: updated.currencyName }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/panel-nests", async ({ request, set, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const page = Number(query?.page ?? 1);
+    const perPage = Number(query?.perPage ?? query?.per_page ?? 50);
+    const data = await listNests({
+      page: Number.isInteger(page) && page > 0 ? page : 1,
+      perPage: Number.isInteger(perPage) && perPage > 0 && perPage <= 100 ? perPage : 50
+    });
+
+    const out = ok({ ...data }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/imported-nests", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const nests = await listImportedNests();
+    const out = ok({ nests }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .delete("/admin/delete-nest", async ({ request, set, body, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const nestId = Number(body?.id ?? query?.id);
+    if (!Number.isInteger(nestId) || nestId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const deleted = await deleteImportedNest({ nestId });
+    const out = ok({ ...deleted }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/admin/add-nest", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const nestId = Number(body?.id);
+    if (!Number.isInteger(nestId) || nestId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const imported = await importNestToDb({ nestId });
+    const out = ok({ ...imported }, 200);
     set.status = out.status;
     return out.body;
   })

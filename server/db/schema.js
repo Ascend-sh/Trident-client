@@ -25,7 +25,11 @@ export const serverDefaults = sqliteTable('server_defaults', {
   memory: integer('memory').notNull().default(1024),
   swap: integer('swap').notNull().default(0),
   disk: integer('disk').notNull().default(2048),
-  cpu: integer('cpu').notNull().default(100)
+  cpu: integer('cpu').notNull().default(100),
+  io: integer('io').notNull().default(0),
+  databases: integer('databases').notNull().default(0),
+  allocations: integer('allocations').notNull().default(0),
+  backups: integer('backups').notNull().default(0)
 });
 
 export const economySettings = sqliteTable('economy_settings', {
@@ -36,5 +40,30 @@ export const economySettings = sqliteTable('economy_settings', {
 export const wallets = sqliteTable('wallets', {
   userId: integer('user_id').primaryKey(),
   balance: integer('balance').notNull().default(0)
+});
+
+export const nests = sqliteTable('nests', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default('')
+});
+
+export const nestEggs = sqliteTable('nest_eggs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nestId: integer('nest_id').notNull(),
+  eggId: integer('egg_id').notNull()
+});
+
+export const eggs = sqliteTable('eggs', {
+  id: integer('id').primaryKey(),
+  nestId: integer('nest_id').notNull(),
+  uuid: text('uuid').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  dockerImage: text('docker_image'),
+  startup: text('startup'),
+  author: text('author'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at')
 });
 

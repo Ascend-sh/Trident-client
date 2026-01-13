@@ -1,12 +1,35 @@
 import { Search, Bell, HelpCircle, Sun, Moon, Gift, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CenterModal from "../modals/center-modal";
+import SearchModal from "../modals/search-modal";
 
 const Header = () => {
     const [isDark, setIsDark] = useState(true);
     const [notificationOpen, setNotificationOpen] = useState(false);
+    const [notificationVisible, setNotificationVisible] = useState(false);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [searchModalOpen, setSearchModalOpen] = useState(false);
     const helpUrl = "https://docs.torqen.com/help";
+
+    useEffect(() => {
+        if (notificationOpen) {
+            setNotificationVisible(true);
+        } else {
+            setNotificationVisible(false);
+        }
+    }, [notificationOpen]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setSearchModalOpen(true);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const notifications = [
         { id: 1, type: "success", title: "Server Created", message: "Production Server is now online", time: "2m ago", read: false },
@@ -17,14 +40,23 @@ const Header = () => {
     return (
         <header className="h-14 border-b border-white/10 flex items-center justify-between px-6" style={{ backgroundColor: "#0A1618" }}>
             <div className="flex items-center gap-4 flex-1">
-                <div className="relative max-w-xs w-full">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200"
-                    />
-                </div>
+                <button 
+                    onClick={() => setSearchModalOpen(true)}
+                    className="relative max-w-xs w-full text-left"
+                >
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                    <div className="w-full pl-9 pr-16 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 hover:border-white/20">
+                        Search...
+                    </div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+                        <kbd className="px-1.5 py-0.5 text-[10px] rounded border border-white/10 bg-white/5 text-white/40">
+                            ⌘
+                        </kbd>
+                        <kbd className="px-1.5 py-0.5 text-[10px] rounded border border-white/10 bg-white/5 text-white/40">
+                            K
+                        </kbd>
+                    </div>
+                </button>
             </div>
 
             <div className="flex items-center gap-3">
@@ -68,7 +100,9 @@ const Header = () => {
                                 onClick={() => setNotificationOpen(false)}
                             />
                             <div 
-                                className="absolute top-full right-0 mt-2 z-50 w-80 rounded-lg border border-white/10 overflow-hidden"
+                                className={`absolute top-full right-0 mt-2 z-50 w-80 rounded-lg border border-white/10 overflow-hidden transition-all duration-200 ${
+                                    notificationVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                                }`}
                                 style={{ backgroundColor: "#0A1618" }}
                             >
                                 <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
@@ -150,6 +184,11 @@ const Header = () => {
                     </div>
                 </div>
             </CenterModal>
+
+            <SearchModal 
+                isOpen={searchModalOpen}
+                onClose={() => setSearchModalOpen(false)}
+            />
         </header>
     );
 };

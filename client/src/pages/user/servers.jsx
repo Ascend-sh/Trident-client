@@ -70,8 +70,8 @@ export default function Servers() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-5">
                     <div>
-                        <h1 className="text-lg font-semibold text-white mb-0.5">Welcome back, {user?.username || "User"}</h1>
-                        <p className="text-xs text-white/50">Manage and monitor your servers</p>
+                        <h1 className="text-xl font-semibold text-white mb-1">Welcome back, {user?.username || "User"}</h1>
+                        <p className="text-xs text-white/60">Manage and monitor your servers</p>
                     </div>
                     <button 
                         onClick={() => setIsCreateModalOpen(true)}

@@ -1,16 +1,35 @@
+import { useState, useEffect } from 'react';
+
 const CenterModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }) => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsVisible(true);
+        } else {
+            setIsVisible(false);
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
         <>
             <div 
-                className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 animate-in fade-in duration-200"
+                className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-200 ${
+                    isVisible ? 'opacity-100' : 'opacity-0'
+                }`}
                 onClick={onClose}
             />
             
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <div 
+                className="fixed inset-0 z-50 flex items-center justify-center p-6"
+                onClick={onClose}
+            >
                 <div 
-                    className={`relative w-full ${maxWidth} rounded-lg border border-white/10 animate-in fade-in zoom-in-95 duration-200`}
+                    className={`relative w-full ${maxWidth} rounded-lg border border-white/10 transition-all duration-200 ${
+                        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                    }`}
                     style={{ backgroundColor: "#0A1618" }}
                     onClick={(e) => e.stopPropagation()}
                 >

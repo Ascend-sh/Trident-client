@@ -1,8 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Auth from "./pages/auth";
 import Servers from "./pages/user/servers";
 import NotFound from "./pages/errors/404";
+import Forbidden from "./pages/errors/403";
+import AdminOverview from "./pages/admin/overview";
+import AdminSoftware from "./pages/admin/software";
 import Sidebar from "./components/navigation/sidebar";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
@@ -10,6 +13,15 @@ import { account } from "./utils/auth";
 
 const AppLayout = () => {
   const [showLoader, setShowLoader] = useState(true);
+  const location = useLocation();
+  const [prevPath, setPrevPath] = useState(location.pathname);
+
+  useEffect(() => {
+    if (location.pathname !== prevPath) {
+      setShowLoader(true);
+      setPrevPath(location.pathname);
+    }
+  }, [location.pathname, prevPath]);
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#091416" }}>
@@ -53,6 +65,40 @@ const RequireAuth = () => {
   return <Outlet />;
 };
 
+const RequireAdmin = () => {
+  const [status, setStatus] = useState("loading");
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    account()
+      .then((res) => {
+        if (!cancelled) {
+          setUser(res?.user || null);
+          setStatus("ok");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("unauthorized");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: "#091416" }} />
+    );
+  }
+  if (status === "unauthorized") return <Navigate to="/" replace />;
+  if (!user?.isAdmin) return <Navigate to="/forbidden" replace />;
+  
+  return <Outlet />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -62,9 +108,15 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/app/home" element={<Servers />} />
+
+            <Route element={<RequireAdmin />}>
+              <Route path="/app/admin/overview" element={<AdminOverview />} />
+              <Route path="/app/admin/software" element={<AdminSoftware />} />
+            </Route>
           </Route>
         </Route>
 
+        <Route path="/forbidden" element={<Forbidden />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -1,7 +1,7 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db } from '../db/client.js';
-import { sessions, users } from '../db/schema.js';
+import { eggs, nestEggs, nests, sessions, users } from '../db/schema.js';
 import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
 import { verifyJwt } from '../utils/jwt.js';
 
@@ -58,6 +58,26 @@ export async function listUsers({ authorization, cookieToken } = {}) {
 export async function listUsersCli() {
   const rows = await db.select().from(users);
   return rows.map(publicUser);
+}
+
+export async function listNestsCli() {
+  const nestRows = await db.select().from(nests);
+  const mappingRows = await db.select().from(nestEggs);
+  const eggRows = await db.select().from(eggs);
+
+  const eggById = new Map(eggRows.map(e => [e.id, e]));
+  const eggIdsByNest = new Map();
+
+  for (const m of mappingRows) {
+    if (!eggIdsByNest.has(m.nestId)) eggIdsByNest.set(m.nestId, []);
+    eggIdsByNest.get(m.nestId).push(m.eggId);
+  }
+
+  return nestRows.map(n => ({
+    id: n.id,
+    name: n.name,
+    eggs: (eggIdsByNest.get(n.id) || []).map(id => eggById.get(id)).filter(Boolean)
+  }));
 }
 
 export async function listSessionsCli() {
@@ -165,6 +185,12 @@ async function main() {
     process.exit(0);
   }
 
+  if (cmd === 'nests') {
+    const rows = await listNestsCli();
+    console.log(JSON.stringify({ ok: true, nests: rows }, null, 2));
+    process.exit(0);
+  }
+
   if (cmd === 'user-delete') {
     const res = await deleteUserCli(arg1);
     console.log(JSON.stringify(res, null, 2));
@@ -184,7 +210,7 @@ async function main() {
   }
 
   console.error('Unknown command');
-  console.error('Usage: bun server/modules/cli.js users|sessions|user-delete=<id>|status|reset');
+  console.error('Usage: bun server/modules/cli.js users|sessions|nests|user-delete=<id>|status|reset');
   console.error('Examples:');
   console.error('  bun server/modules/cli.js user-delete=123');
   console.error('  bun server/modules/cli.js user-delete 123');
