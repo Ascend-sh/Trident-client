@@ -20,3 +20,21 @@ export const sessions = sqliteTable('sessions', {
   expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull()
 });
 
+export const serverDefaults = sqliteTable('server_defaults', {
+  id: integer('id').primaryKey(),
+  memory: integer('memory').notNull().default(1024),
+  swap: integer('swap').notNull().default(0),
+  disk: integer('disk').notNull().default(2048),
+  cpu: integer('cpu').notNull().default(100)
+});
+
+export const economySettings = sqliteTable('economy_settings', {
+  id: integer('id').primaryKey(),
+  currencyName: text('currency_name').notNull().default('TQN')
+});
+
+export const wallets = sqliteTable('wallets', {
+  userId: integer('user_id').primaryKey(),
+  balance: integer('balance').notNull().default(0)
+});
+

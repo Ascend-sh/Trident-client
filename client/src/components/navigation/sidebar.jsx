@@ -9,16 +9,24 @@ const Sidebar = () => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [user, setUser] = useState(null);
+    const [balance, setBalance] = useState(0);
+    const [currencyName, setCurrencyName] = useState("TQN");
 
     useEffect(() => {
         let cancelled = false;
 
         account()
             .then((res) => {
-                if (!cancelled) setUser(res?.user || null);
+                if (cancelled) return;
+                setUser(res?.user || null);
+                setBalance(Number(res?.balance ?? 0));
+                setCurrencyName(String(res?.currencyName ?? "TQN"));
             })
             .catch(() => {
-                if (!cancelled) setUser(null);
+                if (cancelled) return;
+                setUser(null);
+                setBalance(0);
+                setCurrencyName("TQN");
             });
 
         return () => {
@@ -149,7 +157,7 @@ const Sidebar = () => {
                         <Wallet size={15} className="text-white/60" />
                         <span className="text-xs text-white/70 font-medium">Balance</span>
                     </div>
-                    <span className="text-sm font-semibold text-white">250 TQN</span>
+                    <span className="text-sm font-semibold text-white">{balance} {currencyName}</span>
                 </div>
             </div>
 

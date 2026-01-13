@@ -1,4 +1,5 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db } from '../db/client.js';
 import { sessions, users } from '../db/schema.js';
 import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
@@ -95,6 +96,24 @@ export async function deleteUserCli(userId) {
   return { ok: true, deletedUserId: id };
 }
 
+export async function resetCli() {
+  const tables = [
+    'wallets',
+    'economy_settings',
+    'server_defaults',
+    'sessions',
+    'users',
+    '__drizzle_migrations'
+  ];
+
+  for (const name of tables) {
+    await db.run(sql.raw(`DROP TABLE IF EXISTS \`${name}\``));
+  }
+
+  migrate(db, { migrationsFolder: './server/db/migrations' });
+  return { ok: true };
+}
+
 export async function statusCli({ baseUrl } = {}) {
   const startedAt = Date.now();
 
@@ -158,8 +177,14 @@ async function main() {
     process.exit(res.ok ? 0 : 1);
   }
 
+  if (cmd === 'reset') {
+    const res = await resetCli();
+    console.log(JSON.stringify(res, null, 2));
+    process.exit(res.ok ? 0 : 1);
+  }
+
   console.error('Unknown command');
-  console.error('Usage: bun server/modules/cli.js users|sessions|user-delete=<id>|status');
+  console.error('Usage: bun server/modules/cli.js users|sessions|user-delete=<id>|status|reset');
   console.error('Examples:');
   console.error('  bun server/modules/cli.js user-delete=123');
   console.error('  bun server/modules/cli.js user-delete 123');

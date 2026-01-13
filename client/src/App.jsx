@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { useEffect, useState } from "react";
 import Auth from "./pages/auth";
 import Servers from "./pages/user/servers";
+import NotFound from "./pages/errors/404";
 import Sidebar from "./components/navigation/sidebar";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
@@ -63,6 +64,8 @@ function App() {
             <Route path="/app/home" element={<Servers />} />
           </Route>
         </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

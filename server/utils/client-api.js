@@ -1,13 +1,17 @@
 import { Elysia } from "elysia";
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
-import { listUsers } from "../modules/cli.js";
-import { errorHandler, notFound, send } from "../middlewares/error-handler.js";
+import { errorHandler, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
+import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
 import { authLogger } from "../middlewares/logger.js";
 import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies.js";
+import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 
 export const clientApi = new Elysia({ name: "client-api" })
   .use(errorHandler)
   .post("/register", async ({ body, set, request }) => {
+    const limited = checkAuthRateLimit({ request, set });
+    if (limited) return limited;
+
     const res = await register({
       username: body?.username,
       email: body?.email,
@@ -29,6 +33,9 @@ export const clientApi = new Elysia({ name: "client-api" })
     return res.body;
   })
   .post("/login", async ({ body, set, request }) => {
+    const limited = checkAuthRateLimit({ request, set });
+    if (limited) return limited;
+
     const res = await login({ email: body?.email, password: body?.password });
     if (res.ok && res.body?.token) {
       const cookie = serializeCookie(authCookieName(), res.body.token, authCookieOptions());
@@ -50,6 +57,9 @@ export const clientApi = new Elysia({ name: "client-api" })
     return res.body;
   })
   .post("/logout", async ({ set, request }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
     const cookies = parseCookies(request.headers.get("cookie"));
     const token = cookies?.[authCookieName()];
     const res = await logout({ token });
@@ -73,21 +83,100 @@ export const clientApi = new Elysia({ name: "client-api" })
     return res.body;
   })
   .get("/account", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
     const cookies = parseCookies(request.headers.get("cookie"));
     const res = await account({
       authorization: request.headers.get("authorization"),
       cookieToken: cookies?.[authCookieName()],
     });
-    set.status = res.status;
-    return res.body;
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const wallet = await getBalance(userId);
+    const out = ok({ user: res.body.user, ...wallet }, 200);
+    set.status = out.status;
+    return out.body;
   })
-  .get("/users", async ({ request, set }) => {
+  .get("/balance", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
     const cookies = parseCookies(request.headers.get("cookie"));
-    const res = await listUsers({
+    const res = await account({
       authorization: request.headers.get("authorization"),
       cookieToken: cookies?.[authCookieName()],
     });
-    set.status = res.status;
-    return res.body;
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const data = await getBalance(userId);
+    const out = ok({ ...data }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/economy", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const settings = await getEconomySettings();
+    const out = ok({ ...settings }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .patch("/admin/economy", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const updated = await setCurrencyName(body?.currencyName);
+    if (!updated.ok) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const out = ok({ currencyName: updated.currencyName }, 200);
+    set.status = out.status;
+    return out.body;
   })
   .all("*", ({ set }) => send(set, notFound("not_found")));

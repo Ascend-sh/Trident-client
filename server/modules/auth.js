@@ -1,13 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { sessions, users } from '../db/schema.js';
+import { ensureWallet } from '../utils/economy.js';
 import { pteroApplicationRequest } from '../utils/importer.js';
 import { HTTP_STATUS, badGateway, badRequest, ok, unauthorized, unprocessable } from '../middlewares/error-handler.js';
 import { signJwt, verifyJwt } from '../utils/jwt.js';
 import { authLogger } from '../middlewares/logger.js';
 
 const COOKIE_NAME = 'torqen_session';
-const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+function sessionTtlDays() {
+  const raw = process.env.TORQEN_SESSION_TTL_DAYS;
+  const n = Number.parseFloat(String(raw ?? ''));
+  return Number.isFinite(n) && n > 0 ? n : 2;
+}
+
+const SESSION_TTL_MS = Math.floor(1000 * 60 * 60 * 24 * sessionTtlDays());
 
 function jwtSecret() {
   const secret = process.env.TORQEN_JWT_SECRET;
@@ -20,6 +28,7 @@ function cookieOptions() {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Lax',
     path: '/',
+    maxAge: Math.floor(SESSION_TTL_MS / 1000)
   };
 }
 
@@ -183,6 +192,11 @@ export async function register({ username, email, password }) {
       .returning();
 
     const user = inserted[0];
+
+    if (user?.id) {
+      await ensureWallet(user.id);
+    }
+
     return ok({ user: publicUser(user) }, HTTP_STATUS.OK);
   } catch {
     return unprocessable('user_exists');
