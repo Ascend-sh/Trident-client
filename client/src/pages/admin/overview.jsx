@@ -29,8 +29,16 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
-        <div className="lg:col-span-2 rounded-lg border border-white/10 bg-white/5 p-4">
-          <div className="flex items-start justify-between">
+        <div className="lg:col-span-2 rounded-lg border border-white/10 bg-white/5 p-4 relative overflow-hidden">
+          <div 
+            className="absolute inset-0 pointer-events-none" 
+            style={{ 
+              backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(173, 229, 218, 0.03) 10px, rgba(173, 229, 218, 0.03) 11px)",
+              maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,1) 100%)",
+              WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,1) 100%)"
+            }}
+          />
+          <div className="relative flex items-start justify-between">
             <div>
               <img src="/Logo.png" alt="Torqen" className="h-12 mb-3" />
               <h2 className="text-sm font-semibold text-white mb-2">Torqen Dashboard</h2>
@@ -43,12 +51,6 @@ export default function AdminOverview() {
                   <span className="text-[10px] text-white/50 uppercase tracking-wider">Build</span>
                   <span className="text-xs font-medium text-white">Swell</span>
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                <CheckCircle size={10} className="text-green-400" />
-                <span className="text-[10px] text-green-400 font-medium">Up to date</span>
               </div>
             </div>
           </div>

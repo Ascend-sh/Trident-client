@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ShieldAlert, Undo2 } from "lucide-react";
+import { Undo2 } from "lucide-react";
 
 export default function Forbidden() {
   const navigate = useNavigate();
@@ -8,12 +8,6 @@ export default function Forbidden() {
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#091416" }}>
       <div className="text-center">
         <img src="/Logo.png" alt="Torqen" className="h-16 mx-auto mb-8" />
-        
-        <div className="mb-6 flex justify-center">
-          <div className="w-24 h-24 rounded-full flex items-center justify-center border border-white/10 bg-white/5">
-            <ShieldAlert size={48} className="text-white/40" />
-          </div>
-        </div>
         
         <h1 className="text-6xl font-bold mb-4" style={{ color: "#ADE5DA" }}>403</h1>
         

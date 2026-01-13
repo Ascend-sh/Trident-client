@@ -6,10 +6,11 @@ import NotFound from "./pages/errors/404";
 import Forbidden from "./pages/errors/403";
 import AdminOverview from "./pages/admin/overview";
 import AdminSoftware from "./pages/admin/software";
+import AdminLocations from "./pages/admin/locations";
 import Sidebar from "./components/navigation/sidebar";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
-import { account } from "./utils/auth";
+import { useAuth } from "./context/auth-context.jsx";
 
 const AppLayout = () => {
   const [showLoader, setShowLoader] = useState(true);
@@ -38,64 +39,27 @@ const AppLayout = () => {
 };
 
 const RequireAuth = () => {
-  const [status, setStatus] = useState("loading");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    account()
-      .then(() => {
-        if (!cancelled) setStatus("ok");
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("unauthorized");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { status } = useAuth();
 
   if (status === "loading") {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#091416" }} />
     );
   }
-  if (status === "unauthorized") return <Navigate to="/" replace />;
+  if (status === "unauthenticated") return <Navigate to="/" replace />;
   return <Outlet />;
 };
 
 const RequireAdmin = () => {
-  const [status, setStatus] = useState("loading");
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    account()
-      .then((res) => {
-        if (!cancelled) {
-          setUser(res?.user || null);
-          setStatus("ok");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("unauthorized");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { status, isAdmin } = useAuth();
 
   if (status === "loading") {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#091416" }} />
     );
   }
-  if (status === "unauthorized") return <Navigate to="/" replace />;
-  if (!user?.isAdmin) return <Navigate to="/forbidden" replace />;
-  
+  if (status === "unauthenticated") return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/forbidden" replace />;
   return <Outlet />;
 };
 
@@ -112,6 +76,7 @@ function App() {
             <Route element={<RequireAdmin />}>
               <Route path="/app/admin/overview" element={<AdminOverview />} />
               <Route path="/app/admin/software" element={<AdminSoftware />} />
+              <Route path="/app/admin/locations" element={<AdminLocations />} />
             </Route>
           </Route>
         </Route>

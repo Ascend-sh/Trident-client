@@ -257,5 +257,14 @@ export async function account({ authorization, cookieToken }) {
     return unauthorized('unauthorized');
   }
 
+  try {
+    const panelIsAdmin = await fetchPteroAdminByEmail(user.email);
+    if (panelIsAdmin !== null && panelIsAdmin !== user.isAdmin) {
+      await db.update(users).set({ isAdmin: panelIsAdmin }).where(eq(users.id, user.id));
+      user.isAdmin = panelIsAdmin;
+    }
+  } catch {
+  }
+
   return ok({ user: publicUser(user) }, HTTP_STATUS.OK);
 }

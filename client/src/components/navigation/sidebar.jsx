@@ -1,38 +1,14 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, User, HeadphonesIcon, MoreVertical, PanelLeft, Wallet, ChevronDown, Settings, Shield, Palette, Earth, HardDrive, Package, LogOut } from "lucide-react";
-import { useEffect, useState } from "react";
-import { account, logout } from "../../utils/auth";
+import { LayoutDashboard, ShoppingCart, User, HeadphonesIcon, MoreVertical, PanelLeft, Wallet, ChevronDown, Settings, Shield, Palette, Earth, FileText, Package, LogOut } from "lucide-react";
+import { useState } from "react";
+import { logout, useAuth } from "../../context/auth-context.jsx";
 
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [accountOpen, setAccountOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [user, setUser] = useState(null);
-    const [balance, setBalance] = useState(0);
-    const [currencyName, setCurrencyName] = useState("TQN");
-
-    useEffect(() => {
-        let cancelled = false;
-
-        account()
-            .then((res) => {
-                if (cancelled) return;
-                setUser(res?.user || null);
-                setBalance(Number(res?.balance ?? 0));
-                setCurrencyName(String(res?.currencyName ?? "TQN"));
-            })
-            .catch(() => {
-                if (cancelled) return;
-                setUser(null);
-                setBalance(0);
-                setCurrencyName("TQN");
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const { user, balance, currencyName, refresh } = useAuth();
 
     const navItems = [
         { path: "/app/home", label: "Dashboard", icon: LayoutDashboard },
@@ -49,7 +25,7 @@ const Sidebar = () => {
         { path: "/app/admin/overview", label: "Overview", icon: LayoutDashboard },
         { path: "/app/admin/customizations", label: "Customizations", icon: Palette },
         { path: "/app/admin/locations", label: "Locations", icon: Earth },
-        { path: "/app/admin/nodes", label: "Nodes", icon: HardDrive },
+        { path: "/app/admin/logs", label: "Logs", icon: FileText },
         { path: "/app/admin/software", label: "Software", icon: Package },
     ];
 
@@ -213,6 +189,7 @@ const Sidebar = () => {
                                         setUserMenuOpen(false);
                                         try {
                                             await logout();
+                                            await refresh();
                                         } finally {
                                             navigate("/", { replace: true });
                                         }

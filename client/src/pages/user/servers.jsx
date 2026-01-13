@@ -1,55 +1,95 @@
 import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Gift, MessageCircle, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import CenterModal from "../../components/modals/center-modal";
-import { account } from "../../utils/auth";
+import { useAuth } from "../../context/auth-context.jsx";
+
+const API_BASE = "/api/v1/client";
+
+async function request(path, { method = "GET", body } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: body ? { "content-type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include"
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
+    const error = new Error(message);
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
 
 export default function Servers() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
-    const [user, setUser] = useState(null);
+    const { user } = useAuth();
     const [serverData, setServerData] = useState({
         name: "",
         location: null,
         software: null
     });
+    const [locations, setLocations] = useState([]);
+    const [nests, setNests] = useState([]);
+    const [loadingLocations, setLoadingLocations] = useState(false);
+    const [loadingNests, setLoadingNests] = useState(false);
+
+    const availableEggs = nests.flatMap(nest =>
+        (nest.eggs || []).map(egg => ({
+            ...egg,
+            nestId: nest.id,
+            nestName: nest.name
+        }))
+    );
 
     useEffect(() => {
-        let cancelled = false;
+        if (isCreateModalOpen && createStep === 2 && locations.length === 0) {
+            setLoadingLocations(true);
+            request('/locations')
+                .then((res) => {
+                    setLocations(res?.locations || []);
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch locations:', err);
+                    setLocations([]);
+                })
+                .finally(() => setLoadingLocations(false));
+        }
+    }, [isCreateModalOpen, createStep, locations.length]);
 
-        account()
-            .then((res) => {
-                if (!cancelled) setUser(res?.user || null);
-            })
-            .catch(() => {
-                if (!cancelled) setUser(null);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    const locations = [
-        { id: "us-east", name: "US East", country: "US", flag: "https://flagcdn.com/w80/us.png" },
-        { id: "us-west", name: "US West", country: "US", flag: "https://flagcdn.com/w80/us.png" },
-        { id: "eu-west", name: "EU West", country: "GB", flag: "https://flagcdn.com/w80/gb.png" },
-        { id: "asia", name: "Asia Pacific", country: "SG", flag: "https://flagcdn.com/w80/sg.png" },
-    ];
-
-    const softwareOptions = [
-        { id: "paper", name: "Paper", description: "Performance Minecraft", icon: "📄" },
-        { id: "forge", name: "Forge", description: "Modded Minecraft", icon: "⚒️" },
-        { id: "vanilla", name: "Vanilla", description: "Default Minecraft", icon: "🎮" },
-        { id: "fabric", name: "Fabric", description: "Modern Minecraft", icon: "🧵" },
-        { id: "nodejs", name: "Node.js", description: "JavaScript Runtime", icon: "💚" },
-        { id: "python", name: "Python", description: "Python Applications", icon: "🐍" },
-        { id: "bun", name: "Bun", description: "Fast JavaScript Runtime", icon: "🥟" },
-    ];
+    useEffect(() => {
+        if (isCreateModalOpen && createStep === 3 && nests.length === 0) {
+            setLoadingNests(true);
+            request('/nests')
+                .then((res) => {
+                    setNests(res?.nests || []);
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch nests:', err);
+                    setNests([]);
+                })
+                .finally(() => setLoadingNests(false));
+        }
+    }, [isCreateModalOpen, createStep, nests.length]);
 
     const handleCloseModal = () => {
         setIsCreateModalOpen(false);
         setCreateStep(1);
         setServerData({ name: "", location: null, software: null });
+        setLocations([]);
+        setNests([]);
     };
 
     const handleNext = () => {
@@ -59,11 +99,15 @@ export default function Servers() {
     const handleBack = () => {
         if (createStep > 1) setCreateStep(createStep - 1);
     };
-    const servers = [
-        { id: 1, name: "Production Server", uid: "SRV-001-PROD", software: "Minecraft", status: "online", cpu: "45%", ram: "2.4GB / 8GB", uptime: "15 days" },
-        { id: 2, name: "Development Server", uid: "SRV-002-DEV", software: "Pterodactyl", status: "online", cpu: "23%", ram: "1.2GB / 4GB", uptime: "7 days" },
-        { id: 3, name: "Testing Server", uid: "SRV-003-TEST", software: "Node.js", status: "offline", cpu: "0%", ram: "0GB / 4GB", uptime: "0 days" },
-    ];
+    
+    const servers = [];
+    
+    // Active state placeholder (not in use for now)
+    // const servers = [
+    //     { id: 1, name: "Production Server", uid: "SRV-001-PROD", software: "Minecraft", status: "online", cpu: "45%", ram: "2.4GB / 8GB", uptime: "15 days" },
+    //     { id: 2, name: "Development Server", uid: "SRV-002-DEV", software: "Pterodactyl", status: "online", cpu: "23%", ram: "1.2GB / 4GB", uptime: "7 days" },
+    //     { id: 3, name: "Testing Server", uid: "SRV-003-TEST", software: "Node.js", status: "offline", cpu: "0%", ram: "0GB / 4GB", uptime: "0 days" },
+    // ];
 
     return (
         <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
@@ -87,22 +131,22 @@ export default function Servers() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Total Servers</p>
-                    <p className="text-xl font-semibold text-white">3</p>
+                    <p className="text-xl font-semibold text-white">{servers.length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Online</p>
-                    <p className="text-xl font-semibold text-white">2</p>
+                    <p className="text-xl font-semibold text-white">{servers.filter(s => s.status === 'online').length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Offline</p>
-                    <p className="text-xl font-semibold text-white">1</p>
+                    <p className="text-xl font-semibold text-white">{servers.filter(s => s.status === 'offline').length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Balance</p>
-                    <p className="text-xl font-semibold text-white">250 TQN</p>
+                    <p className="text-xl font-semibold text-white">{user?.balance || 0} TQN</p>
                 </div>
             </div>
 
@@ -124,74 +168,87 @@ export default function Servers() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-white/10">
-                                <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Server</th>
-                                <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Software</th>
-                                <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Status</th>
-                                <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Resources</th>
-                                <th className="text-right px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                            {servers.map((server) => (
-                                <tr key={server.id} className="hover:bg-white/5 transition-colors duration-200">
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg flex items-center justify-center border border-white/10">
-                                                <Box size={16} className="text-white/60" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-medium text-white mb-0.5">{server.name}</h3>
-                                                <p className="text-[11px] text-white/50">{server.uid}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-xs text-white/70">{server.software}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                            server.status === 'online' 
-                                                ? 'bg-green-500/20 text-green-400' 
-                                                : 'bg-red-500/20 text-red-400'
-                                        }`}>
-                                            {server.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-[10px] text-white/50">CPU</span>
-                                                <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                    <div className="h-full rounded-full" style={{ width: server.cpu, backgroundColor: "#ADE5DA" }}></div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-[10px] text-white/50">RAM</span>
-                                                <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                    <div className="h-full rounded-full" style={{ width: `${(parseFloat(server.ram.split('/')[0]) / parseFloat(server.ram.split('/')[1])) * 100}%`, backgroundColor: "#ADE5DA" }}></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
-                                                Edit
-                                            </button>
-                                            <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
-                                                Manage
-                                            </button>
-                                        </div>
-                                    </td>
+                {servers.length === 0 ? (
+                    <div className="p-12 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-white/30 mx-auto mb-4">
+                            <path d="M16.5 7.5h-9v9h9v-9Z" />
+                            <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 0 1 9 3v.75h2.25V3a.75.75 0 0 1 1.5 0v.75H15V3a.75.75 0 0 1 1.5 0v.75h.75a3 3 0 0 1 3 3v.75H21A.75.75 0 0 1 21 9h-.75v2.25H21a.75.75 0 0 1 0 1.5h-.75V15H21a.75.75 0 0 1 0 1.5h-.75v.75a3 3 0 0 1-3 3h-.75V21a.75.75 0 0 1-1.5 0v-.75h-2.25V21a.75.75 0 0 1-1.5 0v-.75H9V21a.75.75 0 0 1-1.5 0v-.75h-.75a3 3 0 0 1-3-3v-.75H3A.75.75 0 0 1 3 15h.75v-2.25H3a.75.75 0 0 1 0-1.5h.75V9H3a.75.75 0 0 1 0-1.5h.75v-.75a3 3 0 0 1 3-3h.75V3a.75.75 0 0 1 .75-.75ZM6 6.75A.75.75 0 0 1 6.75 6h10.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V6.75Z" clipRule="evenodd" />
+                        </svg>
+                        <h3 className="text-sm font-medium text-white/50 mb-2">No Active Servers</h3>
+                        <p className="text-xs text-white/40 max-w-sm mx-auto">
+                            You don't have any servers on your account yet
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-white/10">
+                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Server</th>
+                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Software</th>
+                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Status</th>
+                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Resources</th>
+                                    <th className="text-right px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-white/10">
+                                {servers.map((server) => (
+                                    <tr key={server.id} className="hover:bg-white/5 transition-colors duration-200">
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center border border-white/10">
+                                                    <Box size={16} className="text-white/60" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-white mb-0.5">{server.name}</h3>
+                                                    <p className="text-[11px] text-white/50">{server.uid}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-xs text-white/70">{server.software}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                                server.status === 'online' 
+                                                    ? 'bg-green-500/20 text-green-400' 
+                                                    : 'bg-red-500/20 text-red-400'
+                                            }`}>
+                                                {server.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] text-white/50">CPU</span>
+                                                    <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                                        <div className="h-full rounded-full" style={{ width: server.cpu, backgroundColor: "#ADE5DA" }}></div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] text-white/50">RAM</span>
+                                                    <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                                        <div className="h-full rounded-full" style={{ width: `${(parseFloat(server.ram.split('/')[0]) / parseFloat(server.ram.split('/')[1])) * 100}%`, backgroundColor: "#ADE5DA" }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
+                                                    Edit
+                                                </button>
+                                                <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
+                                                    Manage
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
@@ -310,25 +367,44 @@ export default function Servers() {
                 {createStep === 2 && (
                     <div key="step-2" className="space-y-4 transition-all duration-300 ease-out animate-[fadeIn_0.3s_ease-out]">
                         <p className="text-xs text-white/70">Select a location for your server</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            {locations.map((location) => (
-                                <button
-                                    key={location.id}
-                                    onClick={() => setServerData({ ...serverData, location: location })}
-                                    className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
-                                        serverData.location?.id === location.id
-                                            ? 'bg-white/10'
-                                            : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
-                                    }`}
-                                    style={serverData.location?.id === location.id ? { borderColor: "#ADE5DA" } : {}}
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <img src={location.flag} alt={location.country} className="w-7 h-5 rounded object-cover" />
-                                        <h3 className="text-sm font-medium text-white">{location.name}</h3>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                        {loadingLocations ? (
+                            <div className="p-8 text-center">
+                                <svg className="animate-spin h-8 w-8 mx-auto text-white/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <p className="text-xs text-white/50 mt-3">Loading locations...</p>
+                            </div>
+                        ) : locations.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <p className="text-xs text-white/50">No locations available</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                {locations.map((location) => (
+                                    <button
+                                        key={location.id}
+                                        onClick={() => setServerData({ ...serverData, location: location })}
+                                        className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                                            serverData.location?.id === location.id
+                                                ? 'bg-white/10'
+                                                : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+                                        }`}
+                                        style={serverData.location?.id === location.id ? { borderColor: "#ADE5DA" } : {}}
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <img 
+                                                src={`https://flagsapi.com/${location.shortCode}/flat/64.png`} 
+                                                alt={location.shortCode} 
+                                                className="w-7 h-5 rounded object-cover" 
+                                                onError={(e) => e.target.style.display = 'none'}
+                                            />
+                                            <h3 className="text-sm font-medium text-white">{location.description || location.shortCode}</h3>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex items-center justify-end gap-2 pt-4">
                             <button
                                 onClick={handleBack}
@@ -351,28 +427,39 @@ export default function Servers() {
                 {createStep === 3 && (
                     <div key="step-3" className="space-y-4 transition-all duration-300 ease-out animate-[fadeIn_0.3s_ease-out]">
                         <p className="text-xs text-white/70">Choose server software</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            {softwareOptions.map((software) => (
-                                <button
-                                    key={software.id}
-                                    onClick={() => setServerData({ ...serverData, software: software })}
-                                    className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
-                                        serverData.software?.id === software.id
-                                            ? 'bg-white/10'
-                                            : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
-                                    }`}
-                                    style={serverData.software?.id === software.id ? { borderColor: "#ADE5DA" } : {}}
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <span className="text-xl">{software.icon}</span>
+                        {loadingNests ? (
+                            <div className="p-8 text-center">
+                                <svg className="animate-spin h-8 w-8 mx-auto text-white/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <p className="text-xs text-white/50 mt-3">Loading software options...</p>
+                            </div>
+                        ) : availableEggs.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <p className="text-xs text-white/50">No eggs available</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                {availableEggs.map((egg) => (
+                                    <button
+                                        key={egg.id}
+                                        onClick={() => setServerData({ ...serverData, software: egg })}
+                                        className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                                            serverData.software?.id === egg.id
+                                                ? 'bg-white/10'
+                                                : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+                                        }`}
+                                        style={serverData.software?.id === egg.id ? { borderColor: "#ADE5DA" } : {}}
+                                    >
                                         <div>
-                                            <h3 className="text-sm font-medium text-white">{software.name}</h3>
-                                            <p className="text-xs text-white/50">{software.description}</p>
+                                            <h3 className="text-sm font-medium text-white">{egg.name}</h3>
+                                            <p className="text-xs text-white/50">{egg.nestName}</p>
                                         </div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex items-center justify-end gap-2 pt-4">
                             <button
                                 onClick={handleBack}
@@ -403,15 +490,20 @@ export default function Servers() {
                             <div className="flex items-center justify-between py-2.5 border-b border-white/10">
                                 <span className="text-xs text-white/50">Location</span>
                                 <div className="flex items-center gap-2">
-                                    <img src={serverData.location?.flag} alt="" className="w-5 h-4 rounded object-cover" />
-                                    <span className="text-sm font-medium text-white">{serverData.location?.name}</span>
+                                    <img 
+                                        src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`} 
+                                        alt={serverData.location?.shortCode} 
+                                        className="w-5 h-4 rounded object-cover" 
+                                        onError={(e) => e.target.style.display = 'none'}
+                                    />
+                                    <span className="text-sm font-medium text-white">{serverData.location?.description || serverData.location?.shortCode}</span>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between py-2.5">
                                 <span className="text-xs text-white/50">Software</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-base">{serverData.software?.icon}</span>
-                                    <span className="text-sm font-medium text-white">{serverData.software?.name}</span>
+                                <div className="text-right">
+                                    <p className="text-sm font-medium text-white">{serverData.software?.name}</p>
+                                    <p className="text-xs text-white/40">{serverData.software?.nestName}</p>
                                 </div>
                             </div>
                         </div>

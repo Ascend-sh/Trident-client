@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { account, login, register } from "../utils/auth";
+import { login, register, useAuth } from "../context/auth-context.jsx";
 
 export default function Auth() {
     const navigate = useNavigate();
@@ -14,11 +14,13 @@ export default function Auth() {
         username: "",
     });
 
+    const { status, refresh } = useAuth();
+
     useEffect(() => {
-        account()
-            .then(() => navigate("/app/home", { replace: true }))
-            .catch(() => {});
-    }, [navigate]);
+        if (status === "authenticated") {
+            navigate("/app/home", { replace: true });
+        }
+    }, [status, navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,6 +35,7 @@ export default function Auth() {
         try {
             if (isLogin) {
                 await login({ email: formData.email, password: formData.password });
+                await refresh();
                 navigate("/app/home");
                 return;
             }

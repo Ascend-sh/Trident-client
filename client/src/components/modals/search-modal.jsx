@@ -1,27 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { account } from '../../utils/auth';
+import { useAuth } from '../../context/auth-context.jsx';
 
 export default function SearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const inputRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let cancelled = false;
-    account()
-      .then((res) => {
-        if (!cancelled) setUser(res?.user || null);
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   const getSearchItems = () => {
     const items = [

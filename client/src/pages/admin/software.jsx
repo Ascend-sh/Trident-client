@@ -1,7 +1,53 @@
 import { Package, Plus, Server, Code } from "lucide-react";
 import { useEffect, useState } from "react";
 import CenterModal from "../../components/modals/center-modal";
-import { addNest, deleteNest, fetchImportedNests, fetchPanelNests } from "../../utils/admin-nests";
+
+const API_BASE = "/api/v1/client";
+
+async function request(path, { method = "GET", body } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: body ? { "content-type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include"
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
+    const error = new Error(message);
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
+
+function fetchPanelNests({ page = 1, perPage = 50 } = {}) {
+  const qs = new URLSearchParams({ page: String(page), perPage: String(perPage) });
+  return request(`/admin/panel-nests?${qs}`);
+}
+
+function fetchImportedNests() {
+  return request('/admin/imported-nests');
+}
+
+function addNest(nestId) {
+  return request('/admin/add-nest', { method: 'POST', body: { id: nestId } });
+}
+
+function deleteNest(nestId) {
+  const qs = new URLSearchParams({ id: String(nestId) });
+  return request(`/admin/delete-nest?${qs}`, { method: 'DELETE' });
+}
 
 export default function AdminSoftware() {
   const [activeTab, setActiveTab] = useState("available");
@@ -12,6 +58,8 @@ export default function AdminSoftware() {
   const [activeNests, setActiveNests] = useState([]);
   const [error, setError] = useState("");
   const [deletingNestId, setDeletingNestId] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [nestToDelete, setNestToDelete] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,15 +117,18 @@ export default function AdminSoftware() {
     }
   };
 
-  const handleDeleteNest = async (nestId) => {
+  const handleDeleteNest = async () => {
+    if (!nestToDelete) return;
+
     setError("");
-    setDeletingNestId(nestId);
+    setDeletingNestId(nestToDelete.id);
+    setDeleteModalOpen(false);
 
     try {
-      await deleteNest(nestId);
+      await deleteNest(nestToDelete.id);
       const res = await fetchImportedNests();
       setActiveNests(res?.nests || []);
-      if (selectedNest?.id === nestId) {
+      if (selectedNest?.id === nestToDelete.id) {
         setEggsModalOpen(false);
         setSelectedNest(null);
       }
@@ -85,7 +136,13 @@ export default function AdminSoftware() {
       setError(err?.message || "Failed to delete nest");
     } finally {
       setDeletingNestId(null);
+      setNestToDelete(null);
     }
+  };
+
+  const confirmDeleteNest = (nest) => {
+    setNestToDelete(nest);
+    setDeleteModalOpen(true);
   };
 
   return (
@@ -195,14 +252,20 @@ export default function AdminSoftware() {
           </div>
 
           {activeNests.length === 0 ? (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <Server size={32} className="text-white/40" />
-              </div>
-              <h3 className="text-sm font-semibold text-white mb-1">No Active Nests</h3>
-              <p className="text-xs text-white/50 max-w-md mx-auto">
-                You haven't added any nests yet. Go to "Available Nests" to import nests from your Pterodactyl panel.
+            <div className="rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent p-12 text-center">
+              <Package size={32} className="text-white/30 mx-auto mb-4" />
+              <h3 className="text-sm font-medium text-white/50 mb-2">No Active Nests</h3>
+              <p className="text-xs text-white/40 max-w-sm mx-auto mb-5">
+                Import nests from your Pterodactyl panel to get started with server creation
               </p>
+              <button
+                onClick={() => setActiveTab("available")}
+                className="px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center gap-2 mx-auto"
+                style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+              >
+                <Plus size={14} />
+                Browse Available Nests
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -218,7 +281,7 @@ export default function AdminSoftware() {
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-white">{nest.name}</h3>
-                        <p className="text-xs text-white/40">{nest.eggCount} eggs</p>
+                        <p className="text-xs text-white/40">Available eggs: {nest.eggCount}</p>
                       </div>
                     </div>
                   </div>
@@ -227,11 +290,21 @@ export default function AdminSoftware() {
 
                   <div className="flex items-center justify-end gap-2 mt-auto pt-2">
                     <button
-                      onClick={() => handleDeleteNest(nest.id)}
+                      onClick={() => confirmDeleteNest(nest)}
                       disabled={deletingNestId === nest.id}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 border border-red-500/20 text-red-200 hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                     >
-                      {deletingNestId === nest.id ? "Deleting..." : "Delete"}
+                      {deletingNestId === nest.id ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Deleting...
+                        </>
+                      ) : (
+                        "Delete"
+                      )}
                     </button>
                     <button
                       onClick={() => handleViewEggs(nest)}
@@ -298,6 +371,38 @@ export default function AdminSoftware() {
             </div>
           </div>
         )}
+      </CenterModal>
+
+      <CenterModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Delete Nest"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-red-500/20 bg-red-500/10">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-white/70 mb-1">Are you sure you want to delete this nest?</p>
+              <p className="text-sm font-semibold text-white mb-1">{nestToDelete?.name}</p>
+              <p className="text-xs text-white/50">This will remove the nest and all its eggs from your dashboard. This action cannot be undone.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => setDeleteModalOpen(false)}
+              className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteNest}
+              className="px-4 py-2 text-xs font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 bg-red-500 hover:bg-red-600"
+            >
+              Delete Nest
+            </button>
+          </div>
+        </div>
       </CenterModal>
     </div>
   );

@@ -15,7 +15,8 @@
     "cli:user-delete": "bun server/modules/cli.js user-delete",
     "cli:status": "bun server/modules/cli.js status",
     "cli:reset": "bun server/modules/cli.js reset",
-    "cli:nests": "bun server/modules/cli.js nests"
+    "cli:nests": "bun server/modules/cli.js nests",
+    "cli:locations": "bun server/modules/cli.js locations"
   },
   "dependencies": {
     "chalk": "^5.6.2",

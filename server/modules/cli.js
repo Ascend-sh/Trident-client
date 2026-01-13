@@ -1,10 +1,9 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db } from '../db/client.js';
-import { eggs, nestEggs, nests, sessions, users } from '../db/schema.js';
+import { eggs, locationNodes, locations, nestEggs, nests, sessions, users } from '../db/schema.js';
 import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
 import { verifyJwt } from '../utils/jwt.js';
-
 function jwtSecret() {
   const secret = process.env.TORQEN_JWT_SECRET;
   return secret ? String(secret) : null;
@@ -77,6 +76,55 @@ export async function listNestsCli() {
     id: n.id,
     name: n.name,
     eggs: (eggIdsByNest.get(n.id) || []).map(id => eggById.get(id)).filter(Boolean)
+  }));
+}
+
+async function fetchImportedLocationsFromApi() {
+  const base = String(process.env.TORQEN_CLI_BASE_URL ?? 'http://localhost:3000').trim().replace(/\/+$/, '');
+  const token = String(process.env.TORQEN_CLI_TOKEN ?? '').trim();
+  if (!token) return null;
+
+  const res = await fetch(`${base}/api/v1/client/admin/imported-locations`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = new Error(payload?.error || payload?.message || 'request_failed');
+    err.status = res.status;
+    err.payload = payload;
+    throw err;
+  }
+
+  return payload?.locations || [];
+}
+
+export async function listLocationsCli() {
+  const fromApi = await fetchImportedLocationsFromApi();
+  if (fromApi) return fromApi;
+
+  const locationRows = await db.select().from(locations);
+  const nodeRows = await db.select().from(locationNodes);
+
+  const nodesByLocationId = new Map();
+  for (const node of nodeRows) {
+    if (!nodesByLocationId.has(node.locationId)) nodesByLocationId.set(node.locationId, []);
+    nodesByLocationId.get(node.locationId).push({
+      id: node.id,
+      name: node.name,
+      fqdn: node.fqdn,
+      description: node.description
+    });
+  }
+
+  return locationRows.map(loc => ({
+    id: loc.id,
+    shortCode: loc.shortCode,
+    description: loc.description,
+    nodes: nodesByLocationId.get(loc.id) || []
   }));
 }
 
@@ -191,6 +239,12 @@ async function main() {
     process.exit(0);
   }
 
+  if (cmd === 'locations') {
+    const rows = await listLocationsCli();
+    console.log(JSON.stringify({ ok: true, locations: rows }, null, 2));
+    process.exit(0);
+  }
+
   if (cmd === 'user-delete') {
     const res = await deleteUserCli(arg1);
     console.log(JSON.stringify(res, null, 2));
@@ -210,7 +264,7 @@ async function main() {
   }
 
   console.error('Unknown command');
-  console.error('Usage: bun server/modules/cli.js users|sessions|nests|user-delete=<id>|status|reset');
+  console.error('Usage: bun server/modules/cli.js users|sessions|nests|locations|user-delete=<id>|status|reset');
   console.error('Examples:');
   console.error('  bun server/modules/cli.js user-delete=123');
   console.error('  bun server/modules/cli.js user-delete 123');

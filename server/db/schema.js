@@ -67,3 +67,17 @@ export const eggs = sqliteTable('eggs', {
   updatedAt: text('updated_at')
 });
 
+export const locations = sqliteTable('locations', {
+  id: integer('id').primaryKey(),
+  shortCode: text('short_code').notNull(),
+  description: text('description').notNull().default('')
+});
+
+export const locationNodes = sqliteTable('location_nodes', {
+  id: integer('id').primaryKey(),
+  locationId: integer('location_id').notNull(),
+  name: text('name').notNull(),
+  fqdn: text('fqdn').notNull(),
+  description: text('description').notNull().default('')
+});
+
