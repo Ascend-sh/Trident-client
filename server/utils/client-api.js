@@ -2,11 +2,15 @@ import { Elysia } from "elysia";
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
 import { errorHandler, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
 import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
-import { authLogger } from "../middlewares/logger.js";
+import { authLogger, getLogger } from "../middlewares/logger.js";
 import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies.js";
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers } from "../modules/server.js";
+import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
+
+const wsLogger = getLogger('ws');
 
 export const clientApi = new Elysia({ name: "client-api" })
   .use(errorHandler)
@@ -178,6 +182,56 @@ export const clientApi = new Elysia({ name: "client-api" })
     }
 
     const out = ok({ currencyName: updated.currencyName }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/server-defaults", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const defaults = await getServerDefaults();
+    const out = ok({ defaults }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .patch("/admin/update-defaults", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const updated = await updateServerDefaults(body || {});
+    const out = ok({ ...updated }, 200);
     set.status = out.status;
     return out.body;
   })
@@ -375,6 +429,26 @@ export const clientApi = new Elysia({ name: "client-api" })
     set.status = out.status;
     return out.body;
   })
+  .get("/default-resources", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const defaults = await getServerDefaults();
+    const out = ok({ defaults }, 200);
+    set.status = out.status;
+    return out.body;
+  })
   .get("/locations", async ({ request, set }) => {
     const limited = checkRateLimit({ request, set });
     if (limited) return limited;
@@ -392,6 +466,143 @@ export const clientApi = new Elysia({ name: "client-api" })
 
     const locations = await listImportedLocations();
     const out = ok({ locations }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/servers", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const servers = await listUserServers({ userId: res.body.user.id });
+    const out = ok({ servers }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/servers/:id/websocket", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const ws = await getServerWebsocket({ userId: res.body.user.id, serverId: id });
+      wsLogger.info('server_websocket_credentials_ok', { meta: { userId: res.body.user.id, serverId: id } });
+      const out = ok({ ...ws }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      wsLogger.error('server_websocket_credentials_failed', { meta: { userId: res.body.user.id, serverId: id, error: err?.message, status: err?.status } });
+      if (err?.status) set.status = err.status;
+      else set.status = 500;
+      return { error: err?.message || 'websocket_failed' };
+    }
+  })
+  .post("/create-server", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const created = await createServer({
+      userId: res.body.user.id,
+      userEmail: res.body.user.email,
+      name: body?.name,
+      description: body?.description,
+      locationId: body?.locationId,
+      eggId: body?.eggId,
+      dockerImage: body?.dockerImage,
+      startup: body?.startup,
+      nestId: body?.nestId
+    });
+
+    const out = ok({ server: created.local, panel: created.panel }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .patch("/edit-server", async ({ request, set, body, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(body?.id ?? query?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const updated = await editServer({ userId: res.body.user.id, id, name: body?.name, description: body?.description });
+    const out = ok({ server: updated }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .delete("/delete-server", async ({ request, set, body, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(body?.id ?? query?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const deleted = await deleteServer({ userId: res.body.user.id, id });
+    const out = ok({ server: deleted }, 200);
     set.status = out.status;
     return out.body;
   })

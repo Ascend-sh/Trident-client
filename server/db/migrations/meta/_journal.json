@@ -85,6 +85,13 @@
       "when": 1768240000000,
       "tag": "0011_add_location_nodes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1768241000000,
+      "tag": "0012_add_servers",
+      "breakpoints": true
     }
   ]
 }

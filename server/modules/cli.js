@@ -1,9 +1,10 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db } from '../db/client.js';
-import { eggs, locationNodes, locations, nestEggs, nests, sessions, users } from '../db/schema.js';
+import { eggs, locationNodes, locations, nestEggs, nests, servers, sessions, users } from '../db/schema.js';
 import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
 import { verifyJwt } from '../utils/jwt.js';
+import { getServerDefaults } from '../utils/configuration.js';
 function jwtSecret() {
   const secret = process.env.TORQEN_JWT_SECRET;
   return secret ? String(secret) : null;
@@ -128,6 +129,33 @@ export async function listLocationsCli() {
   }));
 }
 
+export async function listServersCli() {
+  const serverRows = await db.select().from(servers);
+  const userRows = await db.select({ id: users.id, username: users.username, email: users.email }).from(users);
+
+  const userById = new Map(userRows.map(u => [u.id, u]));
+
+  return serverRows.map(s => {
+    const u = userById.get(s.userId);
+    return {
+      id: s.id,
+      name: s.name,
+      userId: s.userId,
+      username: u?.username || null,
+      email: u?.email || null,
+      pteroServerId: s.pteroServerId,
+      pteroIdentifier: s.pteroIdentifier,
+      pteroUuid: s.pteroUuid,
+      locationId: s.locationId,
+      nodeId: s.nodeId,
+      eggId: s.eggId,
+      suspended: s.suspended,
+      status: s.status,
+      createdAt: s.createdAt
+    };
+  });
+}
+
 export async function listSessionsCli() {
   const rows = await db.select().from(sessions);
   const now = Date.now();
@@ -166,6 +194,12 @@ export async function deleteUserCli(userId) {
 
 export async function resetCli() {
   const tables = [
+    'servers',
+    'location_nodes',
+    'locations',
+    'nest_eggs',
+    'eggs',
+    'nests',
     'wallets',
     'economy_settings',
     'server_defaults',
@@ -245,6 +279,18 @@ async function main() {
     process.exit(0);
   }
 
+  if (cmd === 'default-resources') {
+    const defaults = await getServerDefaults();
+    console.log(JSON.stringify({ ok: true, defaults }, null, 2));
+    process.exit(0);
+  }
+
+  if (cmd === 'servers') {
+    const rows = await listServersCli();
+    console.log(JSON.stringify({ ok: true, servers: rows }, null, 2));
+    process.exit(0);
+  }
+
   if (cmd === 'user-delete') {
     const res = await deleteUserCli(arg1);
     console.log(JSON.stringify(res, null, 2));
@@ -264,7 +310,7 @@ async function main() {
   }
 
   console.error('Unknown command');
-  console.error('Usage: bun server/modules/cli.js users|sessions|nests|locations|user-delete=<id>|status|reset');
+  console.error('Usage: bun server/modules/cli.js users|sessions|nests|locations|servers|default-resources|user-delete=<id>|status|reset');
   console.error('Examples:');
   console.error('  bun server/modules/cli.js user-delete=123');
   console.error('  bun server/modules/cli.js user-delete 123');

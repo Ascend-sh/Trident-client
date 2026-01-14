@@ -81,3 +81,38 @@ export const locationNodes = sqliteTable('location_nodes', {
   description: text('description').notNull().default('')
 });
 
+export const servers = sqliteTable('servers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull(),
+  pteroServerId: integer('ptero_server_id').notNull().unique(),
+  pteroUuid: text('ptero_uuid').notNull().unique(),
+  pteroIdentifier: text('ptero_identifier').notNull().unique(),
+  externalId: text('external_id'),
+  pteroUserId: integer('ptero_user_id'),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  status: text('status'),
+  suspended: integer('suspended', { mode: 'boolean' }).notNull().default(false),
+  locationId: integer('location_id'),
+  nodeId: integer('node_id'),
+  allocationId: integer('allocation_id'),
+  nestId: integer('nest_id'),
+  eggId: integer('egg_id'),
+  limitMemory: integer('limit_memory').notNull().default(0),
+  limitSwap: integer('limit_swap').notNull().default(0),
+  limitDisk: integer('limit_disk').notNull().default(0),
+  limitIo: integer('limit_io').notNull().default(0),
+  limitCpu: integer('limit_cpu').notNull().default(0),
+  limitThreads: text('limit_threads'),
+  oomDisabled: integer('oom_disabled', { mode: 'boolean' }).notNull().default(false),
+  featureDatabases: integer('feature_databases').notNull().default(0),
+  featureAllocations: integer('feature_allocations').notNull().default(0),
+  featureBackups: integer('feature_backups').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});
+

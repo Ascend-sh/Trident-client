@@ -1,5 +1,5 @@
 import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Gift, MessageCircle, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import CenterModal from "../../components/modals/center-modal";
 import { useAuth } from "../../context/auth-context.jsx";
 
@@ -90,6 +90,8 @@ export default function Servers() {
         setServerData({ name: "", location: null, software: null });
         setLocations([]);
         setNests([]);
+        setCreateServerError("");
+        setCreatingServer(false);
     };
 
     const handleNext = () => {
@@ -100,15 +102,122 @@ export default function Servers() {
         if (createStep > 1) setCreateStep(createStep - 1);
     };
     
-    const servers = [];
-    
-    // Active state placeholder (not in use for now)
-    // const servers = [
-    //     { id: 1, name: "Production Server", uid: "SRV-001-PROD", software: "Minecraft", status: "online", cpu: "45%", ram: "2.4GB / 8GB", uptime: "15 days" },
-    //     { id: 2, name: "Development Server", uid: "SRV-002-DEV", software: "Pterodactyl", status: "online", cpu: "23%", ram: "1.2GB / 4GB", uptime: "7 days" },
-    //     { id: 3, name: "Testing Server", uid: "SRV-003-TEST", software: "Node.js", status: "offline", cpu: "0%", ram: "0GB / 4GB", uptime: "0 days" },
-    // ];
+    const [servers, setServers] = useState([]);
+    const [serversLoading, setServersLoading] = useState(false);
+    const [serversError, setServersError] = useState("");
+    const [creatingServer, setCreatingServer] = useState(false);
+    const [createServerError, setCreateServerError] = useState("");
+    const [metricsByServerId, setMetricsByServerId] = useState({});
+    const socketsRef = useRef({});
 
+    const fetchServers = async () => {
+        setServersLoading(true);
+        setServersError("");
+
+        try {
+            const res = await request('/servers');
+            setServers(res?.servers || []);
+        } catch (err) {
+            setServers([]);
+            setServersError(err?.message || 'Failed to load servers');
+        } finally {
+            setServersLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchServers();
+    }, []);
+
+    const connectServerSocket = async (server) => {
+        const id = server?.id;
+        if (!id) return;
+        if (socketsRef.current[id]) return;
+
+        try {
+            const creds = await request(`/servers/${id}/websocket`);
+            if (!creds?.socket || !creds?.token) return;
+
+            const ws = new WebSocket(creds.socket);
+            socketsRef.current[id] = ws;
+
+            ws.onopen = () => {
+                console.log(`[ws] connected serverId=${id}`);
+                ws.send(JSON.stringify({ event: 'auth', args: [creds.token] }));
+                console.log(`[ws] auth sent serverId=${id}`);
+            };
+
+            ws.onmessage = (event) => {
+                let msg;
+                try {
+                    msg = JSON.parse(event.data);
+                } catch {
+                    return;
+                }
+
+                if (msg?.event === 'stats' && Array.isArray(msg.args) && msg.args[0]) {
+                    console.log(`[ws] stats serverId=${id}`);
+                    let stats;
+                    try {
+                        stats = JSON.parse(msg.args[0]);
+                    } catch {
+                        return;
+                    }
+
+                    const memoryBytes = Number(stats?.memory_bytes || 0);
+                    const memoryLimitBytes = Number(stats?.memory_limit_bytes || 0);
+                    const diskBytes = Number(stats?.disk_bytes || 0);
+                    const cpu = Number(stats?.cpu_absolute || 0);
+
+                    const memoryPercent = memoryLimitBytes > 0 ? Math.min(100, Math.max(0, (memoryBytes / memoryLimitBytes) * 100)) : 0;
+
+                    setMetricsByServerId(prev => ({
+                        ...prev,
+                        [id]: {
+                            state: stats?.state,
+                            cpuPercent: cpu,
+                            memoryBytes,
+                            memoryLimitBytes,
+                            memoryPercent,
+                            diskBytes,
+                            uptime: stats?.uptime,
+                            network: stats?.network
+                        }
+                    }));
+                }
+            };
+
+            ws.onclose = (e) => {
+                console.log(`[ws] closed serverId=${id} code=${e?.code} reason=${e?.reason}`);
+                delete socketsRef.current[id];
+            };
+
+            ws.onerror = () => {
+                console.log(`[ws] error serverId=${id}`);
+                try {
+                    ws.close();
+                } catch {
+                }
+            };
+        } catch {
+        }
+    };
+
+    useEffect(() => {
+        for (const srv of servers) {
+            connectServerSocket(srv);
+        }
+
+        return () => {
+            for (const ws of Object.values(socketsRef.current)) {
+                try {
+                    ws.close();
+                } catch {
+                }
+            }
+            socketsRef.current = {};
+        };
+    }, [servers]);
     return (
         <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
             <div className="mb-6">
@@ -131,17 +240,26 @@ export default function Servers() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Total Servers</p>
-                    <p className="text-xl font-semibold text-white">{servers.length}</p>
+                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Online</p>
-                    <p className="text-xl font-semibold text-white">{servers.filter(s => s.status === 'online').length}</p>
+                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.filter(s => {
+                        const m = metricsByServerId[s.id];
+                        const state = m?.state;
+                        return state === 'running' || state === 'online';
+                    }).length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                     <p className="text-xs text-white/60 mb-1">Offline</p>
-                    <p className="text-xl font-semibold text-white">{servers.filter(s => s.status === 'offline').length}</p>
+                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.filter(s => {
+                        const m = metricsByServerId[s.id];
+                        const state = m?.state;
+                        if (!state) return true;
+                        return state === 'offline' || state === 'stopped';
+                    }).length}</p>
                 </div>
 
                 <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
@@ -149,6 +267,12 @@ export default function Servers() {
                     <p className="text-xl font-semibold text-white">{user?.balance || 0} TQN</p>
                 </div>
             </div>
+
+            {serversError && (
+                <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
+                    <p className="text-xs text-red-200">{serversError}</p>
+                </div>
+            )}
 
             <div className="border border-white/10 rounded-lg overflow-hidden bg-gradient-to-br from-white/[0.02] to-transparent">
                 <div className="p-3 border-b border-white/10 flex items-center justify-between">
@@ -201,37 +325,61 @@ export default function Servers() {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-medium text-white mb-0.5">{server.name}</h3>
-                                                    <p className="text-[11px] text-white/50">{server.uid}</p>
+                                                    <p className="text-[11px] text-white/50">{server.identifier}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-3 py-3">
-                                            <span className="text-xs text-white/70">{server.software}</span>
+                                            <span className="text-xs text-white/70">{server.egg?.name || '-'}</span>
                                         </td>
                                         <td className="px-3 py-3">
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                server.status === 'online' 
-                                                    ? 'bg-green-500/20 text-green-400' 
-                                                    : 'bg-red-500/20 text-red-400'
-                                            }`}>
-                                                {server.status}
-                                            </span>
+                                            {(() => {
+                                                const m = metricsByServerId[server.id];
+                                                const hasLiveState = Boolean(m?.state);
+                                                const state = hasLiveState ? m.state : 'fetching';
+
+                                                const isOnline = state === 'running' || state === 'online';
+                                                const isStarting = state === 'starting';
+                                                const isInstalling = state === 'installing';
+
+                                                const cls = !hasLiveState
+                                                    ? 'bg-white/10 text-white/50'
+                                                    : isStarting || isInstalling
+                                                        ? 'bg-yellow-500/20 text-yellow-300'
+                                                        : isOnline
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'bg-red-500/20 text-red-400';
+
+                                                return (
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${cls}`}>
+                                                        {state}
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-3 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] text-white/50">CPU</span>
-                                                    <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                        <div className="h-full rounded-full" style={{ width: server.cpu, backgroundColor: "#ADE5DA" }}></div>
+                                            {(() => {
+                                                const m = metricsByServerId[server.id];
+                                                const cpu = m?.cpuPercent;
+                                                const mem = m?.memoryPercent;
+
+                                                return (
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[10px] text-white/50">CPU</span>
+                                                            <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                                                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, Number(cpu) || 0))}%`, backgroundColor: "#ADE5DA" }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[10px] text-white/50">RAM</span>
+                                                            <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                                                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, Number(mem) || 0))}%`, backgroundColor: "#ADE5DA" }}></div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] text-white/50">RAM</span>
-                                                    <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                        <div className="h-full rounded-full" style={{ width: `${(parseFloat(server.ram.split('/')[0]) / parseFloat(server.ram.split('/')[1])) * 100}%`, backgroundColor: "#ADE5DA" }}></div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-3 py-3">
                                             <div className="flex items-center justify-end gap-2">
@@ -482,6 +630,12 @@ export default function Servers() {
                 {createStep === 4 && (
                     <div key="step-4" className="space-y-4 transition-all duration-300 ease-out animate-[fadeIn_0.3s_ease-out]">
                         <p className="text-xs text-white/70">Review your server configuration</p>
+                        {createServerError && (
+                            <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10">
+                                <p className="text-[10px] text-red-200">{createServerError}</p>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <div className="flex items-center justify-between py-2.5 border-b border-white/10">
                                 <span className="text-xs text-white/50">Server Name</span>
@@ -515,11 +669,39 @@ export default function Servers() {
                                 Back
                             </button>
                             <button
-                                onClick={handleCloseModal}
-                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
+                                onClick={async () => {
+                                    setCreateServerError("");
+                                    setCreatingServer(true);
+
+                                    try {
+                                        const locationId = serverData.location?.id;
+                                        const eggId = serverData.software?.id;
+
+                                        await request('/create-server', {
+                                            method: 'POST',
+                                            body: {
+                                                name: serverData.name,
+                                                description: '',
+                                                locationId,
+                                                eggId,
+                                                dockerImage: serverData.software?.dockerImage,
+                                                startup: serverData.software?.startup,
+                                                nestId: serverData.software?.nestId
+                                            }
+                                        });
+
+                                        handleCloseModal();
+                                    } catch (err) {
+                                        setCreateServerError(err?.message || 'Failed to create server');
+                                    } finally {
+                                        setCreatingServer(false);
+                                    }
+                                }}
+                                disabled={creatingServer}
+                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: "#ADE5DA" }}
                             >
-                                Create Server
+                                {creatingServer ? 'Creating...' : 'Create Server'}
                             </button>
                         </div>
                     </div>

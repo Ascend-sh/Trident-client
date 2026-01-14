@@ -1,10 +1,88 @@
 import { Users, Server, Package, Activity, Download, RefreshCw, CheckCircle, AlertCircle, MoveUpRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CenterModal from "../../components/modals/center-modal";
+
+const API_BASE = "/api/v1/client";
+
+async function request(path, { method = "GET", body } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: body ? { "content-type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include"
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
+    const error = new Error(message);
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
 
 export default function AdminOverview() {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [serverDefaults, setServerDefaults] = useState({
+    memory: 1024,
+    swap: 0,
+    disk: 2048,
+    cpu: 100,
+    io: 0,
+    databases: 0,
+    backups: 0,
+    allocations: 0
+  });
+  const [defaultsLoading, setDefaultsLoading] = useState(false);
+  const [defaultsSaving, setDefaultsSaving] = useState(false);
+  const [defaultsError, setDefaultsError] = useState("");
+  const [defaultsSaved, setDefaultsSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setDefaultsLoading(true);
+    setDefaultsError("");
+
+    request('/admin/server-defaults')
+      .then((res) => {
+        if (cancelled) return;
+        const d = res?.defaults || {};
+        setServerDefaults({
+          memory: Number(d.memory ?? 1024),
+          swap: Number(d.swap ?? 0),
+          disk: Number(d.disk ?? 2048),
+          cpu: Number(d.cpu ?? 100),
+          io: Number(d.io ?? 0),
+          databases: Number(d.databases ?? 0),
+          backups: Number(d.backups ?? 0),
+          allocations: Number(d.allocations ?? 0)
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDefaultsError(err?.message || 'Failed to load server defaults');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setDefaultsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats = [
     { label: "Total Users", value: "127", icon: Users, color: "#ADE5DA" },
@@ -200,14 +278,30 @@ export default function AdminOverview() {
           </div>
 
           <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">Default Server Resources</h3>
-            <p className="text-[10px] text-white/50 mb-3">Set default resource limits for new servers</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <h3 className="text-xs font-semibold text-white mb-1">Default Server Resources</h3>
+                <p className="text-[10px] text-white/50">Set default resource limits for new servers</p>
+              </div>
+              {defaultsSaved && (
+                <span className="text-[10px] text-green-400">Saved</span>
+              )}
+            </div>
+
+            {defaultsError && (
+              <div className="mb-3 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10">
+                <p className="text-[10px] text-red-200">{defaultsError}</p>
+              </div>
+            )}
+
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${defaultsLoading ? 'opacity-50 pointer-events-none' : ''}`}>
               <div>
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Memory (MB)</label>
                 <input
                   type="number"
-                  placeholder="1024"
+                  step="1"
+                  value={serverDefaults.memory}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, memory: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -215,7 +309,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Swap (MB)</label>
                 <input
                   type="number"
-                  placeholder="0"
+                  step="1"
+                  value={serverDefaults.swap}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, swap: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -223,7 +319,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Disk (MB)</label>
                 <input
                   type="number"
-                  placeholder="2048"
+                  step="1"
+                  value={serverDefaults.disk}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, disk: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -231,7 +329,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">CPU (%)</label>
                 <input
                   type="number"
-                  placeholder="100"
+                  step="1"
+                  value={serverDefaults.cpu}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, cpu: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -239,7 +339,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">IO Weight</label>
                 <input
                   type="number"
-                  placeholder="500"
+                  step="1"
+                  value={serverDefaults.io}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, io: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -247,7 +349,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Databases</label>
                 <input
                   type="number"
-                  placeholder="0"
+                  step="1"
+                  value={serverDefaults.databases}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, databases: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -255,7 +359,9 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Backups</label>
                 <input
                   type="number"
-                  placeholder="0"
+                  step="1"
+                  value={serverDefaults.backups}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, backups: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
@@ -263,17 +369,54 @@ export default function AdminOverview() {
                 <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Allocations</label>
                 <input
                   type="number"
-                  placeholder="0"
+                  step="1"
+                  value={serverDefaults.allocations}
+                  onChange={(e) => setServerDefaults({ ...serverDefaults, allocations: Number(e.target.value) })}
                   className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
                 />
               </div>
             </div>
+
             <div className="mt-3 pt-3 border-t border-white/10 flex justify-end">
               <button
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90"
+                onClick={async () => {
+                  const values = Object.values(serverDefaults);
+                  const invalid = values.some(v => !Number.isFinite(v) || !Number.isInteger(v));
+                  if (invalid) {
+                    setDefaultsError('Enter proper values');
+                    return;
+                  }
+
+                  setDefaultsSaving(true);
+                  setDefaultsError("");
+                  setDefaultsSaved(false);
+
+                  try {
+                    const res = await request('/admin/update-defaults', { method: 'PATCH', body: serverDefaults });
+                    const d = res?.defaults || serverDefaults;
+                    setServerDefaults({
+                      memory: Number(d.memory ?? serverDefaults.memory),
+                      swap: Number(d.swap ?? serverDefaults.swap),
+                      disk: Number(d.disk ?? serverDefaults.disk),
+                      cpu: Number(d.cpu ?? serverDefaults.cpu),
+                      io: Number(d.io ?? serverDefaults.io),
+                      databases: Number(d.databases ?? serverDefaults.databases),
+                      backups: Number(d.backups ?? serverDefaults.backups),
+                      allocations: Number(d.allocations ?? serverDefaults.allocations)
+                    });
+                    setDefaultsSaved(true);
+                    setTimeout(() => setDefaultsSaved(false), 1500);
+                  } catch (err) {
+                    setDefaultsError(err?.message || 'Failed to save server defaults');
+                  } finally {
+                    setDefaultsSaving(false);
+                  }
+                }}
+                disabled={defaultsLoading || defaultsSaving}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
               >
-                Save Resources
+                {defaultsSaving ? 'Saving...' : 'Save Resources'}
               </button>
             </div>
           </div>

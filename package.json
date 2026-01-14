@@ -16,7 +16,9 @@
     "cli:status": "bun server/modules/cli.js status",
     "cli:reset": "bun server/modules/cli.js reset",
     "cli:nests": "bun server/modules/cli.js nests",
-    "cli:locations": "bun server/modules/cli.js locations"
+    "cli:locations": "bun server/modules/cli.js locations",
+    "cli:default-resources": "bun server/modules/cli.js default-resources",
+    "cli:servers": "bun server/modules/cli.js servers"
   },
   "dependencies": {
     "chalk": "^5.6.2",
