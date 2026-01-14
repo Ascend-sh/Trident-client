@@ -96,12 +96,50 @@ async function pickRandomNodeAndAllocationForLocation({ locationId }) {
   throw new Error('no_allocations_available');
 }
 
+async function fetchAllApplicationServers() {
+  const first = await pteroApplicationRequest({ path: '/api/application/servers', method: 'GET', query: { per_page: 100, page: 1 } });
+  const data = Array.isArray(first?.data) ? first.data : [];
+  const meta = first?.meta;
+  const totalPages = Number(meta?.pagination?.total_pages ?? 1);
+
+  if (!Number.isFinite(totalPages) || totalPages <= 1) return data;
+
+  const pages = [];
+  for (let p = 2; p <= totalPages; p++) pages.push(p);
+
+  const rest = await Promise.all(pages.map(page => pteroApplicationRequest({ path: '/api/application/servers', method: 'GET', query: { per_page: 100, page } }).catch(() => null)));
+  const merged = [...data];
+
+  for (const r of rest) {
+    if (Array.isArray(r?.data)) merged.push(...r.data);
+  }
+
+  return merged;
+}
+
 export async function listUserServers({ userId }) {
   const id = Number(userId);
   if (!Number.isInteger(id) || id <= 0) throw new Error('userId is required');
 
-  const serverRows = await db.select().from(servers).where(eq(servers.userId, id));
+  let serverRows = await db.select().from(servers).where(eq(servers.userId, id));
   if (serverRows.length === 0) return [];
+
+  const panelServers = await fetchAllApplicationServers().catch(() => null);
+  const panelIds = new Set(
+    Array.isArray(panelServers)
+      ? panelServers.map(s => Number(s?.attributes?.id)).filter(n => Number.isInteger(n) && n > 0)
+      : []
+  );
+
+  if (panelIds.size) {
+    const toDelete = serverRows.filter(s => !panelIds.has(Number(s.pteroServerId)));
+    if (toDelete.length) {
+      for (const s of toDelete) {
+        await db.delete(servers).where(and(eq(servers.id, s.id), eq(servers.userId, id)));
+      }
+      serverRows = serverRows.filter(s => panelIds.has(Number(s.pteroServerId)));
+    }
+  }
 
   const eggRows = await db.select().from(eggs);
   const locationRows = await db.select().from(locations);
