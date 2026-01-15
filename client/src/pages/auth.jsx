@@ -52,13 +52,13 @@ export default function Auth() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#091416" }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#18181b" }}>
             <div className="w-full border-t border-b border-white/10 flex justify-center">
                 <div className="flex py-3 mx-auto gap-8">
                     <div 
                         className="w-12 flex-shrink-0 -my-3" 
                         style={{ 
-                            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(173, 229, 218, 0.1) 10px, rgba(173, 229, 218, 0.1) 11px)",
+                            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, #27272a 10px, #27272a 11px)",
                         }}
                     />
                     <div className="w-[450px] py-8">
@@ -143,7 +143,7 @@ export default function Auth() {
                         type="submit"
                         disabled={isLoading}
                         className="w-full py-2.5 rounded-lg font-medium text-sm transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                        style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                     >
                         {isLoading && (
                             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@ export default function Auth() {
                                     setIsLogin(!isLogin);
                                 }}
                                 className="transition-colors duration-200 cursor-pointer"
-                                style={{ color: "#ADE5DA" }}
+                                style={{ color: "#14b8a6" }}
                             >
                                 {isLogin ? "Create one" : "Login"}
                             </button>
@@ -179,7 +179,7 @@ export default function Auth() {
                     <div 
                         className="w-12 flex-shrink-0 -my-3" 
                         style={{ 
-                            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(173, 229, 218, 0.1) 10px, rgba(173, 229, 218, 0.1) 11px)",
+                            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, #27272a 10px, #27272a 11px)",
                         }}
                     />
                 </div>
@@ -187,3 +187,5 @@ export default function Auth() {
         </div>
     );
 }
+
+

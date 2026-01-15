@@ -5,6 +5,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import "@xterm/xterm/css/xterm.css";
+import CenterModal from "../../../components/modals/center-modal";
 import { Line } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -144,6 +145,11 @@ export default function ServerOverview() {
     const fitAddonRef = useRef(null);
     const [serverState, setServerState] = useState(null);
     const lastStatusLoggedRef = useRef(null);
+
+    const [eulaModalOpen, setEulaModalOpen] = useState(false);
+    const [acceptingEula, setAcceptingEula] = useState(false);
+    const eulaTriggeredRef = useRef(false);
+    const eulaCheckInFlightRef = useRef(false);
 
     const [serverInfo, setServerInfo] = useState(null);
     const [primaryAllocation, setPrimaryAllocation] = useState(null);
@@ -305,8 +311,12 @@ export default function ServerOverview() {
 
                     if (evt === "auth success") {
                         setWsAuthed(true);
+                        eulaTriggeredRef.current = false;
+                        eulaCheckInFlightRef.current = false;
                         ws.send(JSON.stringify({ event: "send logs", args: [] }));
                         ws.send(JSON.stringify({ event: "send stats", args: [] }));
+                        
+                        checkEulaFile();
                         return;
                     }
 
@@ -319,6 +329,11 @@ export default function ServerOverview() {
                         try {
                             xtermRef.current?.writeln(cleaned);
                         } catch {
+                        }
+
+                        if (!eulaTriggeredRef.current && !eulaCheckInFlightRef.current && cleaned.toLowerCase().includes('eula')) {
+                            eulaTriggeredRef.current = true;
+                            setEulaModalOpen(true);
                         }
 
                         return;
@@ -390,6 +405,8 @@ export default function ServerOverview() {
                     if (cancelled) return;
                     setWsReady(false);
                     setWsAuthed(false);
+                    eulaTriggeredRef.current = false;
+                    eulaCheckInFlightRef.current = false;
                     try {
                         xtermRef.current?.writeln('\x1b[33m[Torqen]\x1b[0m Console disconnected');
                     } catch {
@@ -400,6 +417,8 @@ export default function ServerOverview() {
                     if (cancelled) return;
                     setWsReady(false);
                     setWsAuthed(false);
+                    eulaTriggeredRef.current = false;
+                    eulaCheckInFlightRef.current = false;
                 };
             } catch {
                 if (cancelled) return;
@@ -425,11 +444,13 @@ export default function ServerOverview() {
     const normalizedState = (serverState || '').toLowerCase();
     const isOnline = normalizedState === 'running' || normalizedState === 'online';
     const isOffline = !normalizedState || normalizedState === 'offline' || normalizedState === 'stopped';
-    const isTransitioning = normalizedState === 'starting' || normalizedState === 'stopping' || normalizedState === 'installing';
+    const isStarting = normalizedState === 'starting';
+    const isStopping = normalizedState === 'stopping';
+    const isInstalling = normalizedState === 'installing';
 
-    const canStart = isOffline && !isTransitioning;
-    const canRestart = isOnline && !isTransitioning;
-    const canStop = isOnline && !isTransitioning;
+    const canStart = (isOffline || isStopping) && !isStarting && !isInstalling;
+    const canRestart = isOnline && !isStarting && !isStopping && !isInstalling;
+    const canStop = (isOnline || isStarting) && !isStopping && !isInstalling;
 
     const canSendCommand = wsReady && wsAuthed;
 
@@ -455,6 +476,67 @@ export default function ServerOverview() {
         setCommand("");
     };
 
+    const checkEulaFile = async () => {
+        if (!serverId || eulaCheckInFlightRef.current) return;
+        eulaCheckInFlightRef.current = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/servers/${serverId}/files/contents?file=${encodeURIComponent('/eula.txt')}`, {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!res.ok) {
+                eulaTriggeredRef.current = false;
+                return;
+            }
+
+            const content = (await res.text()) || '';
+            const hasAcceptedEula = content.toLowerCase().includes('eula=true');
+
+            if (!hasAcceptedEula) {
+                eulaTriggeredRef.current = false;
+            }
+        } catch {
+            eulaTriggeredRef.current = false;
+        } finally {
+            eulaCheckInFlightRef.current = false;
+        }
+    };
+
+    const acceptEula = async () => {
+        if (!serverId || acceptingEula) return;
+        setAcceptingEula(true);
+        eulaCheckInFlightRef.current = true;
+        try {
+            const res = await fetch(`${API_BASE}/servers/${serverId}/files/write?file=${encodeURIComponent('/eula.txt')}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: "eula=true",
+                credentials: "include"
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to write EULA file');
+            }
+
+            setEulaModalOpen(false);
+            eulaTriggeredRef.current = false;
+            eulaCheckInFlightRef.current = false;
+        } catch (err) {
+            try {
+                xtermRef.current?.writeln(`\x1b[31m[Torqen]\x1b[0m Failed to accept EULA: ${err.message}`);
+            } catch {}
+            eulaTriggeredRef.current = false;
+            eulaCheckInFlightRef.current = false;
+        } finally {
+            setAcceptingEula(false);
+        }
+    };
+
     return (
         <div className="p-8">
             <div className="mb-8">
@@ -467,28 +549,64 @@ export default function ServerOverview() {
                         <div className="flex items-center gap-2">
                             <button 
                                 onClick={() => setPower('start')}
-                                disabled={!serverId || powerActionLoading || !canStart}
-                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: "#ADE5DA" }}
+                                disabled={!serverId || powerActionLoading || !canStart || isStarting}
+                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ backgroundColor: "#14b8a6" }}
                             >
-                                <Play size={14} />
-                                {powerActionLoading === 'start' ? 'Starting...' : 'Start'}
+                                {powerActionLoading === 'start' || isStarting ? (
+                                    <>
+                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Starting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Play size={14} />
+                                        Start
+                                    </>
+                                )}
                             </button>
                             <button 
                                 onClick={() => setPower('restart')}
-                                disabled={!serverId || powerActionLoading || !canRestart}
-                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40"
+                                disabled={!serverId || powerActionLoading || !canRestart || isStopping}
+                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40 cursor-pointer"
                             >
-                                <RotateCw size={14} />
-                                {powerActionLoading === 'restart' ? 'Restarting...' : 'Restart'}
+                                {powerActionLoading === 'restart' ? (
+                                    <>
+                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Restarting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCw size={14} />
+                                        Restart
+                                    </>
+                                )}
                             </button>
                             <button 
                                 onClick={() => setPower('stop')}
-                                disabled={!serverId || powerActionLoading || !canStop}
-                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-red-500 hover:bg-red-600 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40"
+                                disabled={!serverId || powerActionLoading || !canStop || isStopping}
+                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-red-500 hover:bg-red-600 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40 cursor-pointer"
                             >
-                                <Square size={14} />
-                                {powerActionLoading === 'stop' ? 'Stopping...' : 'Stop'}
+                                {powerActionLoading === 'stop' || isStopping ? (
+                                    <>
+                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Stopping...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Square size={14} />
+                                        Stop
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -628,6 +746,51 @@ export default function ServerOverview() {
                     />
                 </div>
             </div>
+
+            <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
+                <div className="p-6 pb-4">
+                    <h2 className="text-lg font-semibold text-white mb-4">Minecraft EULA Agreement</h2>
+                    <p className="text-sm text-white/70 mb-6">
+                        Your server has detected that the Minecraft EULA has not been accepted. 
+                        By clicking "Accept EULA", you agree to Mojang's End User License Agreement.
+                    </p>
+                    <p className="text-xs text-white/50 mb-6">
+                        Read the full EULA at: <a href="https://account.mojang.com/documents/minecraft_eula" target="_blank" rel="noopener noreferrer" className="text-[#14b8a6] hover:underline">https://account.mojang.com/documents/minecraft_eula</a>
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            onClick={() => {
+                                setEulaModalOpen(false);
+                                eulaTriggeredRef.current = false;
+                                eulaCheckInFlightRef.current = false;
+                            }}
+                            disabled={acceptingEula}
+                            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={acceptEula}
+                            disabled={acceptingEula}
+                            className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            style={{ backgroundColor: "#14b8a6" }}
+                        >
+                            {acceptingEula ? (
+                                <>
+                                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Accepting...
+                                </>
+                            ) : (
+                                'Accept EULA'
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </CenterModal>
         </div>
     );
 }
+

@@ -29,7 +29,7 @@ const AppLayout = () => {
   const isServerRoute = location.pathname.startsWith('/app/server');
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#091416" }}>
+    <div className="flex h-screen" style={{ backgroundColor: "#18181b" }}>
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
       {isServerRoute ? <ServerNav /> : <Sidebar />}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -47,7 +47,7 @@ const RequireAuth = () => {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: "#091416" }} />
+      <div className="min-h-screen" style={{ backgroundColor: "#18181b" }} />
     );
   }
   if (status === "unauthenticated") return <Navigate to="/" replace />;
@@ -59,7 +59,7 @@ const RequireAdmin = () => {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: "#091416" }} />
+      <div className="min-h-screen" style={{ backgroundColor: "#18181b" }} />
     );
   }
   if (status === "unauthenticated") return <Navigate to="/" replace />;
@@ -94,3 +94,5 @@ function App() {
 }
 
 export default App;
+
+

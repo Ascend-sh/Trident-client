@@ -28,7 +28,7 @@ export default function GlobalLoader({ onLoadingComplete }) {
     <div 
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-300" 
       style={{ 
-        backgroundColor: "#091416",
+        backgroundColor: "#18181b",
         opacity: isFadingOut ? 0 : 1
       }}
     >
@@ -36,7 +36,7 @@ export default function GlobalLoader({ onLoadingComplete }) {
       <div className="relative">
         <div className="w-12 h-12 border-3 rounded-full animate-spin" style={{ 
           borderColor: "rgba(255, 255, 255, 0.1)",
-          borderTopColor: "#ADE5DA"
+          borderTopColor: "#14b8a6"
         }}></div>
       </div>
     </div>

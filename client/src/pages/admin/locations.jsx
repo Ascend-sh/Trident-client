@@ -164,7 +164,7 @@ export default function AdminLocations() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
+    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-white mb-1">Locations</h1>
@@ -173,7 +173,7 @@ export default function AdminLocations() {
         <button 
           onClick={() => setSetupModalOpen(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90" 
-          style={{ backgroundColor: "#ADE5DA" }}
+          style={{ backgroundColor: "#14b8a6" }}
         >
           <Plus size={14} />
           Setup Locations
@@ -198,7 +198,7 @@ export default function AdminLocations() {
         <div className="border border-white/10 rounded-lg overflow-hidden">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-white/10" style={{ backgroundColor: "#0A1618" }}>
+              <tr className="border-b border-white/10" style={{ backgroundColor: "#18181b" }}>
                 <th className="text-left px-4 py-3 text-white/60 font-medium">Short Code</th>
                 <th className="text-left px-4 py-3 text-white/60 font-medium">Description</th>
                 <th className="text-left px-4 py-3 text-white/60 font-medium">Nodes</th>
@@ -260,11 +260,11 @@ export default function AdminLocations() {
       <CenterModal
         isOpen={setupModalOpen}
         onClose={() => setSetupModalOpen(false)}
-        title="Available Locations"
         maxWidth="max-w-2xl"
       >
-        <div className="space-y-4">
-          <p className="text-xs text-white/60">
+        <div className="p-6 pb-4">
+          <h2 className="text-lg font-semibold text-white mb-4">Available Locations</h2>
+          <p className="text-xs text-white/60 mb-6">
             These locations are available from your Pterodactyl panel. Select locations to import into your dashboard.
           </p>
 
@@ -289,8 +289,8 @@ export default function AdminLocations() {
                   <button
                     onClick={() => handleImport(location.id)}
                     disabled={importingLocationId === location.id || importedLocationIds.has(location.id)}
-                    className="px-3 py-1 rounded text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                    className="px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                    style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                   >
                     {importingLocationId === location.id ? (
                       <>
@@ -317,11 +317,11 @@ export default function AdminLocations() {
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between pt-4 mt-6 border-t border-white/10">
             <span className="text-xs text-white/40">{panelLocations.length} locations available</span>
             <button
               onClick={() => setSetupModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+              className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
             >
               Close
             </button>
@@ -332,19 +332,21 @@ export default function AdminLocations() {
       <CenterModal
         isOpen={detailsModalOpen}
         onClose={() => setDetailsModalOpen(false)}
-        title={viewDetailsLocation ? `${viewDetailsLocation.shortCode} - Nodes` : "Location Nodes"}
         maxWidth="max-w-3xl"
       >
         {viewDetailsLocation && (
-          <div className="space-y-4">
-            <p className="text-xs text-white/60">{viewDetailsLocation.description}</p>
+          <div className="p-6 pb-4">
+            <h2 className="text-lg font-semibold text-white mb-1">
+              {viewDetailsLocation ? `${viewDetailsLocation.shortCode} - Nodes` : "Location Nodes"}
+            </h2>
+            <p className="text-xs text-white/60 mb-6">{viewDetailsLocation.description}</p>
 
             <div className="border border-white/10 rounded-lg overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-white/10" style={{ backgroundColor: "#0A1618" }}>
-                    <th className="text-left px-4 py-3 text-white/80 font-medium">Node Name</th>
-                    <th className="text-left px-4 py-3 text-white/80 font-medium">FQDN</th>
+                  <tr className="border-b border-white/10" style={{ backgroundColor: "#18181b" }}>
+                    <th className="text-left px-4 py-2 text-white/80 font-medium">Node Name</th>
+                    <th className="text-left px-4 py-2 text-white/80 font-medium">FQDN</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -366,11 +368,11 @@ export default function AdminLocations() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-white/10">
               <span className="text-xs text-white/40">{viewDetailsLocation.nodes?.length || 0} nodes total</span>
               <button
                 onClick={() => setDetailsModalOpen(false)}
-                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
               >
                 Close
               </button>
@@ -381,3 +383,6 @@ export default function AdminLocations() {
     </div>
   );
 }
+
+
+

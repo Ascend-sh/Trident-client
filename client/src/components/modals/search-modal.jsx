@@ -99,7 +99,7 @@ export default function SearchModal({ isOpen, onClose }) {
           className={`w-full max-w-2xl mx-4 rounded-lg border border-white/10 shadow-2xl overflow-hidden transition-all duration-200 ${
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
-          style={{ backgroundColor: '#0A1618' }}
+          style={{ backgroundColor: '#18181b' }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
@@ -181,3 +181,5 @@ export default function SearchModal({ isOpen, onClose }) {
     </>
   );
 }
+
+

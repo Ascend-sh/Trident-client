@@ -85,10 +85,10 @@ export default function AdminOverview() {
   }, []);
 
   const stats = [
-    { label: "Total Users", value: "127", icon: Users, color: "#ADE5DA" },
-    { label: "Active Servers", value: "42", icon: Server, color: "#ADE5DA" },
-    { label: "Total Nests", value: "8", icon: Package, color: "#ADE5DA" },
-    { label: "System Status", value: "Healthy", icon: Activity, color: "#ADE5DA" },
+    { label: "Total Users", value: "127", icon: Users, color: "#14b8a6" },
+    { label: "Active Servers", value: "42", icon: Server, color: "#14b8a6" },
+    { label: "Total Nests", value: "8", icon: Package, color: "#14b8a6" },
+    { label: "System Status", value: "Healthy", icon: Activity, color: "#14b8a6" },
   ];
 
   const handleUpdate = () => {
@@ -100,7 +100,7 @@ export default function AdminOverview() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
+    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-white mb-1">Admin Overview</h1>
         <p className="text-white/60 text-xs">Dashboard statistics and system information</p>
@@ -123,7 +123,7 @@ export default function AdminOverview() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-white/50 uppercase tracking-wider">Version</span>
-                  <span className="text-sm font-semibold" style={{ color: "#ADE5DA" }}>v0.5.0-beta</span>
+                  <span className="text-sm font-semibold" style={{ color: "#14b8a6" }}>v0.5.0-beta</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-white/50 uppercase tracking-wider">Build</span>
@@ -152,7 +152,7 @@ export default function AdminOverview() {
           <button
             onClick={() => setUpdateModalOpen(true)}
             className="w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center justify-center gap-1.5"
-            style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
           >
             <RefreshCw size={14} />
             Update from Source
@@ -201,7 +201,7 @@ export default function AdminOverview() {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ADE5DA]"></div>
+                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14b8a6]"></div>
                 </label>
               </div>
               <div className="flex items-center justify-between py-2">
@@ -215,7 +215,7 @@ export default function AdminOverview() {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ADE5DA]"></div>
+                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14b8a6]"></div>
                 </label>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function AdminOverview() {
                 <span className="text-xs text-white">Enable Economy</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ADE5DA]"></div>
+                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14b8a6]"></div>
                 </label>
               </div>
               <div>
@@ -237,7 +237,7 @@ export default function AdminOverview() {
                 <input
                   type="text"
                   placeholder="TQN"
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
             </div>
@@ -248,16 +248,16 @@ export default function AdminOverview() {
                 <input
                   type="email"
                   placeholder="User email"
-                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
                 <input
                   type="number"
                   placeholder="Amount"
-                  className="w-24 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-24 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
                 <button
                   className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90"
-                  style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                  style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                 >
                   Grant
                 </button>
@@ -272,7 +272,7 @@ export default function AdminOverview() {
               <span className="text-xs text-white">Disable Registration</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" />
-                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ADE5DA]"></div>
+                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14b8a6]"></div>
               </label>
             </div>
           </div>
@@ -302,7 +302,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.memory}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, memory: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -312,7 +312,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.swap}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, swap: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -322,7 +322,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.disk}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, disk: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -332,7 +332,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.cpu}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, cpu: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -342,7 +342,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.io}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, io: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -352,7 +352,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.databases}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, databases: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -362,7 +362,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.backups}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, backups: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
               <div>
@@ -372,7 +372,7 @@ export default function AdminOverview() {
                   step="1"
                   value={serverDefaults.allocations}
                   onChange={(e) => setServerDefaults({ ...serverDefaults, allocations: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
               </div>
             </div>
@@ -414,7 +414,7 @@ export default function AdminOverview() {
                 }}
                 disabled={defaultsLoading || defaultsSaving}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
               >
                 {defaultsSaving ? 'Saving...' : 'Save Resources'}
               </button>
@@ -428,7 +428,7 @@ export default function AdminOverview() {
               <span className="text-xs text-white">Enable Maintenance Mode</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" />
-                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ADE5DA]"></div>
+                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14b8a6]"></div>
               </label>
             </div>
           </div>
@@ -474,11 +474,11 @@ export default function AdminOverview() {
                 <input
                   type="email"
                   placeholder="Enter email to blacklist"
-                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#ADE5DA]/50"
+                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#14b8a6]/50"
                 />
                 <button
                   className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90"
-                  style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                  style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                 >
                   Add to Blacklist
                 </button>
@@ -520,7 +520,7 @@ export default function AdminOverview() {
               onClick={handleUpdate}
               disabled={isUpdating}
               className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "#ADE5DA" }}
+              style={{ backgroundColor: "#14b8a6" }}
             >
               {isUpdating ? (
                 <>
@@ -543,3 +543,5 @@ export default function AdminOverview() {
     </div>
   );
 }
+
+

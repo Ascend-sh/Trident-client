@@ -38,7 +38,7 @@ const Header = () => {
     ];
 
     return (
-        <header className="h-14 border-b border-white/10 flex items-center justify-between px-6" style={{ backgroundColor: "#0A1618" }}>
+        <header className="h-14 border-b border-white/10 flex items-center justify-between px-6" style={{ backgroundColor: "#18181b" }}>
             <div className="flex items-center gap-4 flex-1">
                 <button 
                     onClick={() => setSearchModalOpen(true)}
@@ -64,14 +64,14 @@ const Header = () => {
                     <button 
                         onClick={() => setIsDark(true)}
                         className={`p-1.5 transition-colors duration-200 ${isDark ? 'text-white' : 'text-white/40'}`}
-                        style={isDark ? { backgroundColor: "rgba(173, 229, 218, 0.15)", borderRadius: "6px" } : {}}
+                        style={isDark ? { backgroundColor: "#27272a", borderRadius: "6px" } : {}}
                     >
                         <Moon size={14} />
                     </button>
                     <button 
                         onClick={() => setIsDark(false)}
                         className={`p-1.5 transition-colors duration-200 ${!isDark ? 'text-white' : 'text-white/40'}`}
-                        style={!isDark ? { backgroundColor: "rgba(173, 229, 218, 0.15)", borderRadius: "6px" } : {}}
+                        style={!isDark ? { backgroundColor: "#27272a", borderRadius: "6px" } : {}}
                     >
                         <Sun size={14} />
                     </button>
@@ -103,7 +103,7 @@ const Header = () => {
                                 className={`absolute top-full right-0 mt-2 z-50 w-80 rounded-lg border border-white/10 overflow-hidden transition-all duration-200 ${
                                     notificationVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                                 }`}
-                                style={{ backgroundColor: "#0A1618" }}
+                                style={{ backgroundColor: "#18181b" }}
                             >
                                 <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
                                     <h3 className="text-xs font-semibold text-white">Notifications</h3>
@@ -128,7 +128,7 @@ const Header = () => {
                                                 <div className="flex items-start justify-between gap-2 mb-1">
                                                     <h4 className="text-xs font-medium text-white truncate">{notification.title}</h4>
                                                     {!notification.read && (
-                                                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: "#ADE5DA" }}></span>
+                                                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: "#14b8a6" }}></span>
                                                     )}
                                                 </div>
                                                 <p className="text-xs text-white/60 mb-1">{notification.message}</p>
@@ -177,7 +177,7 @@ const Header = () => {
                                 setHelpModalOpen(false);
                             }}
                             className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
-                            style={{ backgroundColor: "#ADE5DA" }}
+                            style={{ backgroundColor: "#14b8a6" }}
                         >
                             Continue
                         </button>
@@ -194,3 +194,6 @@ const Header = () => {
 };
 
 export default Header;
+
+
+

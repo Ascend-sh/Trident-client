@@ -146,7 +146,7 @@ export default function AdminSoftware() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
+    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-white mb-1">Software Management</h1>
@@ -165,7 +165,7 @@ export default function AdminSoftware() {
           onClick={() => setActiveTab("available")}
           className={`px-4 py-2 text-xs font-medium transition-colors duration-200 border-b-2 ${
             activeTab === "available"
-              ? "text-white border-[#ADE5DA]"
+              ? "text-white border-[#14b8a6]"
               : "text-white/60 border-transparent hover:text-white/80"
           }`}
         >
@@ -175,7 +175,7 @@ export default function AdminSoftware() {
           onClick={() => setActiveTab("active")}
           className={`px-4 py-2 text-xs font-medium transition-colors duration-200 border-b-2 ${
             activeTab === "active"
-              ? "text-white border-[#ADE5DA]"
+              ? "text-white border-[#14b8a6]"
               : "text-white/60 border-transparent hover:text-white/80"
           }`}
         >
@@ -216,7 +216,7 @@ export default function AdminSoftware() {
                     onClick={() => handleAddNest(nest.id)}
                     disabled={addingNestId === nest.id || importedNestIds.has(nest.id)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 flex-shrink-0 ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                    style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                   >
                     {addingNestId === nest.id ? (
                       <>
@@ -261,7 +261,7 @@ export default function AdminSoftware() {
               <button
                 onClick={() => setActiveTab("available")}
                 className="px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center gap-2 mx-auto"
-                style={{ backgroundColor: "#ADE5DA", color: "#091416" }}
+                style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
               >
                 <Plus size={14} />
                 Browse Available Nests
@@ -276,8 +276,8 @@ export default function AdminSoftware() {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#ADE5DA]/20 flex items-center justify-center">
-                        <Package size={20} style={{ color: "#ADE5DA" }} />
+                      <div className="w-10 h-10 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center">
+                        <Package size={20} style={{ color: "#14b8a6" }} />
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-white">{nest.name}</h3>
@@ -324,20 +324,20 @@ export default function AdminSoftware() {
       <CenterModal
         isOpen={eggsModalOpen}
         onClose={() => setEggsModalOpen(false)}
-        title={selectedNest ? `${selectedNest.name} - Eggs` : "Eggs"}
         maxWidth="max-w-3xl"
       >
         {selectedNest && (
-          <div className="space-y-4">
-            <p className="text-xs text-white/60">{selectedNest.description}</p>
-            
+          <div className="p-6 pb-4">
+            <h2 className="text-lg font-semibold text-white mb-1">{selectedNest ? `${selectedNest.name} - Eggs` : "Eggs"}</h2>
+            <p className="text-xs text-white/60 mb-6">{selectedNest.description}</p>
+
             <div className="border border-white/10 rounded-lg overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-white/10" style={{ backgroundColor: "#0A1618" }}>
-                    <th className="text-left px-4 py-3 text-white/80 font-medium">Egg Name</th>
-                    <th className="text-left px-4 py-3 text-white/80 font-medium">Author</th>
-                    <th className="text-left px-4 py-3 text-white/80 font-medium">Docker Image</th>
+                  <tr className="border-b border-white/10" style={{ backgroundColor: "#18181b" }}>
+                    <th className="text-left px-4 py-2 text-white/80 font-medium">Egg Name</th>
+                    <th className="text-left px-4 py-2 text-white/80 font-medium">Author</th>
+                    <th className="text-left px-4 py-2 text-white/80 font-medium">Docker Image</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -360,11 +360,11 @@ export default function AdminSoftware() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-white/10">
               <span className="text-xs text-white/40">{selectedNest.eggs?.length || 0} eggs total</span>
               <button
                 onClick={() => setEggsModalOpen(false)}
-                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
               >
                 Close
               </button>
@@ -376,28 +376,25 @@ export default function AdminSoftware() {
       <CenterModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        title="Delete Nest"
         maxWidth="max-w-md"
       >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-red-500/20 bg-red-500/10">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-white/70 mb-1">Are you sure you want to delete this nest?</p>
-              <p className="text-sm font-semibold text-white mb-1">{nestToDelete?.name}</p>
-              <p className="text-xs text-white/50">This will remove the nest and all its eggs from your dashboard. This action cannot be undone.</p>
-            </div>
-          </div>
+        <div className="p-6 pb-4">
+          <h2 className="text-lg font-semibold text-white mb-4">Delete Nest</h2>
 
-          <div className="flex items-center justify-end gap-2">
+          <p className="text-xs text-white/60 mb-2">Are you sure you want to delete this nest?</p>
+          <p className="text-sm font-semibold text-white mb-2">{nestToDelete?.name}</p>
+          <p className="text-xs text-white/50 mb-6">This will remove the nest and all its eggs from your dashboard. This action cannot be undone.</p>
+
+          <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
             <button
               onClick={() => setDeleteModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+              className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleDeleteNest}
-              className="px-4 py-2 text-xs font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 bg-red-500 hover:bg-red-600"
+              className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors duration-200 bg-red-500 hover:bg-red-600 cursor-pointer"
             >
               Delete Nest
             </button>
@@ -407,3 +404,6 @@ export default function AdminSoftware() {
     </div>
   );
 }
+
+
+

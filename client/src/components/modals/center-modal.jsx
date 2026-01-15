@@ -30,7 +30,7 @@ const CenterModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }
                     className={`relative w-full ${maxWidth} rounded-lg border border-white/10 transition-all duration-200 ${
                         isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                     }`}
-                    style={{ backgroundColor: "#0A1618" }}
+                    style={{ backgroundColor: "#18181b" }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center px-4 py-3 border-b border-white/10">
@@ -47,3 +47,5 @@ const CenterModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }
 };
 
 export default CenterModal;
+
+

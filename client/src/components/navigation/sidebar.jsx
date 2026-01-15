@@ -30,7 +30,7 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#0A1618" }}>
+        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#18181b" }}>
             <div className="h-14 px-5 border-b border-white/10 flex items-center justify-between">
                 <img src="/Logo.png" alt="Torqen" className="h-8" />
                 <button className="text-white/60 hover:text-white transition-colors duration-200">
@@ -51,9 +51,19 @@ const Sidebar = () => {
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
                                 location.pathname === item.path
                                     ? "text-white"
-                                    : "text-white/60 hover:text-white hover:bg-white/5"
+                                    : "text-white/60 hover:text-white"
                             }`}
-                            style={location.pathname === item.path ? { backgroundColor: "rgba(173, 229, 218, 0.1)" } : {}}
+                            style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                            onMouseEnter={(e) => {
+                                if (location.pathname !== item.path) {
+                                    e.currentTarget.style.backgroundColor = "#27272a";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (location.pathname !== item.path) {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                }
+                            }}
                         >
                             <Icon size={18} className="flex-shrink-0" />
                             <span className="text-sm font-medium leading-none">{item.label}</span>
@@ -67,9 +77,19 @@ const Sidebar = () => {
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
                             location.pathname.startsWith("/app/account")
                                 ? "text-white"
-                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                : "text-white/60 hover:text-white"
                         }`}
-                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "rgba(173, 229, 218, 0.1)" } : {}}
+                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                        onMouseEnter={(e) => {
+                            if (!location.pathname.startsWith("/app/account")) {
+                                e.currentTarget.style.backgroundColor = "#27272a";
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!location.pathname.startsWith("/app/account")) {
+                                e.currentTarget.style.backgroundColor = "transparent";
+                            }
+                        }}
                     >
                         <User size={18} className="flex-shrink-0" />
                         <span className="text-sm font-medium leading-none flex-1 text-left">Account</span>
@@ -87,9 +107,19 @@ const Sidebar = () => {
                                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
                                             location.pathname === item.path
                                                 ? "text-white"
-                                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                                : "text-white/60 hover:text-white"
                                         }`}
-                                        style={location.pathname === item.path ? { backgroundColor: "rgba(173, 229, 218, 0.1)" } : {}}
+                                        style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                        onMouseEnter={(e) => {
+                                            if (location.pathname !== item.path) {
+                                                e.currentTarget.style.backgroundColor = "#27272a";
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (location.pathname !== item.path) {
+                                                e.currentTarget.style.backgroundColor = "transparent";
+                                            }
+                                        }}
                                     >
                                         <Icon size={16} className="flex-shrink-0" />
                                         <span className="text-xs font-medium leading-none">{item.label}</span>
@@ -114,9 +144,19 @@ const Sidebar = () => {
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
                                         location.pathname === item.path
                                             ? "text-white"
-                                            : "text-white/60 hover:text-white hover:bg-white/5"
+                                            : "text-white/60 hover:text-white"
                                     }`}
-                                    style={location.pathname === item.path ? { backgroundColor: "rgba(173, 229, 218, 0.1)" } : {}}
+                                    style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                    onMouseEnter={(e) => {
+                                        if (location.pathname !== item.path) {
+                                            e.currentTarget.style.backgroundColor = "#27272a";
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (location.pathname !== item.path) {
+                                            e.currentTarget.style.backgroundColor = "transparent";
+                                        }
+                                    }}
                                 >
                                     <Icon size={18} className="flex-shrink-0" />
                                     <span className="text-sm font-medium leading-none">{item.label}</span>
@@ -160,7 +200,7 @@ const Sidebar = () => {
                         />
                         <div 
                             className="absolute bottom-0 left-full ml-2 z-50 w-52 rounded-lg border border-white/10 overflow-hidden shadow-xl"
-                            style={{ backgroundColor: "#0A1618" }}
+                            style={{ backgroundColor: "#18181b" }}
                         >
                             <div className="px-3 py-2 border-b border-white/10">
                                 <div className="flex items-center gap-2">
@@ -209,3 +249,7 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+
+
+
