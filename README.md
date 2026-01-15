@@ -1,11 +1,5 @@
 # Torqen
 
-[![Bun](https://img.shields.io/badge/runtime-bun-black)](https://bun.sh/)
-[![Elysia](https://img.shields.io/badge/backend-elysiajs-0b1020)](https://elysiajs.com/)
-[![React](https://img.shields.io/badge/frontend-react-20232a)](https://react.dev/)
-[![Drizzle](https://img.shields.io/badge/orm-drizzle-0c0c0c)](https://orm.drizzle.team/)
-[![SQLite](https://img.shields.io/badge/database-sqlite-07405e)](https://www.sqlite.org/)
-
 Torqen is a Bun-powered dashboard and API with a React (Vite) client and a SQLite database managed via Drizzle.
 
 > [!NOTE]
@@ -122,17 +116,31 @@ The backend supports reading auth from either:
 
 The repository includes a small CLI for local administration.
 
-### List users
-
 ```bash
 bun run cli:users
-```
-
-### List sessions (active/expired)
-
-```bash
 bun run cli:sessions
+bun run cli:user-delete -- <userId>
+bun run cli:status
+bun run cli:reset
+bun run cli:nests
+bun run cli:nests -- --full
+bun run cli:locations
+bun run cli:default-resources
+bun run cli:servers
 ```
+
+### Commands
+
+- `cli:users` List users.
+- `cli:sessions` List sessions (active/expired).
+- `cli:user-delete -- <userId>` Delete a user and their sessions.
+- `cli:status` Print DB + HTTP health checks.
+- `cli:reset` Drop all tables and re-run migrations (destructive).
+- `cli:nests` List imported nests and eggs.
+- `cli:nests -- --full` Include full parsed egg env vars per egg.
+- `cli:locations` List imported locations and nodes.
+- `cli:default-resources` Show server default resource configuration.
+- `cli:servers` List servers.
 
 ## Development Notes
 
