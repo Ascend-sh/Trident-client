@@ -7,7 +7,9 @@ import Forbidden from "./pages/errors/403";
 import AdminOverview from "./pages/admin/overview";
 import AdminSoftware from "./pages/admin/software";
 import AdminLocations from "./pages/admin/locations";
+import ServerOverview from "./pages/user/server/overview";
 import Sidebar from "./components/navigation/sidebar";
+import ServerNav from "./components/navigation/server-nav";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
 import { useAuth } from "./context/auth-context.jsx";
@@ -24,10 +26,12 @@ const AppLayout = () => {
     }
   }, [location.pathname, prevPath]);
 
+  const isServerRoute = location.pathname.startsWith('/app/server');
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#091416" }}>
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
-      <Sidebar />
+      {isServerRoute ? <ServerNav /> : <Sidebar />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto">
@@ -72,6 +76,7 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/app/home" element={<Servers />} />
+            <Route path="/app/server/:id/overview" element={<ServerOverview />} />
 
             <Route element={<RequireAdmin />}>
               <Route path="/app/admin/overview" element={<AdminOverview />} />

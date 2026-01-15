@@ -4,6 +4,9 @@ import { eggs, locations, servers } from '../db/schema.js';
 import { getServerDefaults } from '../utils/configuration.js';
 import { pteroApplicationRequest } from '../utils/importer.js';
 import { getPteroServerWebsocket } from './server/websocket.js';
+import { connectServerConsole } from './server/console.js';
+import { sendPowerSignal } from './server/state.js';
+import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
 
 async function resolvePteroUserIdByEmail(email) {
   const clean = String(email ?? '').trim().toLowerCase();
@@ -161,6 +164,7 @@ export async function listUserServers({ userId }) {
       identifier: s.pteroIdentifier,
       uuid: s.pteroUuid,
       name: s.name,
+      description: s.description,
       status: s.status,
       suspended: Boolean(s.suspended),
       egg: egg ? { id: egg.id, name: egg.name } : { id: s.eggId, name: null },
@@ -380,4 +384,72 @@ export async function getServerWebsocket({ userId, serverId }) {
   if (!identifier) throw new Error('missing_identifier');
 
   return getPteroServerWebsocket({ identifier });
+}
+
+export async function openServerConsole({ userId, serverId, onConsoleOutput, onStatus, onStats, onEvent, onError, onClose }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return connectServerConsole({ identifier, onConsoleOutput, onStatus, onStats, onEvent, onError, onClose });
+}
+
+export async function getServerAllocations({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return listPteroServerAllocations({ identifier });
+}
+
+export async function setServerPowerState({ userId, serverId, state }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const s = String(state ?? '').trim().toLowerCase();
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const allowed = new Set(['start', 'stop', 'restart', 'kill']);
+  if (!allowed.has(s)) {
+    const err = new Error('invalid_power_state');
+    err.status = 422;
+    throw err;
+  }
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return sendPowerSignal({ identifier, signal: s });
 }

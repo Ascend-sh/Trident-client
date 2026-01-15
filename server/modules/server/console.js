@@ -1,5 +1,5 @@
-import { pteroClientRequest } from '../../utils/importer.js';
 import { getPteroServerWebsocket } from './websocket.js';
+import { normalizeWsStats } from './metrics.js';
 
 function parseMessage(data) {
   if (typeof data !== 'string') return null;
@@ -12,24 +12,7 @@ function parseMessage(data) {
   }
 }
 
-const allowedWsStates = new Set(['start', 'stop', 'restart', 'kill']);
-
-export async function sendPowerSignal({ identifier, signal }) {
-  const id = String(identifier ?? '').trim();
-  const s = String(signal ?? '').trim();
-  if (!id) throw new Error('missing_identifier');
-  if (!s) throw new Error('missing_signal');
-
-  const res = await pteroClientRequest({
-    path: `/api/client/servers/${id}/power`,
-    method: 'POST',
-    body: { signal: s }
-  });
-
-  return res;
-}
-
-export async function connectServerPower({ identifier, onStatus, onAuthSuccess, onEvent, onClose, onError } = {}) {
+export async function connectServerConsole({ identifier, onConsoleOutput, onStatus, onStats, onAuthSuccess, onEvent, onClose, onError } = {}) {
   const id = String(identifier ?? '').trim();
   if (!id) throw new Error('missing_identifier');
 
@@ -53,22 +36,10 @@ export async function connectServerPower({ identifier, onStatus, onAuthSuccess, 
       if (ws.readyState !== WebSocket.OPEN) throw new Error('socket_not_open');
       ws.send(JSON.stringify({ event, args: Array.isArray(args) ? args : [] }));
     },
-    setState(state) {
-      const s = String(state ?? '').trim();
-      if (!allowedWsStates.has(s)) throw new Error('invalid_power_state');
-      api.send('set state', [s]);
-    },
-    start() {
-      api.setState('start');
-    },
-    stop() {
-      api.setState('stop');
-    },
-    restart() {
-      api.setState('restart');
-    },
-    kill() {
-      api.setState('kill');
+    sendCommand(command) {
+      const cmd = String(command ?? '').trim();
+      if (!cmd) throw new Error('missing_command');
+      api.send('send command', [cmd]);
     },
     close(code, reason) {
       ws.close(code, reason);
@@ -98,6 +69,18 @@ export async function connectServerPower({ identifier, onStatus, onAuthSuccess, 
           onAuthSuccess();
         } catch {}
       }
+      api.send('send logs', []);
+      api.send('send stats', []);
+      return;
+    }
+
+    if (event === 'console output') {
+      const line = typeof args[0] === 'string' ? args[0] : '';
+      if (typeof onConsoleOutput === 'function') {
+        try {
+          onConsoleOutput(line);
+        } catch {}
+      }
       return;
     }
 
@@ -106,6 +89,16 @@ export async function connectServerPower({ identifier, onStatus, onAuthSuccess, 
       if (typeof onStatus === 'function') {
         try {
           onStatus(status);
+        } catch {}
+      }
+      return;
+    }
+
+    if (event === 'stats') {
+      const stats = normalizeWsStats(args[0]);
+      if (typeof onStats === 'function') {
+        try {
+          onStats(stats);
         } catch {}
       }
     }

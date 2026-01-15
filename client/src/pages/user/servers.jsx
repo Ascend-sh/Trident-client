@@ -1,5 +1,6 @@
-import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Check } from "lucide-react";
+import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Check, Trash2, ChevronDown, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import CenterModal from "../../components/modals/center-modal";
 import { useAuth } from "../../context/auth-context.jsx";
 
@@ -33,11 +34,13 @@ async function request(path, { method = "GET", body } = {}) {
 }
 
 export default function Servers() {
+    const navigate = useNavigate();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
     const { user } = useAuth();
     const [serverData, setServerData] = useState({
         name: "",
+        description: "",
         location: null,
         software: null
     });
@@ -45,6 +48,15 @@ export default function Servers() {
     const [nests, setNests] = useState([]);
     const [loadingLocations, setLoadingLocations] = useState(false);
     const [loadingNests, setLoadingNests] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingServer, setEditingServer] = useState(null);
+    const [editData, setEditData] = useState({
+        name: "",
+        location: null,
+        software: null
+    });
+    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+    const [showSoftwareDropdown, setShowSoftwareDropdown] = useState(false);
 
     const availableEggs = nests.flatMap(nest =>
         (nest.eggs || []).map(egg => ({
@@ -87,11 +99,29 @@ export default function Servers() {
     const handleCloseModal = () => {
         setIsCreateModalOpen(false);
         setCreateStep(1);
-        setServerData({ name: "", location: null, software: null });
+        setServerData({ name: "", description: "", location: null, software: null });
         setLocations([]);
         setNests([]);
         setCreateServerError("");
         setCreatingServer(false);
+    };
+
+    const handleOpenEditModal = (server) => {
+        setEditingServer(server);
+        setEditData({
+            name: server.name,
+            location: null,
+            software: null
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingServer(null);
+        setEditData({ name: "", location: null, software: null });
+        setShowLocationDropdown(false);
+        setShowSoftwareDropdown(false);
     };
 
     const handleNext = () => {
@@ -389,11 +419,17 @@ export default function Servers() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
-                                                    Edit
-                                                </button>
-                                                <button className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200">
+                                                <button 
+                                                    onClick={() => navigate(`/app/server/${server.id}/overview`)}
+                                                    className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                                >
                                                     Manage
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleOpenEditModal(server)}
+                                                    className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                                >
+                                                    Edit
                                                 </button>
                                             </div>
                                         </td>
@@ -456,6 +492,17 @@ export default function Servers() {
                                 onChange={(e) => setServerData({ ...serverData, name: e.target.value })}
                                 placeholder="e.g., My Awesome Server"
                                 className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-white/70 mb-2">Description</label>
+                            <textarea
+                                value={serverData.description}
+                                onChange={(e) => setServerData({ ...serverData, description: e.target.value })}
+                                placeholder="Optional description..."
+                                rows={3}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 resize-none"
                             />
                         </div>
                         <div className="flex items-center justify-end gap-2 pt-4">
@@ -646,7 +693,7 @@ export default function Servers() {
                                             method: 'POST',
                                             body: {
                                                 name: serverData.name,
-                                                description: '',
+                                                description: serverData.description || '',
                                                 locationId,
                                                 eggId,
                                                 dockerImage: serverData.software?.dockerImage,
@@ -682,6 +729,153 @@ export default function Servers() {
                         </div>
                     </div>
                 )}
+            </CenterModal>
+
+            <CenterModal
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                title={`Edit Server - ${editingServer?.name || ''}`}
+                maxWidth="max-w-xl"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-white/70 mb-2">Server Name</label>
+                        <input
+                            type="text"
+                            value={editData.name}
+                            onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                            placeholder="Enter server name"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-white/70 mb-2">Location</label>
+                        <button
+                            onClick={() => {
+                                setShowLocationDropdown(!showLocationDropdown);
+                                setShowSoftwareDropdown(false);
+                                if (locations.length === 0) {
+                                    setLoadingLocations(true);
+                                    request('/locations')
+                                        .then((res) => setLocations(res?.locations || []))
+                                        .catch(() => setLocations([]))
+                                        .finally(() => setLoadingLocations(false));
+                                }
+                            }}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-left text-white/70 hover:bg-white/10 focus:outline-none focus:border-white/20 transition-colors duration-200 flex items-center justify-between"
+                        >
+                            <span>{editData.location?.description || editingServer?.location?.description || 'Select new location'}</span>
+                            <ChevronDown size={16} className={`text-white/40 transition-transform duration-200 ${showLocationDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+                        {showLocationDropdown && locations.length > 0 && (
+                            <div className="mt-2 grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 rounded-lg border border-white/10 bg-black/20">
+                                {locations.map((location) => (
+                                    <button
+                                        key={location.id}
+                                        onClick={() => {
+                                            setEditData({ ...editData, location });
+                                            setShowLocationDropdown(false);
+                                        }}
+                                        className={`p-2 rounded-lg border transition-all duration-200 text-left text-xs ${
+                                            editData.location?.id === location.id
+                                                ? 'bg-white/10'
+                                                : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                        }`}
+                                        style={editData.location?.id === location.id ? { borderColor: "#ADE5DA" } : {}}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <img 
+                                                src={`https://flagsapi.com/${location.shortCode}/flat/64.png`} 
+                                                alt={location.shortCode} 
+                                                className="w-5 h-4 rounded object-cover" 
+                                                onError={(e) => e.target.style.display = 'none'}
+                                            />
+                                            <span className="text-white">{location.description || location.shortCode}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-white/70 mb-2">Server Software</label>
+                        <button
+                            onClick={() => {
+                                setShowSoftwareDropdown(!showSoftwareDropdown);
+                                setShowLocationDropdown(false);
+                                if (nests.length === 0) {
+                                    setLoadingNests(true);
+                                    request('/nests')
+                                        .then((res) => setNests(res?.nests || []))
+                                        .catch(() => setNests([]))
+                                        .finally(() => setLoadingNests(false));
+                                }
+                            }}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-left text-white/70 hover:bg-white/10 focus:outline-none focus:border-white/20 transition-colors duration-200 flex items-center justify-between"
+                        >
+                            <span>{editData.software?.name || editingServer?.egg?.name || 'Select new software'}</span>
+                            <ChevronDown size={16} className={`text-white/40 transition-transform duration-200 ${showSoftwareDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+                        {showSoftwareDropdown && availableEggs.length > 0 && (
+                            <div className="mt-2 grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 rounded-lg border border-white/10 bg-black/20">
+                                {availableEggs.map((egg) => (
+                                    <button
+                                        key={egg.id}
+                                        onClick={() => {
+                                            setEditData({ ...editData, software: egg });
+                                            setShowSoftwareDropdown(false);
+                                        }}
+                                        className={`p-2 rounded-lg border transition-all duration-200 text-left text-xs ${
+                                            editData.software?.id === egg.id
+                                                ? 'bg-white/10'
+                                                : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                        }`}
+                                        style={editData.software?.id === egg.id ? { borderColor: "#ADE5DA" } : {}}
+                                    >
+                                        <p className="text-white font-medium">{egg.name}</p>
+                                        <p className="text-white/50 text-[10px]">{egg.nestName}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="pt-2 border-t border-white/10">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    className="px-3 py-2 text-xs font-medium text-white rounded-lg bg-red-500 hover:bg-red-600 transition-colors duration-200 flex items-center gap-1.5"
+                                >
+                                    <Trash2 size={14} />
+                                    Delete
+                                </button>
+                                <button
+                                    className="px-3 py-2 text-xs font-medium text-white rounded-lg bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200 flex items-center gap-1.5"
+                                >
+                                    <RefreshCw size={14} />
+                                    Reinstall
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                        <button
+                            onClick={handleCloseEditModal}
+                            className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
+                            style={{ backgroundColor: "#ADE5DA" }}
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
             </CenterModal>
         </div>
     );

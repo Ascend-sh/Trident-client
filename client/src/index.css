@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+.xterm,
+.xterm-viewport,
+.xterm-screen,
+.xterm canvas {
+    background: transparent !important;
+}
+
+.xterm,
+.xterm * {
+    font-family: Consolas, "DejaVu Sans Mono", "Liberation Mono", Menlo, Monaco, monospace !important;
+    letter-spacing: 0 !important;
+    font-kerning: none !important;
+    font-variant-ligatures: none !important;
+    text-rendering: geometricPrecision !important;
+}
+
 @font-face {
     font-family: 'Satoshi';
     src: url('/Satoshi-Regular.woff2') format('woff2');

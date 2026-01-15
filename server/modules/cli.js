@@ -140,6 +140,7 @@ export async function listServersCli() {
     return {
       id: s.id,
       name: s.name,
+      description: s.description,
       userId: s.userId,
       username: u?.username || null,
       email: u?.email || null,
