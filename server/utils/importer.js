@@ -11,12 +11,13 @@ function buildUrl(path) {
   return cleanPath.startsWith('http') ? cleanPath : `${panelUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
 }
 
-function buildHeaders(apiKey) {
+function buildHeaders(apiKey, extra) {
   assertConfigured(apiKey, 'apiKey');
   return {
     Accept: 'Application/vnd.pterodactyl.v1+json',
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`
+    Authorization: `Bearer ${apiKey}`,
+    ...(extra && typeof extra === 'object' ? extra : {})
   };
 }
 
@@ -52,16 +53,16 @@ async function request({ url, method = 'GET', headers, query, body, signal }) {
   return payload;
 }
 
-export function pteroApplicationRequest({ path, method, query, body, signal }) {
+export function pteroApplicationRequest({ path, method, query, body, signal, headers }) {
   const apiKey = (process.env.PTERODACTYL_APPLICATION_KEY ?? '').trim();
   assertConfigured(apiKey, 'PTERODACTYL_APPLICATION_KEY');
   const url = buildUrl(path);
-  return request({ url, method, headers: buildHeaders(apiKey), query, body, signal });
+  return request({ url, method, headers: buildHeaders(apiKey, headers), query, body, signal });
 }
 
-export function pteroClientRequest({ path, method, query, body, signal }) {
+export function pteroClientRequest({ path, method, query, body, signal, headers }) {
   const apiKey = (process.env.PTERODACTYL_CLIENT_API_KEY ?? '').trim();
   assertConfigured(apiKey, 'PTERODACTYL_CLIENT_API_KEY');
   const url = buildUrl(path);
-  return request({ url, method, headers: buildHeaders(apiKey), query, body, signal });
+  return request({ url, method, headers: buildHeaders(apiKey, headers), query, body, signal });
 }

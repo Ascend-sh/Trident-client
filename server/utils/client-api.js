@@ -1,13 +1,13 @@
 import { Elysia } from "elysia";
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
-import { errorHandler, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
+import { errorHandler, fail, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
 import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
 import { authLogger, getLogger } from "../middlewares/logger.js";
 import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies.js";
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
-import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations } from "../modules/server.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 
 const wsLogger = getLogger('ws');
@@ -551,7 +551,115 @@ export const clientApi = new Elysia({ name: "client-api" })
       return out.body;
     } catch (err) {
       set.status = err?.status || 500;
-      return send(err?.message || 'server_allocations_failed', set.status).body;
+      return send(set, fail(err?.message || 'server_allocations_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/list", async ({ request, set, params, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const directory = typeof query?.directory === 'string' ? query.directory : '/';
+
+    try {
+      const data = await listServerFiles({ userId: res.body.user.id, serverId: id, directory });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_list_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/contents", async ({ request, set, params, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const file = typeof query?.file === 'string' ? query.file : '';
+    if (!file) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const content = await getServerFile({ userId: res.body.user.id, serverId: id, file });
+      set.status = 200;
+      set.headers['content-type'] = 'text/plain; charset=utf-8';
+      return content;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_read_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/write", async ({ request, set, params, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const file = typeof query?.file === 'string' ? query.file : '';
+    if (!file) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const content = await request.text().catch(() => '');
+
+    try {
+      await writeServerFile({ userId: res.body.user.id, serverId: id, file, content });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_write_failed', set.status));
     }
   })
   .post("/servers/:id/power", async ({ request, set, params }) => {
@@ -595,7 +703,7 @@ export const clientApi = new Elysia({ name: "client-api" })
       return out.body;
     } catch (err) {
       set.status = err?.status || 500;
-      return send(err?.message || 'server_power_failed', set.status).body;
+      return send(set, fail(err?.message || 'server_power_failed', set.status));
     }
   })
   .post("/create-server", async ({ request, set, body }) => {

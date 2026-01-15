@@ -1,0 +1,60 @@
+import { pteroClientRequest } from '../../utils/importer.js';
+
+function toPath(v, fallback) {
+  const s = String(v ?? '').trim();
+  if (!s) return fallback;
+  return s;
+}
+
+export async function listDirectory({ identifier, directory = '/' }) {
+  const id = String(identifier ?? '').trim();
+  if (!id) throw new Error('missing_identifier');
+
+  const dir = toPath(directory, '/');
+  const json = await pteroClientRequest({
+    path: `/api/client/servers/${id}/files/list`,
+    method: 'GET',
+    query: { directory: dir }
+  });
+
+  const items = Array.isArray(json?.data) ? json.data : [];
+  const files = items.map(i => i?.attributes).filter(Boolean);
+
+  return { directory: dir, files };
+}
+
+export async function readFileContents({ identifier, file }) {
+  const id = String(identifier ?? '').trim();
+  if (!id) throw new Error('missing_identifier');
+
+  const f = toPath(file, '');
+  if (!f) throw new Error('missing_file');
+
+  const text = await pteroClientRequest({
+    path: `/api/client/servers/${id}/files/contents`,
+    method: 'GET',
+    query: { file: f }
+  });
+
+  return typeof text === 'string' ? text : String(text ?? '');
+}
+
+export async function writeFileContents({ identifier, file, content }) {
+  const id = String(identifier ?? '').trim();
+  if (!id) throw new Error('missing_identifier');
+
+  const f = toPath(file, '');
+  if (!f) throw new Error('missing_file');
+
+  const body = content === undefined || content === null ? '' : String(content);
+
+  await pteroClientRequest({
+    path: `/api/client/servers/${id}/files/write`,
+    method: 'POST',
+    query: { file: f },
+    body,
+    headers: { 'Content-Type': 'text/plain' }
+  });
+
+  return null;
+}
