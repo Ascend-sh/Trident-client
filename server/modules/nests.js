@@ -135,6 +135,23 @@ export async function importNestToDb({ nestId }) {
     const eggId = Number(e.id);
     if (!Number.isInteger(eggId) || eggId <= 0) continue;
 
+    let envVars = [];
+    try {
+      const eggDetails = await pteroApplicationRequest({
+        path: `/api/application/nests/${id}/eggs/${eggId}`,
+        query: { include: 'variables,nest' }
+      });
+
+      const varsList = eggDetails?.attributes?.relationships?.variables?.data;
+      if (Array.isArray(varsList)) {
+        envVars = varsList
+          .map((v) => v?.attributes)
+          .filter((v) => v && typeof v === 'object');
+      }
+    } catch {
+      envVars = [];
+    }
+
     const row = {
       id: eggId,
       nestId: id,
@@ -144,6 +161,7 @@ export async function importNestToDb({ nestId }) {
       dockerImage: e.docker_image ?? null,
       startup: e.startup ?? null,
       author: e.author ?? null,
+      envVars: JSON.stringify(envVars),
       createdAt: e.created_at ?? null,
       updatedAt: e.updated_at ?? null
     };

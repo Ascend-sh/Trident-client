@@ -6,91 +6,98 @@
       "idx": 0,
       "version": "6",
       "when": 1768021012810,
-      "tag": "0000_thankful_bullseye",
+      "tag": "0000_velvet_comet",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
       "when": 1768024302741,
-      "tag": "0001_normal_yellowjacket",
+      "tag": "0001_silver_lantern",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "6",
       "when": 1768223546000,
-      "tag": "0002_add_sessions",
+      "tag": "0002_crimson_orbit",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "6",
       "when": 1768227000000,
-      "tag": "0003_add_is_admin",
+      "tag": "0003_misty_river",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "6",
       "when": 1768228000000,
-      "tag": "0004_add_server_defaults",
+      "tag": "0004_amber_vertex",
       "breakpoints": true
     },
     {
       "idx": 5,
       "version": "6",
       "when": 1768230000000,
-      "tag": "0005_add_economy",
+      "tag": "0005_frosted_ember",
       "breakpoints": true
     },
     {
       "idx": 6,
       "version": "6",
       "when": 1768232000000,
-      "tag": "0006_extend_server_defaults",
+      "tag": "0006_quiet_summit",
       "breakpoints": true
     },
     {
       "idx": 7,
       "version": "6",
       "when": 1768234000000,
-      "tag": "0007_add_nests",
+      "tag": "0007_cobalt_harbor",
       "breakpoints": true
     },
     {
       "idx": 8,
       "version": "6",
       "when": 1768236000000,
-      "tag": "0008_add_eggs",
+      "tag": "0008_ruby_glade",
       "breakpoints": true
     },
     {
       "idx": 9,
       "version": "6",
       "when": 1768238000000,
-      "tag": "0009_add_nest_description",
+      "tag": "0009_lucid_thicket",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "6",
       "when": 1768239000000,
-      "tag": "0010_add_locations",
+      "tag": "0010_sable_meadow",
       "breakpoints": true
     },
     {
       "idx": 11,
       "version": "6",
       "when": 1768240000000,
-      "tag": "0011_add_location_nodes",
+      "tag": "0011_nova_fjord",
       "breakpoints": true
     },
     {
       "idx": 12,
       "version": "6",
       "when": 1768241000000,
-      "tag": "0012_add_servers",
+      "tag": "0012_iron_cascade",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1768550000000,
+      "tag": "0013_golden_signal",
       "breakpoints": true
     }
   ]

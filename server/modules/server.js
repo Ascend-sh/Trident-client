@@ -204,16 +204,57 @@ export async function createServer({ userId, userEmail, name, description = '', 
   const resolvedStartup = startup || importedEgg?.startup || undefined;
   const resolvedNestId = nestId || importedEgg?.nestId || null;
 
-  const env = {
-    SERVER_JARFILE: 'server.jar',
-    BUILD_NUMBER: 'latest'
+  const env = {};
+
+  const buildEnvFromVars = (varsList) => {
+    const out = {};
+    for (const v of varsList) {
+      const key = String(v?.env_variable ?? '').trim();
+      if (!key) continue;
+
+      const rawDefault = v?.default_value;
+      const rules = String(v?.rules ?? '').toLowerCase();
+      const required = rules.split('|').includes('required');
+
+      if (rawDefault === undefined || rawDefault === null) {
+        out[key] = required ? 'latest' : '';
+        continue;
+      }
+
+      const str = String(rawDefault);
+      out[key] = required && !str ? 'latest' : str;
+    }
+    return out;
   };
 
-  const eggName = String(importedEgg?.name || '').toLowerCase();
-  if (eggName.includes('minecraft') || eggName.includes('paper') || eggName.includes('spigot') || eggName.includes('forge') || eggName.includes('bungeecord')) {
-    env.MINECRAFT_VERSION = 'latest';
-    env.MC_VERSION = 'latest';
-    env.BUILD_TYPE = 'recommended';
+  let vars = [];
+  try {
+    const parsed = JSON.parse(importedEgg?.envVars || '[]');
+    if (Array.isArray(parsed)) vars = parsed;
+  } catch {
+    vars = [];
+  }
+
+  Object.assign(env, buildEnvFromVars(vars));
+
+  if (!Object.keys(env).length) {
+    const resolvedNest = Number(resolvedNestId || importedEgg?.nestId || 0);
+    if (Number.isInteger(resolvedNest) && resolvedNest > 0) {
+      const live = await pteroApplicationRequest({
+        path: `/api/application/nests/${resolvedNest}/eggs/${eId}`,
+        query: { include: 'variables' }
+      });
+
+      const varsList = live?.attributes?.relationships?.variables?.data;
+      if (Array.isArray(varsList)) {
+        const extracted = varsList.map(v => v?.attributes).filter(Boolean);
+        Object.assign(env, buildEnvFromVars(extracted));
+      }
+    }
+  }
+
+  if (!Object.keys(env).length) {
+    throw new Error('egg_env_vars_missing');
   }
 
   const pteroUserId = await resolvePteroUserIdByEmail(userEmail);

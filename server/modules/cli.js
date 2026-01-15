@@ -60,12 +60,43 @@ export async function listUsersCli() {
   return rows.map(publicUser);
 }
 
-export async function listNestsCli() {
+export async function listNestsCli({ full = false } = {}) {
   const nestRows = await db.select().from(nests);
   const mappingRows = await db.select().from(nestEggs);
   const eggRows = await db.select().from(eggs);
 
-  const eggById = new Map(eggRows.map(e => [e.id, e]));
+  const eggById = new Map(eggRows.map(e => {
+    let envVarCount = 0;
+    let envVars = [];
+    try {
+      const parsed = JSON.parse(e.envVars || '[]');
+      if (Array.isArray(parsed)) {
+        envVarCount = parsed.length;
+        envVars = parsed;
+      }
+    } catch {
+      envVarCount = 0;
+      envVars = [];
+    }
+
+    return [
+      e.id,
+      {
+        id: e.id,
+        nestId: e.nestId,
+        uuid: e.uuid,
+        name: e.name,
+        description: e.description,
+        dockerImage: e.dockerImage,
+        startup: e.startup,
+        author: e.author,
+        envVarCount,
+        ...(full ? { envVars } : {}),
+        createdAt: e.createdAt,
+        updatedAt: e.updatedAt
+      }
+    ];
+  }));
   const eggIdsByNest = new Map();
 
   for (const m of mappingRows) {
@@ -269,7 +300,8 @@ async function main() {
   }
 
   if (cmd === 'nests') {
-    const rows = await listNestsCli();
+    const full = args.includes('--full');
+    const rows = await listNestsCli({ full });
     console.log(JSON.stringify({ ok: true, nests: rows }, null, 2));
     process.exit(0);
   }

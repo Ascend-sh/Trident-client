@@ -63,6 +63,7 @@ export const eggs = sqliteTable('eggs', {
   dockerImage: text('docker_image'),
   startup: text('startup'),
   author: text('author'),
+  envVars: text('env_vars').notNull().default('[]'),
   createdAt: text('created_at'),
   updatedAt: text('updated_at')
 });
