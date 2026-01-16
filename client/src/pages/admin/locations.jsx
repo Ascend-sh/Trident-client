@@ -165,87 +165,97 @@ export default function AdminLocations() {
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-white mb-1">Locations</h1>
-          <p className="text-xs text-white/60">Manage server locations</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-white mb-1">Locations</h1>
+            <p className="text-sm text-white/60">Manage server locations</p>
+          </div>
+          <button 
+            onClick={() => setSetupModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
+            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+          >
+            <Plus size={15} />
+            Setup Locations
+          </button>
         </div>
-        <button 
-          onClick={() => setSetupModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90" 
-          style={{ backgroundColor: "#14b8a6" }}
-        >
-          <Plus size={14} />
-          Setup Locations
-        </button>
       </div>
 
       {error && (
         <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-          <p className="text-xs text-red-200">{error}</p>
+          <p className="text-sm text-red-200">{error}</p>
         </div>
       )}
 
       {importedLocations.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent p-12 text-center">
-          <MapPin size={32} className="text-white/30 mx-auto mb-4" />
-          <h3 className="text-sm font-medium text-white/50 mb-2">No Locations Configured</h3>
-          <p className="text-xs text-white/40 max-w-sm mx-auto">
+        <div className="py-16 text-center border border-white/10 rounded-lg">
+          <MapPin size={48} className="text-white/20 mx-auto mb-4" />
+          <h3 className="text-sm font-medium text-white/70 mb-2">No Locations Configured</h3>
+          <p className="text-sm text-white/50 max-w-sm mx-auto mb-6">
             Set up server locations to organize and distribute your servers geographically
           </p>
+          <button 
+            onClick={() => setSetupModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
+            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+          >
+            <Plus size={15} />
+            Setup Your First Location
+          </button>
         </div>
       ) : (
-        <div className="border border-white/10 rounded-lg overflow-hidden">
-          <table className="w-full text-xs">
+        <div className="overflow-visible">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-white/10" style={{ backgroundColor: "#18181b" }}>
-                <th className="text-left px-4 py-3 text-white/60 font-medium">Short Code</th>
-                <th className="text-left px-4 py-3 text-white/60 font-medium">Description</th>
-                <th className="text-left px-4 py-3 text-white/60 font-medium">Nodes</th>
-                <th className="text-right px-4 py-3 text-white/60 font-medium">Actions</th>
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Short Code</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Nodes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {importedLocations.map((location) => (
                 <tr
                   key={location.id}
-                  className="border-b border-white/10 hover:bg-white/5 transition-colors duration-200 last:border-b-0"
+                  className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
-                      <CountryFlag code={location.shortCode} size={16} />
-                      <span className="text-sm text-white">{location.shortCode}</span>
+                      <CountryFlag code={location.shortCode} size={20} />
+                      <span className="text-sm font-medium text-white">{location.shortCode}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-white/60">{location.description}</td>
-                  <td className="px-4 py-3 text-white/40">{location.nodes?.length || 0} nodes</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
+                    <span className="text-sm text-white/80">{location.description}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="text-sm text-white/70">{location.nodes?.length || 0} nodes</span>
+                  </td>
+                  <td className="px-4 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleViewDetails(location)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 border border-white/10 text-white/60 hover:bg-white/5 hover:text-white flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer"
                       >
-                        <Layers2 size={14} />
                         View Nodes
                       </button>
                       <button
                         onClick={() => handleDelete(location.id)}
                         disabled={deletingLocationId === location.id}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white hover:bg-white/5 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {deletingLocationId === location.id ? (
                           <>
-                            <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-3.5 w-3.5 inline mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             Deleting...
                           </>
                         ) : (
-                          <>
-                            <Trash2 size={14} />
-                            Delete
-                          </>
+                          'Delete'
                         )}
                       </button>
                     </div>

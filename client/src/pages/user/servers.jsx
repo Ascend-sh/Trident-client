@@ -60,6 +60,10 @@ export default function Servers() {
     const [showSoftwareDropdown, setShowSoftwareDropdown] = useState(false);
     const [openActionMenuId, setOpenActionMenuId] = useState(null);
     const [activeFilter, setActiveFilter] = useState('all');
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [serverToDelete, setServerToDelete] = useState(null);
+    const [deletingServer, setDeletingServer] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     const availableEggs = nests.flatMap(nest =>
         (nest.eggs || []).map(egg => ({
@@ -141,6 +145,7 @@ export default function Servers() {
     const [creatingServer, setCreatingServer] = useState(false);
     const [createServerError, setCreateServerError] = useState("");
     const [metricsByServerId, setMetricsByServerId] = useState({});
+    const [metricsLoaded, setMetricsLoaded] = useState(false);
     const socketsRef = useRef({});
 
     const fetchServers = async () => {
@@ -267,6 +272,8 @@ export default function Servers() {
                             network: stats?.network
                         }
                     }));
+                    
+                    setMetricsLoaded(true);
                 }
             };
 
@@ -311,14 +318,14 @@ export default function Servers() {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-xl font-semibold text-white mb-1">Welcome back, {user?.username || "User"}</h1>
-                        <p className="text-white/60 text-xs">Manage and monitor your game servers</p>
+                        <p className="text-white/60 text-sm">Manage and monitor your game servers</p>
                     </div>
                     <button 
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
                         style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                     >
-                        <Plus size={14} />
+                        <Plus size={15} />
                         Create Server
                     </button>
                 </div>
@@ -326,7 +333,7 @@ export default function Servers() {
                 <div className="flex items-end gap-6 mt-6">
                     <button
                         onClick={() => setActiveFilter('all')}
-                        className="relative pb-2 text-xs transition-colors duration-200"
+                        className="relative pb-2 text-sm transition-colors duration-200"
                         style={{ color: activeFilter === 'all' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
                     >
                         All Servers
@@ -336,7 +343,7 @@ export default function Servers() {
                     </button>
                     <button
                         onClick={() => setActiveFilter('online')}
-                        className="relative pb-2 text-xs transition-colors duration-200"
+                        className="relative pb-2 text-sm transition-colors duration-200"
                         style={{ color: activeFilter === 'online' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
                     >
                         Online
@@ -346,7 +353,7 @@ export default function Servers() {
                     </button>
                     <button
                         onClick={() => setActiveFilter('offline')}
-                        className="relative pb-2 text-xs transition-colors duration-200"
+                        className="relative pb-2 text-sm transition-colors duration-200"
                         style={{ color: activeFilter === 'offline' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
                     >
                         Offline
@@ -355,7 +362,7 @@ export default function Servers() {
                         )}
                     </button>
                     <button
-                        className="px-3 py-1.5 text-xs text-white/50 hover:text-white border border-white/10 rounded-md transition-colors duration-200"
+                        className="px-3 py-1.5 text-sm text-white/50 hover:text-white border border-white/10 rounded-md transition-colors duration-200"
                     >
                         + Add Filter
                     </button>
@@ -402,7 +409,9 @@ export default function Servers() {
                         });
                     }
 
-                    if (serversLoading && servers.length === 0) {
+                    const showSkeleton = (serversLoading && servers.length === 0) || (servers.length > 0 && !metricsLoaded);
+                    
+                    if (showSkeleton) {
                         return (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
@@ -526,8 +535,8 @@ export default function Servers() {
                                             >
                                                 <td className="px-4 py-4">
                                                     <div>
-                                                        <p className="text-xs font-medium text-white">{server.name}</p>
-                                                        <p className="text-[10px] text-white/40">{server.identifier}</p>
+                                                        <p className="text-sm font-medium text-white">{server.name}</p>
+                                                        <p className="text-xs text-white/40">{server.identifier}</p>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -536,7 +545,7 @@ export default function Servers() {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <p className="text-xs text-white/80">{server.egg?.name || '-'}</p>
+                                                    <p className="text-sm text-white/80">{server.egg?.name || '-'}</p>
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     <div className="flex items-center gap-2">
@@ -548,11 +557,11 @@ export default function Servers() {
                                                                 onError={(e) => (e.currentTarget.style.display = 'none')}
                                                             />
                                                         )}
-                                                        <p className="text-xs text-white/80">{server.location?.description || server.location?.shortCode || '-'}</p>
+                                                        <p className="text-sm text-white/80">{server.location?.description || server.location?.shortCode || '-'}</p>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <div className="flex items-center gap-3 text-xs text-white/70">
+                                                    <div className="flex items-center gap-3 text-sm text-white/70">
                                                         <span>{hasLiveState ? `${Math.round(cpu)}%` : '-'} CPU</span>
                                                         <span className="text-white/30">/</span>
                                                         <span>{hasLiveState ? `${Math.round(mem)}%` : '-'} RAM</span>
@@ -561,7 +570,7 @@ export default function Servers() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <p className="text-xs text-white/80 font-mono">
+                                                    <p className="text-sm text-white/80 font-mono">
                                                         {server?.allocation?.ip 
                                                             ? `${server.allocation.ip_alias || server.allocation.ip}:${server.allocation.port}` 
                                                             : '-'
@@ -623,7 +632,8 @@ export default function Servers() {
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setOpenActionMenuId(null);
-                                                                            // Handle delete
+                                                                            setServerToDelete(server);
+                                                                            setDeleteModalOpen(true);
                                                                         }}
                                                                         className="w-full px-2.5 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-md"
                                                                     >
@@ -649,63 +659,63 @@ export default function Servers() {
                 <div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80">
+                                <p className="text-sm text-white/80">
                                     <span className="font-medium">Example Server</span>
                                     <span className="text-white/50"> · Server started successfully</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white/40 shrink-0 ml-3">2m ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">2m ago</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80">
+                                <p className="text-sm text-white/80">
                                     <span className="font-medium">Test Server</span>
                                     <span className="text-white/50"> · New server created</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white/40 shrink-0 ml-3">1h ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">1h ago</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80">
+                                <p className="text-sm text-white/80">
                                     <span className="font-medium">Main Server</span>
                                     <span className="text-white/50"> · Server stopped by user</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white/40 shrink-0 ml-3">3h ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">3h ago</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80">
+                                <p className="text-sm text-white/80">
                                     <span className="font-medium">Production Server</span>
                                     <span className="text-white/50"> · Configuration updated</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white/40 shrink-0 ml-3">5h ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">5h ago</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80">
+                                <p className="text-sm text-white/80">
                                     <span className="font-medium">Dev Server</span>
                                     <span className="text-white/50"> · Backup completed</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white/40 shrink-0 ml-3">1d ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">1d ago</span>
                     </div>
                 </div>
             </div>
@@ -911,36 +921,40 @@ export default function Servers() {
 
                 {createStep === 4 && (
                     <div key="step-4" className="space-y-4 transition-all duration-300 ease-out animate-[fadeIn_0.3s_ease-out]">
-                        <p className="text-xs text-white/70">Review your server configuration</p>
+                        <div>
+                            <h3 className="text-lg font-semibold text-white mb-1">Ready to Create</h3>
+                            <p className="text-sm text-white/60">Review your server configuration below</p>
+                        </div>
+
                         {createServerError && (
-                            <div className="px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10">
-                                <p className="text-[10px] text-red-200">{createServerError}</p>
+                            <div className="px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
+                                <p className="text-sm text-red-200">{createServerError}</p>
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between py-2.5 border-b border-white/10">
-                                <span className="text-xs text-white/50">Server Name</span>
-                                <span className="text-sm font-medium text-white">{serverData.name}</span>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs text-white/50 mb-1">Server Name</p>
+                                <p className="text-base text-white font-medium">{serverData.name}</p>
                             </div>
-                            <div className="flex items-center justify-between py-2.5 border-b border-white/10">
-                                <span className="text-xs text-white/50">Location</span>
+
+                            <div>
+                                <p className="text-xs text-white/50 mb-1">Location</p>
                                 <div className="flex items-center gap-2">
                                     <img 
                                         src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`} 
                                         alt={serverData.location?.shortCode} 
-                                        className="w-5 h-4 rounded object-cover" 
+                                        className="w-6 h-5 rounded object-cover" 
                                         onError={(e) => e.target.style.display = 'none'}
                                     />
-                                    <span className="text-sm font-medium text-white">{serverData.location?.description || serverData.location?.shortCode}</span>
+                                    <span className="text-base text-white">{serverData.location?.description || serverData.location?.shortCode}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between py-2.5">
-                                <span className="text-xs text-white/50">Software</span>
-                                <div className="text-right">
-                                    <p className="text-sm font-medium text-white">{serverData.software?.name}</p>
-                                    <p className="text-xs text-white/40">{serverData.software?.nestName}</p>
-                                </div>
+
+                            <div>
+                                <p className="text-xs text-white/50 mb-1">Software</p>
+                                <p className="text-base text-white">{serverData.software?.name}</p>
+                                <p className="text-sm text-white/50">{serverData.software?.nestName}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
@@ -1144,6 +1158,76 @@ export default function Servers() {
                             style={{ backgroundColor: "#14b8a6" }}
                         >
                             Save Changes
+                        </button>
+                    </div>
+                </div>
+            </CenterModal>
+
+            <CenterModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    if (!deletingServer) {
+                        setDeleteModalOpen(false);
+                        setServerToDelete(null);
+                        setDeleteError("");
+                    }
+                }}
+                maxWidth="max-w-md"
+            >
+                <div className="p-6 pb-4">
+                    <h2 className="text-lg font-semibold text-white mb-4">Delete Server</h2>
+
+                    <p className="text-xs text-white/60 mb-4">
+                        Are you sure you want to delete <span className="font-semibold text-white">"{serverToDelete?.name}"</span>? This will permanently delete the server and all its data. This action cannot be undone.
+                    </p>
+
+                    {deleteError && (
+                        <div className="px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10 mb-4">
+                            <p className="text-sm text-red-200">{deleteError}</p>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
+                        <button
+                            onClick={() => {
+                                setDeleteModalOpen(false);
+                                setServerToDelete(null);
+                                setDeleteError("");
+                            }}
+                            disabled={deletingServer}
+                            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={async () => {
+                                setDeletingServer(true);
+                                setDeleteError("");
+                                try {
+                                    await request(`/servers/${serverToDelete.id}`, { method: 'DELETE' });
+                                    setDeleteModalOpen(false);
+                                    setServerToDelete(null);
+                                    await fetchServers();
+                                } catch (err) {
+                                    setDeleteError(err?.message || 'Failed to delete server');
+                                } finally {
+                                    setDeletingServer(false);
+                                }
+                            }}
+                            disabled={deletingServer}
+                            className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors duration-200 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {deletingServer ? (
+                                <>
+                                    <svg className="animate-spin h-3.5 w-3.5 inline mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete Server'
+                            )}
                         </button>
                     </div>
                 </div>

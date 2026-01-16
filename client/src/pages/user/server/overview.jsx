@@ -154,6 +154,7 @@ export default function ServerOverview() {
     const [serverInfo, setServerInfo] = useState(null);
     const [primaryAllocation, setPrimaryAllocation] = useState(null);
     const [locationInfo, setLocationInfo] = useState(null);
+    const [metricsLoaded, setMetricsLoaded] = useState(false);
 
     const [metrics, setMetrics] = useState({
         cpuPercent: 0,
@@ -387,6 +388,8 @@ export default function ServerOverview() {
                             networkTxBytes: txBytes,
                             uptime
                         });
+                        
+                        setMetricsLoaded(true);
 
                         const networkKbps = (rxBytes + txBytes) / 1024;
 
@@ -545,175 +548,182 @@ export default function ServerOverview() {
                         <h1 className="text-xl font-semibold text-white mb-1">{serverInfo?.name || 'Server'}</h1>
                         <p className="text-sm text-white/50">{serverInfo?.description || '-'}</p>
                     </div>
-                    <div className="p-2 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                        <div className="flex items-center gap-2">
-                            <button 
-                                onClick={() => setPower('start')}
-                                disabled={!serverId || powerActionLoading || !canStart || isStarting}
-                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ backgroundColor: "#14b8a6" }}
-                            >
-                                {powerActionLoading === 'start' || isStarting ? (
-                                    <>
-                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Starting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Play size={14} />
-                                        Start
-                                    </>
-                                )}
-                            </button>
-                            <button 
-                                onClick={() => setPower('restart')}
-                                disabled={!serverId || powerActionLoading || !canRestart || isStopping}
-                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40 cursor-pointer"
-                            >
-                                {powerActionLoading === 'restart' ? (
-                                    <>
-                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Restarting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <RotateCw size={14} />
-                                        Restart
-                                    </>
-                                )}
-                            </button>
-                            <button 
-                                onClick={() => setPower('stop')}
-                                disabled={!serverId || powerActionLoading || !canStop || isStopping}
-                                className="px-3 py-1.5 text-xs font-medium text-white rounded-lg bg-red-500 hover:bg-red-600 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/40 cursor-pointer"
-                            >
-                                {powerActionLoading === 'stop' || isStopping ? (
-                                    <>
-                                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Stopping...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Square size={14} />
-                                        Stop
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center gap-2 mb-1">
-                        <EthernetPort size={14} className="text-white/60" />
-                        <p className="text-xs text-white/60">Server IP & Port</p>
-                    </div>
-                    <p className="text-sm font-medium text-white font-mono">
-                        {primaryAllocation
-                            ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
-                            : '-'
-                        }
-                    </p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center gap-2 mb-1">
-                        <ClockArrowUp size={14} className="text-white/60" />
-                        <p className="text-xs text-white/60">Status</p>
-                    </div>
-                    <p className="text-sm font-medium text-white">{normalizedState || 'fetching'}</p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Fingerprint size={14} className="text-white/60" />
-                        <p className="text-xs text-white/60">Server UID</p>
-                    </div>
-                    <p className="text-sm font-medium text-white font-mono">{serverInfo?.identifier || '-'}</p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Map size={14} className="text-white/60" />
-                        <p className="text-xs text-white/60">Location</p>
-                    </div>
                     <div className="flex items-center gap-2">
-                        {locationInfo?.shortCode && (
-                            <img
-                                src={`https://flagsapi.com/${locationInfo.shortCode}/flat/64.png`}
-                                alt={locationInfo.shortCode}
-                                className="w-5 h-4 rounded object-cover"
-                                onError={(e) => (e.currentTarget.style.display = 'none')}
-                            />
-                        )}
-                        <p className="text-sm font-medium text-white">{locationInfo?.description || '-'}</p>
+                        <button 
+                            onClick={() => setPower('start')}
+                            disabled={!serverId || powerActionLoading || !canStart || isStarting}
+                            className="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                        >
+                            {powerActionLoading === 'start' || isStarting ? (
+                                <>
+                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Starting...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                                        <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                                    </svg>
+                                    Start
+                                </>
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setPower('restart')}
+                            disabled={!serverId || powerActionLoading || !canRestart || isStopping}
+                            className="px-3 py-1.5 text-xs font-medium text-white rounded-md border border-white/10 hover:bg-white/5 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {powerActionLoading === 'restart' ? (
+                                <>
+                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Restarting...
+                                </>
+                            ) : (
+                                <>
+                                    <RotateCw size={14} />
+                                    Restart
+                                </>
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setPower('stop')}
+                            disabled={!serverId || powerActionLoading || !canStop || isStopping}
+                            className="px-3 py-1.5 text-xs font-medium text-white rounded-md border border-white/10 hover:bg-white/5 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {powerActionLoading === 'stop' || isStopping ? (
+                                <>
+                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Stopping...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                                        <path fillRule="evenodd" d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z" clipRule="evenodd" />
+                                    </svg>
+                                    Stop
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Cpu size={14} className="text-white/60" />
-                            <p className="text-xs text-white/60">CPU Usage</p>
+                {!metricsLoaded ? (
+                    <>
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col animate-pulse">
+                                <div className="h-4 w-32 bg-white/10 rounded mb-1" />
+                                <div className="h-3 w-20 bg-white/10 rounded" />
+                            </div>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                            <p className="text-sm font-medium text-white font-mono mb-0.5">
+                                {primaryAllocation
+                                    ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
+                                    : '-'
+                                }
+                            </p>
+                            <p className="text-[10px] text-white/60">Server IP & Port</p>
                         </div>
-                        <p className="text-sm font-medium text-white">{Math.round(metrics.cpuPercent)}%</p>
-                    </div>
-                    <div className="h-20">
-                        <Line data={createChartData(series.cpu, '#60A5FA')} options={chartOptions} />
-                    </div>
-                </div>
 
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <MemoryStick size={14} className="text-white/60" />
-                            <p className="text-xs text-white/60">RAM Usage</p>
+                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                            <p className="text-sm font-medium text-white mb-0.5">{normalizedState || 'fetching'}</p>
+                            <p className="text-[10px] text-white/60">Status</p>
                         </div>
-                        <p className="text-sm font-medium text-white">{Math.round(metrics.memoryBytes / (1024 * 1024))} MB</p>
-                    </div>
-                    <div className="h-20">
-                        <Line data={createChartData(series.ram, '#A78BFA')} options={chartOptions} />
-                    </div>
-                </div>
 
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <HardDrive size={14} className="text-white/60" />
-                            <p className="text-xs text-white/60">Disk Usage</p>
+                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                            <p className="text-sm font-medium text-white font-mono mb-0.5">{serverInfo?.identifier || '-'}</p>
+                            <p className="text-[10px] text-white/60">Server UID</p>
                         </div>
-                        <p className="text-sm font-medium text-white">{Math.round(metrics.diskBytes / (1024 * 1024))} MB</p>
-                    </div>
-                    <div className="h-20">
-                        <Line data={createChartData(series.disk, '#FB923C')} options={chartOptions} />
-                    </div>
-                </div>
 
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Network size={14} className="text-white/60" />
-                            <p className="text-xs text-white/60">Network</p>
+                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                {locationInfo?.shortCode && (
+                                    <img
+                                        src={`https://flagsapi.com/${locationInfo.shortCode}/flat/64.png`}
+                                        alt={locationInfo.shortCode}
+                                        className="w-5 h-4 rounded object-cover"
+                                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    />
+                                )}
+                                <p className="text-sm font-medium text-white">{locationInfo?.description || '-'}</p>
+                            </div>
+                            <p className="text-[10px] text-white/60">Location</p>
                         </div>
-                        <p className="text-sm font-medium text-white">{Math.round((metrics.networkRxBytes + metrics.networkTxBytes) / 1024)} KB/s</p>
-                    </div>
-                    <div className="h-20">
-                        <Line data={createChartData(series.network, '#4ADE80')} options={chartOptions} />
-                    </div>
-                </div>
+                    </>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                {!metricsLoaded ? (
+                    <>
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="p-3 rounded-lg border border-white/10 bg-white/5 animate-pulse">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="h-3 w-20 bg-white/10 rounded" />
+                                    <div className="h-4 w-12 bg-white/10 rounded" />
+                                </div>
+                                <div className="h-20 bg-white/10 rounded" />
+                            </div>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[10px] text-white/60 uppercase tracking-wider">CPU Usage</p>
+                                <p className="text-sm font-medium text-white">{Math.round(metrics.cpuPercent)}%</p>
+                            </div>
+                            <div className="h-20">
+                                <Line data={createChartData(series.cpu, '#60A5FA')} options={chartOptions} />
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[10px] text-white/60 uppercase tracking-wider">RAM Usage</p>
+                                <p className="text-sm font-medium text-white">{Math.round(metrics.memoryBytes / (1024 * 1024))} MB</p>
+                            </div>
+                            <div className="h-20">
+                                <Line data={createChartData(series.ram, '#A78BFA')} options={chartOptions} />
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[10px] text-white/60 uppercase tracking-wider">Disk Usage</p>
+                                <p className="text-sm font-medium text-white">{Math.round(metrics.diskBytes / (1024 * 1024))} MB</p>
+                            </div>
+                            <div className="h-20">
+                                <Line data={createChartData(series.disk, '#FB923C')} options={chartOptions} />
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[10px] text-white/60 uppercase tracking-wider">Network</p>
+                                <p className="text-sm font-medium text-white">{Math.round((metrics.networkRxBytes + metrics.networkTxBytes) / 1024)} KB/s</p>
+                            </div>
+                            <div className="h-20">
+                                <Line data={createChartData(series.network, '#4ADE80')} options={chartOptions} />
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent overflow-hidden">
