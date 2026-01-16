@@ -1,4 +1,4 @@
-import { Box, Plus, Search, Activity, HardDrive, Cpu, SlidersHorizontal, Pencil, Check, Trash2, ChevronDown, RefreshCw } from "lucide-react";
+import { Box, Plus, Search, Activity, HardDrive, Cpu, Server, Check, ExternalLink, ChevronDown, Trash2, Edit, Pencil, SlidersHorizontal, RefreshCw, Layers2, Ellipsis, Frown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CenterModal from "../../components/modals/center-modal";
@@ -35,6 +35,7 @@ async function request(path, { method = "GET", body } = {}) {
 
 export default function Servers() {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
     const { user } = useAuth();
@@ -57,6 +58,8 @@ export default function Servers() {
     });
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const [showSoftwareDropdown, setShowSoftwareDropdown] = useState(false);
+    const [openActionMenuId, setOpenActionMenuId] = useState(null);
+    const [activeFilter, setActiveFilter] = useState('all');
 
     const availableEggs = nests.flatMap(nest =>
         (nest.eggs || []).map(egg => ({
@@ -146,7 +149,23 @@ export default function Servers() {
 
         try {
             const res = await request('/servers');
-            setServers(res?.servers || []);
+            const serversList = res?.servers || [];
+            
+            const serversWithAllocations = await Promise.all(
+                serversList.map(async (server) => {
+                    try {
+                        const allocRes = await request(`/servers/${server.id}/network/allocations`);
+                        return {
+                            ...server,
+                            allocation: allocRes?.primary || server.allocation
+                        };
+                    } catch {
+                        return server;
+                    }
+                })
+            );
+            
+            setServers(serversWithAllocations);
         } catch (err) {
             setServers([]);
             setServersError(err?.message || 'Failed to load servers');
@@ -164,6 +183,10 @@ export default function Servers() {
         if (!id) return;
         if (socketsRef.current[id]) return;
 
+        let statsReceived = false;
+        let retry1;
+        let retry2;
+
         try {
             const creds = await request(`/servers/${id}/websocket`);
             if (!creds?.socket || !creds?.token) return;
@@ -178,6 +201,15 @@ export default function Servers() {
             };
 
             ws.onmessage = (event) => {
+                const safeSendStats = () => {
+                    try {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ event: 'send stats', args: [] }));
+                        }
+                    } catch {
+                    }
+                };
+
                 let msg;
                 try {
                     msg = JSON.parse(event.data);
@@ -186,17 +218,32 @@ export default function Servers() {
                 }
 
                 if (msg?.event === 'auth success') {
-                    ws.send(JSON.stringify({ event: 'send stats', args: [] }));
-                    console.log(`[ws] send stats serverId=${id}`);
+                    safeSendStats();
+                    retry1 = setTimeout(() => {
+                        if (!statsReceived) safeSendStats();
+                    }, 750);
+                    retry2 = setTimeout(() => {
+                        if (!statsReceived) safeSendStats();
+                    }, 2000);
                     return;
                 }
 
                 if (msg?.event === 'stats' && Array.isArray(msg.args) && msg.args[0]) {
-                    console.log(`[ws] stats serverId=${id}`);
+                    statsReceived = true;
+                    if (retry1) clearTimeout(retry1);
+                    if (retry2) clearTimeout(retry2);
+
+                    const raw = msg.args[0];
                     let stats;
-                    try {
-                        stats = JSON.parse(msg.args[0]);
-                    } catch {
+                    if (typeof raw === 'string') {
+                        try {
+                            stats = JSON.parse(raw);
+                        } catch {
+                            return;
+                        }
+                    } else if (raw && typeof raw === 'object') {
+                        stats = raw;
+                    } else {
                         return;
                     }
 
@@ -224,11 +271,15 @@ export default function Servers() {
             };
 
             ws.onclose = (e) => {
+                if (retry1) clearTimeout(retry1);
+                if (retry2) clearTimeout(retry2);
                 console.log(`[ws] closed serverId=${id} code=${e?.code} reason=${e?.reason}`);
                 delete socketsRef.current[id];
             };
 
             ws.onerror = () => {
+                if (retry1) clearTimeout(retry1);
+                if (retry2) clearTimeout(retry2);
                 console.log(`[ws] error serverId=${id}`);
                 try {
                     ws.close();
@@ -255,199 +306,418 @@ export default function Servers() {
         };
     }, [servers]);
     return (
-        <div className="min-h-screen p-6" style={{ backgroundColor: "#091416" }}>
+        <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
             <div className="mb-6">
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-xl font-semibold text-white mb-1">Welcome back, {user?.username || "User"}</h1>
-                        <p className="text-xs text-white/60">Manage and monitor your servers</p>
+                        <p className="text-white/60 text-xs">Manage and monitor your game servers</p>
                     </div>
                     <button 
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90" 
-                        style={{ backgroundColor: "#ADE5DA" }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
+                        style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                     >
                         <Plus size={14} />
                         Create Server
                     </button>
                 </div>
+                
+                <div className="flex items-end gap-6 mt-6">
+                    <button
+                        onClick={() => setActiveFilter('all')}
+                        className="relative pb-2 text-xs transition-colors duration-200"
+                        style={{ color: activeFilter === 'all' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
+                    >
+                        All Servers
+                        {activeFilter === 'all' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10"></div>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveFilter('online')}
+                        className="relative pb-2 text-xs transition-colors duration-200"
+                        style={{ color: activeFilter === 'online' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
+                    >
+                        Online
+                        {activeFilter === 'online' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10"></div>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveFilter('offline')}
+                        className="relative pb-2 text-xs transition-colors duration-200"
+                        style={{ color: activeFilter === 'offline' ? '#fff' : 'rgba(255, 255, 255, 0.5)' }}
+                    >
+                        Offline
+                        {activeFilter === 'offline' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10"></div>
+                        )}
+                    </button>
+                    <button
+                        className="px-3 py-1.5 text-xs text-white/50 hover:text-white border border-white/10 rounded-md transition-colors duration-200"
+                    >
+                        + Add Filter
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <p className="text-xs text-white/60 mb-1">Total Servers</p>
-                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.length}</p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <p className="text-xs text-white/60 mb-1">Online</p>
-                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.filter(s => {
-                        const m = metricsByServerId[s.id];
-                        const state = m?.state;
-                        return state === 'running' || state === 'online';
-                    }).length}</p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <p className="text-xs text-white/60 mb-1">Offline</p>
-                    <p className="text-xl font-semibold text-white">{serversLoading ? '-' : servers.filter(s => {
-                        const m = metricsByServerId[s.id];
-                        const state = m?.state;
-                        if (!state) return true;
-                        return state === 'offline' || state === 'stopped';
-                    }).length}</p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                    <p className="text-xs text-white/60 mb-1">Balance</p>
-                    <p className="text-xl font-semibold text-white">{user?.balance || 0} TQN</p>
-                </div>
-            </div>
 
             {serversError && (
                 <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-                    <p className="text-xs text-red-200">{serversError}</p>
+                    <p className="text-sm text-red-200">{serversError}</p>
                 </div>
             )}
 
-            <div className="border border-white/10 rounded-lg overflow-hidden bg-gradient-to-br from-white/[0.02] to-transparent">
-                <div className="p-3 border-b border-white/10 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-white">Your Servers</h2>
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40" />
-                            <input
-                                type="text"
-                                placeholder="Search servers..."
-                                className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200"
-                            />
-                        </div>
-                        <button className="p-1.5 rounded-lg border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-colors duration-200">
-                            <SlidersHorizontal size={14} />
-                        </button>
-                    </div>
-                </div>
+            <div className="overflow-visible">
 
-                {servers.length === 0 ? (
-                    <div className="p-12 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-white/30 mx-auto mb-4">
-                            <path d="M16.5 7.5h-9v9h9v-9Z" />
-                            <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 0 1 9 3v.75h2.25V3a.75.75 0 0 1 1.5 0v.75H15V3a.75.75 0 0 1 1.5 0v.75h.75a3 3 0 0 1 3 3v.75H21A.75.75 0 0 1 21 9h-.75v2.25H21a.75.75 0 0 1 0 1.5h-.75V15H21a.75.75 0 0 1 0 1.5h-.75v.75a3 3 0 0 1-3 3h-.75V21a.75.75 0 0 1-1.5 0v-.75h-2.25V21a.75.75 0 0 1-1.5 0v-.75H9V21a.75.75 0 0 1-1.5 0v-.75h-.75a3 3 0 0 1-3-3v-.75H3A.75.75 0 0 1 3 15h.75v-2.25H3a.75.75 0 0 1 0-1.5h.75V9H3a.75.75 0 0 1 0-1.5h.75v-.75a3 3 0 0 1 3-3h.75V3a.75.75 0 0 1 .75-.75ZM6 6.75A.75.75 0 0 1 6.75 6h10.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V6.75Z" clipRule="evenodd" />
-                        </svg>
-                        <h3 className="text-sm font-medium text-white/50 mb-2">No Active Servers</h3>
-                        <p className="text-xs text-white/40 max-w-sm mx-auto">
-                            You don't have any servers on your account yet
-                        </p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-white/10">
-                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Server</th>
-                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Software</th>
-                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Status</th>
-                                    <th className="text-left px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Resources</th>
-                                    <th className="text-right px-3 py-2 text-[11px] font-medium text-white/50 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/10">
-                                {servers.map((server) => (
-                                    <tr key={server.id} className="hover:bg-white/5 transition-colors duration-200">
-                                        <td className="px-3 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center border border-white/10">
-                                                    <Box size={16} className="text-white/60" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-sm font-medium text-white mb-0.5">{server.name}</h3>
-                                                    <p className="text-[11px] text-white/50">{server.identifier}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            <span className="text-xs text-white/70">{server.egg?.name || '-'}</span>
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            {(() => {
-                                                const m = metricsByServerId[server.id];
-                                                const hasLiveState = Boolean(m?.state);
-                                                const state = hasLiveState ? m.state : 'fetching';
 
-                                                const isOnline = state === 'running' || state === 'online';
-                                                const isStarting = state === 'starting';
-                                                const isInstalling = state === 'installing';
+                {(() => {
+                    const q = (searchQuery || '').trim().toLowerCase();
+                    let filtered = servers;
+                    
+                    if (q) {
+                        filtered = filtered.filter((s) => {
+                            const name = (s?.name || '').toLowerCase();
+                            const id = (s?.identifier || '').toLowerCase();
+                            return name.includes(q) || id.includes(q);
+                        });
+                    }
+                    
+                    if (activeFilter !== 'all') {
+                        filtered = filtered.filter((s) => {
+                            const m = metricsByServerId[s.id];
+                            const state = m?.state;
+                            const stateLower = String(state || '').toLowerCase();
+                            
+                            if (activeFilter === 'online') {
+                                return stateLower === 'running' || stateLower === 'online';
+                            } else if (activeFilter === 'offline') {
+                                if (!state) return true;
+                                return stateLower === 'offline' || stateLower === 'stopped';
+                            } else if (activeFilter === 'starting') {
+                                return stateLower === 'starting' || stateLower === 'installing';
+                            }
+                            return true;
+                        });
+                    }
 
-                                                const cls = !hasLiveState
-                                                    ? 'bg-white/10 text-white/50'
-                                                    : isStarting || isInstalling
-                                                        ? 'bg-yellow-500/20 text-yellow-300'
-                                                        : isOnline
-                                                            ? 'bg-green-500/20 text-green-400'
-                                                            : 'bg-red-500/20 text-red-400';
-
-                                                return (
-                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${cls}`}>
-                                                        {state}
-                                                    </span>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            {(() => {
-                                                const m = metricsByServerId[server.id];
-                                                const cpu = m?.cpuPercent;
-                                                const mem = m?.memoryPercent;
-
-                                                return (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] text-white/50">CPU</span>
-                                                            <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, Number(cpu) || 0))}%`, backgroundColor: "#ADE5DA" }}></div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] text-white/50">RAM</span>
-                                                            <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                                                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, Number(mem) || 0))}%`, backgroundColor: "#ADE5DA" }}></div>
-                                                            </div>
-                                                        </div>
+                    if (serversLoading && servers.length === 0) {
+                        return (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-white/10">
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Software</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Location</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Resources</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
+                                            <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <tr key={i} className="border-b border-white/10 animate-pulse">
+                                                <td className="px-4 py-4">
+                                                    <div>
+                                                        <div className="h-3 w-32 bg-white/10 rounded mb-1" />
+                                                        <div className="h-2.5 w-24 bg-white/10 rounded" />
                                                     </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button 
-                                                    onClick={() => navigate(`/app/server/${server.id}/overview`)}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
-                                                >
-                                                    Manage
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleOpenEditModal(server)}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
-                                                >
-                                                    Edit
-                                                </button>
-                                            </div>
-                                        </td>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="h-5 w-16 bg-white/10 rounded" />
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="h-3 w-24 bg-white/10 rounded" />
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="h-3 w-20 bg-white/10 rounded" />
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="h-3 w-40 bg-white/10 rounded" />
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="h-3 w-28 bg-white/10 rounded" />
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="h-4 w-4 bg-white/10 rounded ml-auto" />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    }
+
+                    if (filtered.length === 0) {
+                        return (
+                            <div className="py-16 text-center border border-white/10 rounded-lg">
+                                <div className="mb-4">
+                                    <Frown size={48} className="text-white/20 mx-auto" />
+                                </div>
+                                <h3 className="text-sm font-medium text-white/70 mb-2">
+                                    {activeFilter === 'all' ? 'No servers yet' : `No ${activeFilter} servers`}
+                                </h3>
+                                <p className="text-xs text-white/40 mb-6">
+                                    {activeFilter === 'all' 
+                                        ? 'Get started by creating your first game server.'
+                                        : `You don't have any ${activeFilter} servers at the moment.`
+                                    }
+                                </p>
+                                {activeFilter === 'all' && (
+                                    <button 
+                                        onClick={() => setIsCreateModalOpen(true)}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer mx-auto" 
+                                        style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                                    >
+                                        <Plus size={14} />
+                                        Create Your First Server
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="overflow-visible">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-white/10">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Software</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Location</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Resources</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody>
+                                    {filtered.map((server) => {
+                                        const m = metricsByServerId[server.id];
+                                        const hasLiveState = Boolean(m?.state);
+                                        const state = hasLiveState ? m.state : 'fetching';
+                                        const stateLower = String(state || '').toLowerCase();
+
+                                        const isOnline = stateLower === 'running' || stateLower === 'online';
+                                        const isStarting = stateLower === 'starting';
+                                        const isInstalling = stateLower === 'installing';
+
+                                        const statusCls = !hasLiveState
+                                            ? 'bg-white/10 text-white/50'
+                                            : isStarting || isInstalling
+                                                ? 'bg-yellow-500/20 text-yellow-300'
+                                                : isOnline
+                                                    ? 'bg-green-500/20 text-green-400'
+                                                    : 'bg-red-500/20 text-red-400';
+
+                                        const cpu = Number(m?.cpuPercent || 0);
+                                        const mem = Number(m?.memoryPercent || 0);
+                                        const disk = hasLiveState && typeof m?.diskBytes === 'number' ? Math.round(m.diskBytes / 1024 / 1024) : 0;
+
+                                        return (
+                                            <tr 
+                                                key={server.id} 
+                                                className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer"
+                                                onClick={() => navigate(`/app/server/${server.id}/overview`)}
+                                            >
+                                                <td className="px-4 py-4">
+                                                    <div>
+                                                        <p className="text-xs font-medium text-white">{server.name}</p>
+                                                        <p className="text-[10px] text-white/40">{server.identifier}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${statusCls}`}>
+                                                        {stateLower}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <p className="text-xs text-white/80">{server.egg?.name || '-'}</p>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        {server.location?.shortCode && (
+                                                            <img
+                                                                src={`https://flagsapi.com/${server.location.shortCode}/flat/64.png`}
+                                                                alt={server.location.shortCode}
+                                                                className="w-5 h-4 rounded object-cover"
+                                                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                            />
+                                                        )}
+                                                        <p className="text-xs text-white/80">{server.location?.description || server.location?.shortCode || '-'}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-3 text-xs text-white/70">
+                                                        <span>{hasLiveState ? `${Math.round(cpu)}%` : '-'} CPU</span>
+                                                        <span className="text-white/30">/</span>
+                                                        <span>{hasLiveState ? `${Math.round(mem)}%` : '-'} RAM</span>
+                                                        <span className="text-white/30">/</span>
+                                                        <span>{hasLiveState ? `${disk}MB` : '-'} Disk</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <p className="text-xs text-white/80 font-mono">
+                                                        {server?.allocation?.ip 
+                                                            ? `${server.allocation.ip_alias || server.allocation.ip}:${server.allocation.port}` 
+                                                            : '-'
+                                                        }
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenActionMenuId(openActionMenuId === server.id ? null : server.id);
+                                                            }}
+                                                            className="p-1.5 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer inline-flex items-center justify-center"
+                                                            title="Server Actions"
+                                                        >
+                                                            <Ellipsis size={16} className="text-white/60" />
+                                                        </button>
+                                                        
+                                                        {openActionMenuId === server.id && (
+                                                            <div 
+                                                                className="absolute right-0 mt-1 w-36 rounded-md border border-white/10 z-[9999]"
+                                                                style={{ backgroundColor: '#27272a' }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <div className="py-1.5 px-1">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setOpenActionMenuId(null);
+                                                                            setEditingServerId(server.id);
+                                                                        }}
+                                                                        className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                                                                    >
+                                                                        Rename
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setOpenActionMenuId(null);
+                                                                            // Handle change location
+                                                                        }}
+                                                                        className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                                                                    >
+                                                                        Change Location
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setOpenActionMenuId(null);
+                                                                            // Handle change software
+                                                                        }}
+                                                                        className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                                                                    >
+                                                                        Change Software
+                                                                    </button>
+                                                                    <div className="h-px bg-white/10 my-1.5"></div>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setOpenActionMenuId(null);
+                                                                            // Handle delete
+                                                                        }}
+                                                                        className="w-full px-2.5 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-md"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    );
+                })()}
             </div>
 
-            <CenterModal
+            <div className="mt-6">
+                <h2 className="text-sm font-semibold text-white mb-3">Recent Activity</h2>
+                <div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80">
+                                    <span className="font-medium">Example Server</span>
+                                    <span className="text-white/50"> · Server started successfully</span>
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-white/40 shrink-0 ml-3">2m ago</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80">
+                                    <span className="font-medium">Test Server</span>
+                                    <span className="text-white/50"> · New server created</span>
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-white/40 shrink-0 ml-3">1h ago</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80">
+                                    <span className="font-medium">Main Server</span>
+                                    <span className="text-white/50"> · Server stopped by user</span>
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-white/40 shrink-0 ml-3">3h ago</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80">
+                                    <span className="font-medium">Production Server</span>
+                                    <span className="text-white/50"> · Configuration updated</span>
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-white/40 shrink-0 ml-3">5h ago</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Layers2 size={14} className="text-white/40 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80">
+                                    <span className="font-medium">Dev Server</span>
+                                    <span className="text-white/50"> · Backup completed</span>
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-white/40 shrink-0 ml-3">1d ago</span>
+                    </div>
+                </div>
+            </div>
+
+           <CenterModal
                 isOpen={isCreateModalOpen}
                 onClose={handleCloseModal}
-                title="Create Server"
                 maxWidth="max-w-2xl"
             >
-                <div className="mb-4">
+                <div className="p-6 pb-4">
+                    <h2 className="text-lg font-semibold text-white mb-4">Create Server</h2>
+                    <div className="mb-4">
                     <div className="flex items-center gap-2 mb-3">
                         {[1, 2, 3, 4].map((step) => (
                             <div key={step} className="flex items-center flex-1">
@@ -458,7 +728,7 @@ export default function Servers() {
                                         ? 'text-black' 
                                         : 'bg-white/10 text-white/50'
                                 }`}
-                                style={step <= createStep ? { backgroundColor: "#ADE5DA" } : {}}
+                                style={step <= createStep ? { backgroundColor: "#14b8a6" } : {}}
                                 >
                                     {step < createStep ? <Check size={14} /> : step}
                                 </div>
@@ -466,7 +736,7 @@ export default function Servers() {
                                     <div className={`flex-1 h-0.5 mx-2 transition-all duration-200 ${
                                         step < createStep ? '' : 'bg-white/10'
                                     }`}
-                                    style={step < createStep ? { backgroundColor: "#ADE5DA" } : {}}
+                                    style={step < createStep ? { backgroundColor: "#14b8a6" } : {}}
                                     />
                                 )}
                             </div>
@@ -505,18 +775,18 @@ export default function Servers() {
                                 className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 resize-none"
                             />
                         </div>
-                        <div className="flex items-center justify-end gap-2 pt-4">
+                        <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
                             <button
                                 onClick={handleCloseModal}
-                                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleNext}
                                 disabled={!serverData.name}
-                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: "#ADE5DA" }}
+                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ backgroundColor: "#14b8a6" }}
                             >
                                 Next
                             </button>
@@ -550,7 +820,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
                                         }`}
-                                        style={serverData.location?.id === location.id ? { borderColor: "#ADE5DA" } : {}}
+                                        style={serverData.location?.id === location.id ? { borderColor: "#14b8a6" } : {}}
                                     >
                                         <div className="flex items-center gap-2.5">
                                             <img 
@@ -565,18 +835,18 @@ export default function Servers() {
                                 ))}
                             </div>
                         )}
-                        <div className="flex items-center justify-end gap-2 pt-4">
+                        <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
                             <button
                                 onClick={handleBack}
-                                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
                             >
                                 Back
                             </button>
                             <button
                                 onClick={handleNext}
                                 disabled={!serverData.location}
-                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: "#ADE5DA" }}
+                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ backgroundColor: "#14b8a6" }}
                             >
                                 Next
                             </button>
@@ -610,7 +880,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
                                         }`}
-                                        style={serverData.software?.id === egg.id ? { borderColor: "#ADE5DA" } : {}}
+                                        style={serverData.software?.id === egg.id ? { borderColor: "#14b8a6" } : {}}
                                     >
                                         <div>
                                             <h3 className="text-sm font-medium text-white">{egg.name}</h3>
@@ -620,18 +890,18 @@ export default function Servers() {
                                 ))}
                             </div>
                         )}
-                        <div className="flex items-center justify-end gap-2 pt-4">
+                        <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
                             <button
                                 onClick={handleBack}
-                                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
                             >
                                 Back
                             </button>
                             <button
                                 onClick={handleNext}
                                 disabled={!serverData.software}
-                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: "#ADE5DA" }}
+                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ backgroundColor: "#14b8a6" }}
                             >
                                 Next
                             </button>
@@ -673,10 +943,10 @@ export default function Servers() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center justify-end gap-2 pt-4">
+                        <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
                             <button
                                 onClick={handleBack}
-                                className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                                className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
                             >
                                 Back
                             </button>
@@ -711,8 +981,8 @@ export default function Servers() {
                                     }
                                 }}
                                 disabled={creatingServer}
-                                className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                style={{ backgroundColor: "#ADE5DA" }}
+                                className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                                style={{ backgroundColor: "#14b8a6" }}
                             >
                                 {creatingServer ? (
                                     <>
@@ -729,6 +999,7 @@ export default function Servers() {
                         </div>
                     </div>
                 )}
+                </div>
             </CenterModal>
 
             <CenterModal
@@ -782,7 +1053,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                                         }`}
-                                        style={editData.location?.id === location.id ? { borderColor: "#ADE5DA" } : {}}
+                                        style={editData.location?.id === location.id ? { borderColor: "#14b8a6" } : {}}
                                     >
                                         <div className="flex items-center gap-2">
                                             <img 
@@ -832,7 +1103,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                                         }`}
-                                        style={editData.software?.id === egg.id ? { borderColor: "#ADE5DA" } : {}}
+                                        style={editData.software?.id === egg.id ? { borderColor: "#14b8a6" } : {}}
                                     >
                                         <p className="text-white font-medium">{egg.name}</p>
                                         <p className="text-white/50 text-[10px]">{egg.nestName}</p>
@@ -870,7 +1141,7 @@ export default function Servers() {
                         </button>
                         <button
                             className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
-                            style={{ backgroundColor: "#ADE5DA" }}
+                            style={{ backgroundColor: "#14b8a6" }}
                         >
                             Save Changes
                         </button>
@@ -880,3 +1151,5 @@ export default function Servers() {
         </div>
     );
 }
+
+

@@ -44,15 +44,15 @@ const Header = () => {
                     onClick={() => setSearchModalOpen(true)}
                     className="relative max-w-xs w-full text-left"
                 >
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-                    <div className="w-full pl-9 pr-16 py-2 text-sm rounded-lg border border-white/10 bg-white/5 text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 hover:border-white/20">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                    <div className="w-full pl-8 pr-14 py-1.5 text-xs rounded-md border border-white/10 bg-white/5 text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 hover:border-white/20">
                         Search...
                     </div>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
-                        <kbd className="px-1.5 py-0.5 text-[10px] rounded border border-white/10 bg-white/5 text-white/40">
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+                        <kbd className="px-1 py-0.5 text-[9px] rounded border border-white/10 bg-white/5 text-white/40">
                             ⌘
                         </kbd>
-                        <kbd className="px-1.5 py-0.5 text-[10px] rounded border border-white/10 bg-white/5 text-white/40">
+                        <kbd className="px-1 py-0.5 text-[9px] rounded border border-white/10 bg-white/5 text-white/40">
                             K
                         </kbd>
                     </div>
@@ -60,20 +60,20 @@ const Header = () => {
             </div>
 
             <div className="flex items-center gap-3">
-                <div className="flex items-center gap-0.5 border border-white/10 p-0.5" style={{ borderRadius: "8px" }}>
+                <div className="flex items-center gap-0.5 border border-white/10 p-0.5" style={{ borderRadius: "6px" }}>
                     <button 
                         onClick={() => setIsDark(true)}
-                        className={`p-1.5 transition-colors duration-200 ${isDark ? 'text-white' : 'text-white/40'}`}
-                        style={isDark ? { backgroundColor: "#27272a", borderRadius: "6px" } : {}}
+                        className={`p-1 transition-colors duration-200 ${isDark ? 'text-white' : 'text-white/40'}`}
+                        style={isDark ? { backgroundColor: "#27272a", borderRadius: "4px" } : {}}
                     >
-                        <Moon size={14} />
+                        <Moon size={13} />
                     </button>
                     <button 
                         onClick={() => setIsDark(false)}
-                        className={`p-1.5 transition-colors duration-200 ${!isDark ? 'text-white' : 'text-white/40'}`}
-                        style={!isDark ? { backgroundColor: "#27272a", borderRadius: "6px" } : {}}
+                        className={`p-1 transition-colors duration-200 ${!isDark ? 'text-white' : 'text-white/40'}`}
+                        style={!isDark ? { backgroundColor: "#27272a", borderRadius: "4px" } : {}}
                     >
-                        <Sun size={14} />
+                        <Sun size={13} />
                     </button>
                 </div>
                 <button 
