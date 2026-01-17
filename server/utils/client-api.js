@@ -1,4 +1,6 @@
 import { Elysia } from "elysia";
+import fs from 'fs';
+import path from 'path';
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
 import { errorHandler, fail, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
 import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
@@ -11,6 +13,71 @@ import { createServer, deleteServer, editServer, getServerWebsocket, listUserSer
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 
 const wsLogger = getLogger('ws');
+
+function logsDir() {
+  return path.join(process.cwd(), 'server', 'logs');
+}
+
+function authLogFilePaths({ days = 1 } = {}) {
+  const out = [];
+  const now = new Date();
+  for (let i = 0; i <= days; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const stamp = d.toISOString().slice(0, 10);
+    out.push(path.join(logsDir(), `[${stamp}][auth].log`));
+  }
+  return out;
+}
+
+function parseAuthLogLine(line) {
+  const str = String(line ?? '').trim();
+  if (!str) return null;
+  const m = str.match(/^\[(?<ts>[^\]]+)\]\[auth\]\[(?<level>[^\]]+)\]\s+(?<event>\S+)(?:\s+(?<meta>\{.*\}))?$/);
+  if (!m?.groups) return null;
+  let meta = null;
+  const raw = m.groups.meta;
+  if (raw) {
+    try {
+      meta = JSON.parse(raw);
+    } catch {
+      meta = null;
+    }
+  }
+  return { ts: m.groups.ts, level: m.groups.level, event: m.groups.event, meta };
+}
+
+function parseServerLogLine(line) {
+  const str = String(line ?? '').trim();
+  if (!str) return null;
+  const m = str.match(/^\[(?<ts>[^\]]+)\]\[server\]\[(?<level>[^\]]+)\]\s+(?<event>\S+)(?:\s+(?<meta>\{.*\}))?$/);
+  if (!m?.groups) return null;
+  let meta = null;
+  const raw = m.groups.meta;
+  if (raw) {
+    try {
+      meta = JSON.parse(raw);
+    } catch {
+      meta = null;
+    }
+  }
+  return { ts: m.groups.ts, level: m.groups.level, event: m.groups.event, meta };
+}
+
+function formatRelativeTime(ts) {
+  const d = new Date(ts);
+  if (!Number.isFinite(d.getTime())) return null;
+  const delta = Date.now() - d.getTime();
+  const sec = Math.floor(delta / 1000);
+  if (sec < 10) return 'Just now';
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  return `${day}d ago`;
+}
 
 export const clientApi = new Elysia({ name: "client-api" })
   .use(errorHandler)
@@ -106,6 +173,90 @@ export const clientApi = new Elysia({ name: "client-api" })
     const userId = res.body?.user?.id;
     const wallet = await getBalance(userId);
     const out = ok({ user: res.body.user, ...wallet }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/recent-activity", async ({ request, set, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = Number(res.body?.user?.id);
+    const limit = Math.min(50, Math.max(1, Number(query?.limit) || 10));
+    const items = [];
+
+    let files = [];
+    try {
+      const entries = fs.readdirSync(logsDir());
+      files = entries
+        .filter(name => /^\[\d{4}-\d{2}-\d{2}\]\[(auth|server)\]\.log$/.test(name))
+        .map(name => path.join(logsDir(), name))
+        .sort((a, b) => b.localeCompare(a));
+    } catch {
+      files = [];
+    }
+
+    for (const file of files) {
+      if (!fs.existsSync(file)) continue;
+      const raw = fs.readFileSync(file, 'utf8');
+      const lines = raw.split(/\r?\n/);
+
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const parsedAuth = parseAuthLogLine(lines[i]);
+        if (parsedAuth) {
+          if (parsedAuth.event !== 'login' && parsedAuth.event !== 'logout') continue;
+          const meta = parsedAuth.meta || null;
+          if (!meta) continue;
+          if (Number(meta.userId) !== userId) continue;
+
+          items.push({
+            type: 'auth',
+            event: parsedAuth.event,
+            ts: parsedAuth.ts,
+            relative: formatRelativeTime(parsedAuth.ts) || parsedAuth.ts,
+            email: meta.email || null,
+            ip: meta.ip || null
+          });
+          continue;
+        }
+
+        const parsedServer = parseServerLogLine(lines[i]);
+        if (parsedServer) {
+          if (parsedServer.event !== 'server_created' && parsedServer.event !== 'server_deleted') continue;
+          const meta = parsedServer.meta || null;
+          const metaUserId = meta?.userId ?? null;
+          if (Number(metaUserId) !== userId) continue;
+
+          items.push({
+            type: 'server',
+            event: parsedServer.event,
+            ts: parsedServer.ts,
+            relative: formatRelativeTime(parsedServer.ts) || parsedServer.ts,
+            serverName: meta?.name ?? null,
+            serverId: meta?.serverId ?? null
+          });
+          continue;
+        }
+
+        continue;
+
+        if (items.length >= limit) break;
+      }
+
+      if (items.length >= limit) break;
+    }
+
+    const out = ok({ items }, 200);
     set.status = out.status;
     return out.body;
   })
@@ -489,6 +640,32 @@ export const clientApi = new Elysia({ name: "client-api" })
     set.status = out.status;
     return out.body;
   })
+  .delete("/servers/:id/delete", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const deleted = await deleteServer({ userId: res.body.user.id, id });
+    const out = ok({ server: deleted }, 200);
+    set.status = out.status;
+    return out.body;
+  })
   .get("/servers/:id/websocket", async ({ request, set, params }) => {
     const limited = checkRateLimit({ request, set });
     if (limited) return limited;
@@ -760,32 +937,6 @@ export const clientApi = new Elysia({ name: "client-api" })
 
     const updated = await editServer({ userId: res.body.user.id, id, name: body?.name, description: body?.description });
     const out = ok({ server: updated }, 200);
-    set.status = out.status;
-    return out.body;
-  })
-  .delete("/delete-server", async ({ request, set, body, query }) => {
-    const limited = checkRateLimit({ request, set });
-    if (limited) return limited;
-
-    const cookies = parseCookies(request.headers.get("cookie"));
-    const res = await account({
-      authorization: request.headers.get("authorization"),
-      cookieToken: cookies?.[authCookieName()],
-    });
-
-    if (!res.ok) {
-      set.status = res.status;
-      return res.body;
-    }
-
-    const id = Number(body?.id ?? query?.id);
-    if (!Number.isInteger(id) || id <= 0) {
-      set.status = 422;
-      return unprocessable('validation_error').body;
-    }
-
-    const deleted = await deleteServer({ userId: res.body.user.id, id });
-    const out = ok({ server: deleted }, 200);
     set.status = out.status;
     return out.body;
   })

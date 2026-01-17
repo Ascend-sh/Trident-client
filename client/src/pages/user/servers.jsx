@@ -64,6 +64,8 @@ export default function Servers() {
     const [serverToDelete, setServerToDelete] = useState(null);
     const [deletingServer, setDeletingServer] = useState(false);
     const [deleteError, setDeleteError] = useState("");
+    const [recentActivity, setRecentActivity] = useState([]);
+    const [recentActivityLoading, setRecentActivityLoading] = useState(false);
 
     const availableEggs = nests.flatMap(nest =>
         (nest.eggs || []).map(egg => ({
@@ -87,6 +89,30 @@ export default function Servers() {
                 .finally(() => setLoadingLocations(false));
         }
     }, [isCreateModalOpen, createStep, locations.length]);
+
+    const fetchRecentActivity = async ({ retry = false } = {}) => {
+        if (!user?.id) return;
+        setRecentActivityLoading(true);
+        try {
+            const attempts = retry ? 4 : 1;
+            for (let i = 0; i < attempts; i++) {
+                const res = await request('/recent-activity');
+                const items = Array.isArray(res?.items) ? res.items : [];
+                setRecentActivity(items);
+                if (!retry) break;
+                if (items.length) break;
+                await new Promise(r => setTimeout(r, 300));
+            }
+        } catch {
+            setRecentActivity([]);
+        } finally {
+            setRecentActivityLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRecentActivity();
+    }, [user?.id]);
 
     useEffect(() => {
         if (isCreateModalOpen && createStep === 3 && nests.length === 0) {
@@ -476,16 +502,6 @@ export default function Servers() {
                                         : `You don't have any ${activeFilter} servers at the moment.`
                                     }
                                 </p>
-                                {activeFilter === 'all' && (
-                                    <button 
-                                        onClick={() => setIsCreateModalOpen(true)}
-                                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer mx-auto" 
-                                        style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
-                                    >
-                                        <Plus size={14} />
-                                        Create Your First Server
-                                    </button>
-                                )}
                             </div>
                         );
                     }
@@ -657,30 +673,58 @@ export default function Servers() {
             <div className="mt-6">
                 <h2 className="text-sm font-semibold text-white mb-3">Recent Activity</h2>
                 <div>
-                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={16} className="text-white/40 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white/80">
-                                    <span className="font-medium">{user?.username || "User"}</span>
-                                    <span className="text-white/50"> · Logged in to dashboard</span>
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">Just now</span>
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={16} className="text-white/40 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white/80">
-                                    <span className="font-medium">Example Server</span>
-                                    <span className="text-white/50"> · New server created</span>
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">2h ago</span>
-                    </div>
+                    {recentActivityLoading ? (
+                        <div className="py-6 text-center text-xs text-white/40">Loading activity...</div>
+                    ) : recentActivity.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-white/40">No recent activity</div>
+                    ) : (
+                        (() => {
+                            const limits = { login: 3, logout: 3, server_created: 5, server_deleted: 5 };
+                            const counts = { login: 0, logout: 0, server_created: 0, server_deleted: 0 };
+                            const displayed = [];
+                            for (const item of recentActivity) {
+                                const event = item?.event;
+                                if (event !== 'login' && event !== 'logout' && event !== 'server_created' && event !== 'server_deleted') continue;
+                                if (counts[event] >= limits[event]) continue;
+                                counts[event] += 1;
+                                displayed.push(item);
+                            }
+                            return displayed;
+                        })().map((item, idx) => {
+                            const e = item?.event;
+                            const isLogin = e === 'login';
+                            const isLogout = e === 'logout';
+                            const isServerCreate = e === 'server_created';
+                            const isServerDelete = e === 'server_deleted';
+                            const title = isLogin
+                                ? 'Logged in to dashboard'
+                                : isLogout
+                                ? 'Logged out of dashboard'
+                                : isServerCreate
+                                ? 'Server created'
+                                : isServerDelete
+                                ? 'Server deleted'
+                                : 'Activity';
+                            const label = isServerCreate || isServerDelete
+                                ? (item?.serverName || 'Server')
+                                : (item?.email || user?.username || 'User');
+                            return (
+                                <div key={idx} className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <Layers2 size={16} className="text-white/40 shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm text-white/80">
+                                                <span className="font-medium">{label}</span>
+                                                <span className="text-white/50"> · {title}</span>
+                                                {(!isServerCreate && !isServerDelete && item?.ip) ? <span className="text-white/30"> · {item.ip}</span> : null}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs text-white/40 shrink-0 ml-3">{item?.relative || ''}</span>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
@@ -951,6 +995,7 @@ export default function Servers() {
                                         });
 
                                         await fetchServers();
+                                        await fetchRecentActivity({ retry: true });
                                         handleCloseModal();
                                     } catch (err) {
                                         setCreateServerError(err?.message || 'Failed to create server');
@@ -1168,10 +1213,11 @@ export default function Servers() {
                                 setDeletingServer(true);
                                 setDeleteError("");
                                 try {
-                                    await request(`/servers/${serverToDelete.id}`, { method: 'DELETE' });
+                                    await request(`/servers/${serverToDelete?.id}/delete`, { method: 'DELETE' });
                                     setDeleteModalOpen(false);
                                     setServerToDelete(null);
                                     await fetchServers();
+                                    await fetchRecentActivity({ retry: true });
                                 } catch (err) {
                                     setDeleteError(err?.message || 'Failed to delete server');
                                 } finally {

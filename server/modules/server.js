@@ -3,11 +3,14 @@ import { db } from '../db/client.js';
 import { eggs, locations, servers } from '../db/schema.js';
 import { getServerDefaults } from '../utils/configuration.js';
 import { pteroApplicationRequest } from '../utils/importer.js';
+import { getLogger } from '../middlewares/logger.js';
 import { getPteroServerWebsocket } from './server/websocket.js';
 import { connectServerConsole } from './server/console.js';
 import { sendPowerSignal } from './server/state.js';
 import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
 import { listDirectory, readFileContents, writeFileContents } from './server/explorer.js';
+
+const serverLogger = getLogger('server');
 
 async function resolvePteroUserIdByEmail(email) {
   const clean = String(email ?? '').trim().toLowerCase();
@@ -362,7 +365,9 @@ export async function createServer({ userId, userEmail, name, description = '', 
   };
 
   const inserted = await db.insert(servers).values(row).returning();
-  return { local: inserted[0] || null, panel: created };
+  const local = inserted[0] || null;
+  serverLogger.info('server_created', { meta: { ok: Boolean(local), userId: uid, serverId: local?.id ?? null, pteroServerId, name: local?.name ?? serverName, locationId: locId, eggId: eId } });
+  return { local, panel: created };
 }
 
 export async function editServer({ userId, id, name, description }) {
@@ -422,7 +427,9 @@ export async function deleteServer({ userId, id }) {
     .where(and(eq(servers.id, sid), eq(servers.userId, uid)))
     .returning();
 
-  return deleted[0] || null;
+  const local = deleted[0] || null;
+  serverLogger.info('server_deleted', { meta: { ok: Boolean(local), userId: uid, serverId: sid, pteroServerId: pteroId, name: row?.name ?? null } });
+  return local;
 }
 
 export async function getServerWebsocket({ userId, serverId }) {

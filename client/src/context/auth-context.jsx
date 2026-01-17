@@ -58,10 +58,10 @@ export function AuthProvider({ children }) {
       setData(res);
       setStatus('authenticated');
       return res;
-    } catch (err) {
+    } catch {
       setData(null);
       setStatus('unauthenticated');
-      throw err;
+      return null;
     }
   }, []);
 
