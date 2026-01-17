@@ -444,11 +444,11 @@ export default function Servers() {
                                     <thead>
                                         <tr className="border-b border-white/10">
                                             <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Software</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Location</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Resources</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Usage</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
                                             <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -512,11 +512,11 @@ export default function Servers() {
                                 <thead>
                                     <tr className="border-b border-white/10">
                                         <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Software</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Location</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Resources</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">IP Address</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Usage</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Status</th>
                                         <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
@@ -531,13 +531,19 @@ export default function Servers() {
                                         const isStarting = stateLower === 'starting';
                                         const isInstalling = stateLower === 'installing';
 
-                                        const statusCls = !hasLiveState
-                                            ? 'bg-white/10 text-white/50'
-                                            : isStarting || isInstalling
-                                                ? 'bg-yellow-500/20 text-yellow-300'
-                                                : isOnline
-                                                    ? 'bg-green-500/20 text-green-400'
-                                                    : 'bg-red-500/20 text-red-400';
+                                        const isPending = isStarting || isInstalling;
+                                        const isHealthy = isOnline;
+                                        const statusTextCls = isPending
+                                            ? 'text-yellow-300'
+                                            : isHealthy
+                                            ? 'text-green-400'
+                                            : 'text-red-400';
+                                        const statusDotCls = isPending
+                                            ? 'bg-yellow-300'
+                                            : isHealthy
+                                            ? 'bg-green-400'
+                                            : 'bg-red-400';
+                                        const statusCls = `border border-white/10 ${statusTextCls}`;
 
                                         const cpu = Number(m?.cpuPercent || 0);
                                         const mem = Number(m?.memoryPercent || 0);
@@ -556,9 +562,12 @@ export default function Servers() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${statusCls}`}>
-                                                        {stateLower}
-                                                    </span>
+                                                    <p className="text-sm text-white/80 font-mono">
+                                                        {server?.allocation?.ip_alias || server?.allocation?.ip
+                                                            ? `${server?.allocation?.ip_alias || server?.allocation?.ip}:${server?.allocation?.port}`
+                                                            : '-'
+                                                        }
+                                                    </p>
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     <p className="text-sm text-white/80">{server.egg?.name || '-'}</p>
@@ -586,12 +595,10 @@ export default function Servers() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <p className="text-sm text-white/80 font-mono">
-                                                        {server?.allocation?.ip 
-                                                            ? `${server.allocation.ip_alias || server.allocation.ip}:${server.allocation.port}` 
-                                                            : '-'
-                                                        }
-                                                    </p>
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium leading-none ${statusCls}`}>
+                                                        <span className={`inline-block w-1.5 h-1.5 rounded-full relative top-px ${statusDotCls}`} />
+                                                        {stateLower}
+                                                    </span>
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
                                                     <div className="relative">
@@ -674,7 +681,20 @@ export default function Servers() {
                 <h2 className="text-sm font-semibold text-white mb-3">Recent Activity</h2>
                 <div>
                     {recentActivityLoading ? (
-                        <div className="py-6 text-center text-xs text-white/40">Loading activity...</div>
+                        <div className="space-y-3 py-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="flex items-center justify-between py-3 border-b border-white/10 animate-pulse">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <div className="h-4 w-4 bg-white/10 rounded" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="h-3 w-48 bg-white/10 rounded mb-1" />
+                                            <div className="h-2.5 w-28 bg-white/10 rounded" />
+                                        </div>
+                                    </div>
+                                    <div className="h-2.5 w-14 bg-white/10 rounded ml-3" />
+                                </div>
+                            ))}
+                        </div>
                     ) : recentActivity.length === 0 ? (
                         <div className="py-6 text-center text-xs text-white/40">No recent activity</div>
                     ) : (

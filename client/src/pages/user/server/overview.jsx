@@ -47,9 +47,25 @@ const sanitizeConsoleLine = (line) => {
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F\x7F]/g, "");
 };
 
+const formatUptime = (ms) => {
+    const total = Math.max(0, Number(ms) || 0);
+    const sec = Math.floor(total / 1000);
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const minutes = Math.floor((sec % 3600) / 60);
+    const seconds = sec % 60;
+    const s = String(seconds).padStart(2, '0');
+    if (days > 0) return `${days}d ${hours}h ${minutes}m ${s}s`;
+    return `${hours}h ${minutes}m ${s}s`;
+};
+
 const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+        mode: 'index',
+        intersect: false
+    },
     plugins: {
         legend: {
             display: false,
@@ -171,7 +187,8 @@ export default function ServerOverview() {
         cpu: Array.from({ length: 10 }, () => 0),
         ram: Array.from({ length: 10 }, () => 0),
         disk: Array.from({ length: 10 }, () => 0),
-        network: Array.from({ length: 10 }, () => 0)
+        networkRx: Array.from({ length: 10 }, () => 0),
+        networkTx: Array.from({ length: 10 }, () => 0)
     });
     useEffect(() => {
         if (!terminalRef.current) return;
@@ -391,13 +408,15 @@ export default function ServerOverview() {
                         
                         setMetricsLoaded(true);
 
-                        const networkKbps = (rxBytes + txBytes) / 1024;
+                        const rxKbps = rxBytes / 1024;
+                        const txKbps = txBytes / 1024;
 
                         setSeries(prev => ({
                             cpu: appendHistory(prev.cpu, clamp(cpuPercent, 0, 100)),
                             ram: appendHistory(prev.ram, clamp(memoryPercent, 0, 100)),
                             disk: appendHistory(prev.disk, clamp((diskBytes / (1024 * 1024)) % 100, 0, 100)),
-                            network: appendHistory(prev.network, clamp(networkKbps, 0, 100))
+                            networkRx: appendHistory(prev.networkRx, clamp(rxKbps, 0, 100)),
+                            networkTx: appendHistory(prev.networkTx, clamp(txKbps, 0, 100))
                         }));
 
                         return;
@@ -641,8 +660,8 @@ export default function ServerOverview() {
                         </div>
 
                         <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
-                            <p className="text-sm font-medium text-white mb-0.5">{normalizedState || 'fetching'}</p>
-                            <p className="text-[10px] text-white/60">Status</p>
+                            <p className="text-sm font-medium text-white mb-0.5">{formatUptime(metrics.uptime)}</p>
+                            <p className="text-[10px] text-white/60">Uptime</p>
                         </div>
 
                         <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
@@ -684,9 +703,11 @@ export default function ServerOverview() {
                 ) : (
                     <>
                         <div className="p-3 rounded-lg border border-white/10 bg-white/5">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">CPU Usage</p>
-                                <p className="text-sm font-medium text-white">{Math.round(metrics.cpuPercent)}%</p>
+                                <div className="h-9 flex items-center">
+                                    <p className="text-sm font-medium text-white">{Math.round(metrics.cpuPercent)}%</p>
+                                </div>
                             </div>
                             <div className="h-20">
                                 <Line data={createChartData(series.cpu, '#60A5FA')} options={chartOptions} />
@@ -694,9 +715,11 @@ export default function ServerOverview() {
                         </div>
 
                         <div className="p-3 rounded-lg border border-white/10 bg-white/5">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">RAM Usage</p>
-                                <p className="text-sm font-medium text-white">{Math.round(metrics.memoryBytes / (1024 * 1024))} MB</p>
+                                <div className="h-9 flex items-center">
+                                    <p className="text-sm font-medium text-white">{Math.round(metrics.memoryBytes / (1024 * 1024))} MB</p>
+                                </div>
                             </div>
                             <div className="h-20">
                                 <Line data={createChartData(series.ram, '#A78BFA')} options={chartOptions} />
@@ -704,9 +727,11 @@ export default function ServerOverview() {
                         </div>
 
                         <div className="p-3 rounded-lg border border-white/10 bg-white/5">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">Disk Usage</p>
-                                <p className="text-sm font-medium text-white">{Math.round(metrics.diskBytes / (1024 * 1024))} MB</p>
+                                <div className="h-9 flex items-center">
+                                    <p className="text-sm font-medium text-white">{Math.round(metrics.diskBytes / (1024 * 1024))} MB</p>
+                                </div>
                             </div>
                             <div className="h-20">
                                 <Line data={createChartData(series.disk, '#FB923C')} options={chartOptions} />
@@ -714,12 +739,38 @@ export default function ServerOverview() {
                         </div>
 
                         <div className="p-3 rounded-lg border border-white/10 bg-white/5">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">Network</p>
-                                <p className="text-sm font-medium text-white">{Math.round((metrics.networkRxBytes + metrics.networkTxBytes) / 1024)} KB/s</p>
+                                <div className="h-9 flex flex-col justify-center items-end leading-tight">
+                                    <p className="text-[11px] font-medium text-white">Download {Math.round(metrics.networkRxBytes / 1024)} KB/s</p>
+                                    <p className="text-[11px] font-medium text-white/70">Upload {Math.round(metrics.networkTxBytes / 1024)} KB/s</p>
+                                </div>
                             </div>
                             <div className="h-20">
-                                <Line data={createChartData(series.network, '#4ADE80')} options={chartOptions} />
+                                <Line
+                                    data={{
+                                        labels: Array.from({ length: series.networkRx.length }, (_, i) => i),
+                                        datasets: [
+                                            {
+                                                label: 'Download',
+                                                data: series.networkRx,
+                                                borderColor: '#4ADE80',
+                                                backgroundColor: '#4ADE8020',
+                                                fill: true,
+                                                borderWidth: 2
+                                            },
+                                            {
+                                                label: 'Upload',
+                                                data: series.networkTx,
+                                                borderColor: '#60A5FA',
+                                                backgroundColor: '#60A5FA20',
+                                                fill: true,
+                                                borderWidth: 2
+                                            }
+                                        ]
+                                    }}
+                                    options={chartOptions}
+                                />
                             </div>
                         </div>
                     </>
