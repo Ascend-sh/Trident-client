@@ -84,6 +84,7 @@ export default function AdminLocations() {
   const [deletingLocationId, setDeletingLocationId] = useState(null);
   const [panelLocations, setPanelLocations] = useState([]);
   const [importedLocations, setImportedLocations] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState("");
   const [viewDetailsLocation, setViewDetailsLocation] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -108,11 +109,13 @@ export default function AdminLocations() {
       .then((res) => {
         if (cancelled) return;
         setImportedLocations(res?.locations || []);
+        setDataLoaded(true);
       })
       .catch((err) => {
         if (cancelled) return;
         setImportedLocations([]);
         setError(err?.message || "Failed to fetch imported locations");
+        setDataLoaded(true);
       });
 
     return () => {
@@ -188,21 +191,50 @@ export default function AdminLocations() {
         </div>
       )}
 
-      {importedLocations.length === 0 ? (
+      {!dataLoaded ? (
+        <div className="overflow-visible">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Short Code</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Nodes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b border-white/10 animate-pulse">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-4 bg-white/10 rounded" />
+                      <div className="h-3.5 w-12 bg-white/10 rounded" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-3.5 w-40 bg-white/10 rounded" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-3.5 w-16 bg-white/10 rounded" />
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="h-7 w-24 bg-white/10 rounded-md" />
+                      <div className="h-7 w-16 bg-white/10 rounded-md" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : importedLocations.length === 0 ? (
         <div className="py-16 text-center border border-white/10 rounded-lg">
           <MapPin size={48} className="text-white/20 mx-auto mb-4" />
           <h3 className="text-sm font-medium text-white/70 mb-2">No Locations Configured</h3>
-          <p className="text-sm text-white/50 max-w-sm mx-auto mb-6">
+          <p className="text-sm text-white/50 max-w-sm mx-auto">
             Set up server locations to organize and distribute your servers geographically
           </p>
-          <button 
-            onClick={() => setSetupModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
-            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
-          >
-            <Plus size={15} />
-            Setup Your First Location
-          </button>
         </div>
       ) : (
         <div className="overflow-visible">

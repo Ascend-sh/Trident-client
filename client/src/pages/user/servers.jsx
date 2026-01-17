@@ -662,60 +662,24 @@ export default function Servers() {
                             <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm text-white/80">
-                                    <span className="font-medium">Example Server</span>
-                                    <span className="text-white/50"> · Server started successfully</span>
+                                    <span className="font-medium">{user?.username || "User"}</span>
+                                    <span className="text-white/50"> · Logged in to dashboard</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">2m ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">Just now</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                             <Layers2 size={16} className="text-white/40 shrink-0" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm text-white/80">
-                                    <span className="font-medium">Test Server</span>
+                                    <span className="font-medium">Example Server</span>
                                     <span className="text-white/50"> · New server created</span>
                                 </p>
                             </div>
                         </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">1h ago</span>
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={16} className="text-white/40 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white/80">
-                                    <span className="font-medium">Main Server</span>
-                                    <span className="text-white/50"> · Server stopped by user</span>
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">3h ago</span>
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={16} className="text-white/40 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white/80">
-                                    <span className="font-medium">Production Server</span>
-                                    <span className="text-white/50"> · Configuration updated</span>
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">5h ago</span>
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Layers2 size={16} className="text-white/40 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm text-white/80">
-                                    <span className="font-medium">Dev Server</span>
-                                    <span className="text-white/50"> · Backup completed</span>
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-xs text-white/40 shrink-0 ml-3">1d ago</span>
+                        <span className="text-xs text-white/40 shrink-0 ml-3">2h ago</span>
                     </div>
                 </div>
             </div>

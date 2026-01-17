@@ -152,22 +152,23 @@ const Header = () => {
             <CenterModal
                 isOpen={helpModalOpen}
                 onClose={() => setHelpModalOpen(false)}
-                title="External Redirect"
                 maxWidth="max-w-md"
             >
-                <div className="space-y-4">
-                    <div className="flex items-start gap-3 p-3 rounded-lg border border-white/10 bg-white/5">
-                        <ExternalLink size={18} className="text-white/60 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs text-white/70 mb-1">You're about to be redirected outside the dashboard</p>
-                            <p className="text-xs text-white/50 break-all">{helpUrl}</p>
-                        </div>
+                <div className="p-6 pb-4">
+                    <h2 className="text-lg font-semibold text-white mb-4">External Redirect</h2>
+
+                    <p className="text-sm text-white/60 mb-4">
+                        You're about to be redirected outside the dashboard to the following URL:
+                    </p>
+
+                    <div className="p-3 rounded-lg border border-white/10 bg-white/5 mb-6">
+                        <p className="text-xs text-white/70 break-all font-mono">{helpUrl}</p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/10">
                         <button
                             onClick={() => setHelpModalOpen(false)}
-                            className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200"
+                            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer"
                         >
                             Cancel
                         </button>
@@ -176,8 +177,8 @@ const Header = () => {
                                 window.open(helpUrl, '_blank');
                                 setHelpModalOpen(false);
                             }}
-                            className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
-                            style={{ backgroundColor: "#14b8a6" }}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer"
+                            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
                         >
                             Continue
                         </button>
