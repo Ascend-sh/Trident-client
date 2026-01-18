@@ -8,6 +8,7 @@ import AdminOverview from "./pages/admin/overview";
 import AdminSoftware from "./pages/admin/software";
 import AdminLocations from "./pages/admin/locations";
 import ServerOverview from "./pages/user/server/overview";
+import ServerFiles from "./pages/user/server/files";
 import Sidebar from "./components/navigation/sidebar";
 import ServerNav from "./components/navigation/server-nav";
 import Header from "./components/navigation/header";
@@ -77,6 +78,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/app/home" element={<Servers />} />
             <Route path="/app/server/:id/overview" element={<ServerOverview />} />
+            <Route path="/app/server/:id/files" element={<ServerFiles />} />
 
             <Route element={<RequireAdmin />}>
               <Route path="/app/admin/overview" element={<AdminOverview />} />

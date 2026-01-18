@@ -1,4 +1,4 @@
-import { Box, Plus, Search, Activity, HardDrive, Cpu, Server, Check, ExternalLink, ChevronDown, Trash2, Edit, Pencil, SlidersHorizontal, RefreshCw, Layers2, Ellipsis, Frown } from "lucide-react";
+import { Box, Plus, Search, Activity, HardDrive, Cpu, Server, Check, ExternalLink, ChevronDown, Trash2, Edit, Pencil, SlidersHorizontal, RefreshCw, Layers2, Ellipsis } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CenterModal from "../../components/modals/center-modal";
@@ -174,6 +174,8 @@ export default function Servers() {
     const [metricsLoaded, setMetricsLoaded] = useState(false);
     const socketsRef = useRef({});
 
+    const allocationsFetchRef = useRef(0);
+
     const fetchServers = async () => {
         setServersLoading(true);
         setServersError("");
@@ -181,22 +183,33 @@ export default function Servers() {
         try {
             const res = await request('/servers');
             const serversList = res?.servers || [];
-            
-            const serversWithAllocations = await Promise.all(
-                serversList.map(async (server) => {
+
+            setServers(serversList);
+
+            const fetchId = ++allocationsFetchRef.current;
+
+            const fetchAllocationWithRetry = async (serverId, attempts = 4) => {
+                for (let i = 0; i < attempts; i++) {
                     try {
-                        const allocRes = await request(`/servers/${server.id}/network/allocations`);
-                        return {
-                            ...server,
-                            allocation: allocRes?.primary || server.allocation
-                        };
+                        const allocRes = await request(`/servers/${serverId}/network/allocations`);
+                        return allocRes?.primary || null;
                     } catch {
-                        return server;
+                        if (i < attempts - 1) await new Promise(r => setTimeout(r, 600));
                     }
-                })
-            );
-            
-            setServers(serversWithAllocations);
+                }
+                return null;
+            };
+
+            serversList.forEach(async (s) => {
+                if (fetchId !== allocationsFetchRef.current) return;
+                if (s?.allocation?.ip_alias || s?.allocation?.ip) return;
+
+                const primary = await fetchAllocationWithRetry(s.id);
+                if (!primary) return;
+                if (fetchId !== allocationsFetchRef.current) return;
+
+                setServers(prev => prev.map(p => p.id === s.id ? { ...p, allocation: primary } : p));
+            });
         } catch (err) {
             setServers([]);
             setServersError(err?.message || 'Failed to load servers');
@@ -491,7 +504,10 @@ export default function Servers() {
                         return (
                             <div className="py-16 text-center border border-white/10 rounded-lg">
                                 <div className="mb-4">
-                                    <Frown size={48} className="text-white/20 mx-auto" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 text-white/20 mx-auto">
+                                        <path d="M16.5 7.5h-9v9h9v-9Z" />
+                                        <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 0 1 9 3v.75h2.25V3a.75.75 0 0 1 1.5 0v.75H15V3a.75.75 0 0 1 1.5 0v.75h.75a3 3 0 0 1 3 3v.75H21A.75.75 0 0 1 21 9h-.75v2.25H21a.75.75 0 0 1 0 1.5h-.75V15H21a.75.75 0 0 1 0 1.5h-.75v.75a3 3 0 0 1-3 3h-.75V21a.75.75 0 0 1-1.5 0v-.75h-2.25V21a.75.75 0 0 1-1.5 0v-.75H9V21a.75.75 0 0 1-1.5 0v-.75h-.75a3 3 0 0 1-3-3v-.75H3A.75.75 0 0 1 3 15h.75v-2.25H3a.75.75 0 0 1 0-1.5h.75V9H3a.75.75 0 0 1 0-1.5h.75v-.75a3 3 0 0 1 3-3h.75V3a.75.75 0 0 1 .75-.75ZM6 6.75A.75.75 0 0 1 6.75 6h10.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V6.75Z" clipRule="evenodd" />
+                                    </svg>
                                 </div>
                                 <h3 className="text-sm font-medium text-white/70 mb-2">
                                     {activeFilter === 'all' ? 'No servers yet' : `No ${activeFilter} servers`}
@@ -562,12 +578,13 @@ export default function Servers() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <p className="text-sm text-white/80 font-mono">
-                                                        {server?.allocation?.ip_alias || server?.allocation?.ip
-                                                            ? `${server?.allocation?.ip_alias || server?.allocation?.ip}:${server?.allocation?.port}`
-                                                            : '-'
-                                                        }
-                                                    </p>
+                                                    {server?.allocation?.ip_alias || server?.allocation?.ip ? (
+                                                        <p className="text-sm text-white/80 font-mono">
+                                                            {`${server?.allocation?.ip_alias || server?.allocation?.ip}:${server?.allocation?.port}`}
+                                                        </p>
+                                                    ) : (
+                                                        <div className="h-3 w-28 bg-white/10 rounded animate-pulse" />
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     <p className="text-sm text-white/80">{server.egg?.name || '-'}</p>
@@ -698,19 +715,7 @@ export default function Servers() {
                     ) : recentActivity.length === 0 ? (
                         <div className="py-6 text-center text-xs text-white/40">No recent activity</div>
                     ) : (
-                        (() => {
-                            const limits = { login: 3, logout: 3, server_created: 5, server_deleted: 5 };
-                            const counts = { login: 0, logout: 0, server_created: 0, server_deleted: 0 };
-                            const displayed = [];
-                            for (const item of recentActivity) {
-                                const event = item?.event;
-                                if (event !== 'login' && event !== 'logout' && event !== 'server_created' && event !== 'server_deleted') continue;
-                                if (counts[event] >= limits[event]) continue;
-                                counts[event] += 1;
-                                displayed.push(item);
-                            }
-                            return displayed;
-                        })().map((item, idx) => {
+                        recentActivity.slice(0, 6).map((item, idx) => {
                             const e = item?.event;
                             const isLogin = e === 'login';
                             const isLogout = e === 'logout';

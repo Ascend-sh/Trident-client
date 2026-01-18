@@ -72,11 +72,35 @@ const chartOptions = {
         },
         tooltip: {
             enabled: true,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 8,
+            backgroundColor: '#18181b',
+            padding: 6,
             bodyColor: '#fff',
+            titleColor: '#fff',
             borderColor: 'rgba(255, 255, 255, 0.1)',
             borderWidth: 1,
+            displayColors: true,
+            boxWidth: 6,
+            boxHeight: 6,
+            boxPadding: 3,
+            cornerRadius: 4,
+            titleFont: {
+                size: 10,
+                weight: '500'
+            },
+            bodyFont: {
+                size: 10,
+                weight: '400'
+            },
+            callbacks: {
+                title: function() {
+                    return '';
+                },
+                label: function(context) {
+                    const label = context.dataset.label || '';
+                    const value = Math.round(context.parsed.y * 10) / 10;
+                    return ` ${label}: ${value}`;
+                }
+            }
         },
     },
     scales: {
@@ -641,7 +665,7 @@ export default function ServerOverview() {
                 {!metricsLoaded ? (
                     <>
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col animate-pulse">
+                            <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col animate-pulse">
                                 <div className="h-4 w-32 bg-white/10 rounded mb-1" />
                                 <div className="h-3 w-20 bg-white/10 rounded" />
                             </div>
@@ -649,7 +673,7 @@ export default function ServerOverview() {
                     </>
                 ) : (
                     <>
-                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
                             <p className="text-sm font-medium text-white font-mono mb-0.5">
                                 {primaryAllocation
                                     ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
@@ -659,17 +683,17 @@ export default function ServerOverview() {
                             <p className="text-[10px] text-white/60">Server IP & Port</p>
                         </div>
 
-                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
                             <p className="text-sm font-medium text-white mb-0.5">{formatUptime(metrics.uptime)}</p>
                             <p className="text-[10px] text-white/60">Uptime</p>
                         </div>
 
-                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
                             <p className="text-sm font-medium text-white font-mono mb-0.5">{serverInfo?.identifier || '-'}</p>
                             <p className="text-[10px] text-white/60">Server UID</p>
                         </div>
 
-                        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col">
+                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
                             <div className="flex items-center gap-2 mb-0.5">
                                 {locationInfo?.shortCode && (
                                     <img
@@ -691,7 +715,7 @@ export default function ServerOverview() {
                 {!metricsLoaded ? (
                     <>
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="p-3 rounded-lg border border-white/10 bg-white/5 animate-pulse">
+                            <div key={i} className="p-3 rounded-lg border border-white/10 bg-black/20 animate-pulse">
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="h-3 w-20 bg-white/10 rounded" />
                                     <div className="h-4 w-12 bg-white/10 rounded" />
@@ -702,7 +726,7 @@ export default function ServerOverview() {
                     </>
                 ) : (
                     <>
-                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
                             <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">CPU Usage</p>
                                 <div className="h-9 flex items-center">
@@ -714,7 +738,7 @@ export default function ServerOverview() {
                             </div>
                         </div>
 
-                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
                             <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">RAM Usage</p>
                                 <div className="h-9 flex items-center">
@@ -726,7 +750,7 @@ export default function ServerOverview() {
                             </div>
                         </div>
 
-                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
                             <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">Disk Usage</p>
                                 <div className="h-9 flex items-center">
@@ -738,7 +762,7 @@ export default function ServerOverview() {
                             </div>
                         </div>
 
-                        <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
                             <div className="flex items-start justify-between mb-3 h-9">
                                 <p className="text-[10px] text-white/60 uppercase tracking-wider">Network</p>
                                 <div className="h-9 flex flex-col justify-center items-end leading-tight">
@@ -854,4 +878,5 @@ export default function ServerOverview() {
         </div>
     );
 }
+
 

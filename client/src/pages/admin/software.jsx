@@ -50,7 +50,7 @@ function deleteNest(nestId) {
 }
 
 export default function AdminSoftware() {
-  const [activeTab, setActiveTab] = useState("available");
+  const [activeTab, setActiveTab] = useState("active");
   const [eggsModalOpen, setEggsModalOpen] = useState(false);
   const [selectedNest, setSelectedNest] = useState(null);
   const [addingNestId, setAddingNestId] = useState(null);
@@ -147,109 +147,108 @@ export default function AdminSoftware() {
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-white mb-1">Software Management</h1>
-          <p className="text-white/60 text-xs">Manage nests and eggs from your Pterodactyl panel</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white mb-1">Software Management</h1>
+            <p className="text-sm text-white/60">Manage nests and eggs from your Pterodactyl panel</p>
+          </div>
+        </div>
+
+        <div className="flex items-end gap-6 mt-6">
+          <button
+            onClick={() => setActiveTab("active")}
+            className="relative pb-2 text-sm transition-colors duration-200"
+            style={{ color: activeTab === "active" ? "#fff" : "rgba(255, 255, 255, 0.5)" }}
+          >
+            Active Nests
+            {activeTab === "active" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("available")}
+            className="relative pb-2 text-sm transition-colors duration-200"
+            style={{ color: activeTab === "available" ? "#fff" : "rgba(255, 255, 255, 0.5)" }}
+          >
+            Available Nests
+            {activeTab === "available" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10"></div>
+            )}
+          </button>
         </div>
       </div>
 
       {error && (
         <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-          <p className="text-xs text-red-200">{error}</p>
+          <p className="text-sm text-red-200">{error}</p>
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-b border-white/10 mb-6">
-        <button
-          onClick={() => setActiveTab("available")}
-          className={`px-4 py-2 text-xs font-medium transition-colors duration-200 border-b-2 ${
-            activeTab === "available"
-              ? "text-white border-[#14b8a6]"
-              : "text-white/60 border-transparent hover:text-white/80"
-          }`}
-        >
-          Available Nests
-        </button>
-        <button
-          onClick={() => setActiveTab("active")}
-          className={`px-4 py-2 text-xs font-medium transition-colors duration-200 border-b-2 ${
-            activeTab === "active"
-              ? "text-white border-[#14b8a6]"
-              : "text-white/60 border-transparent hover:text-white/80"
-          }`}
-        >
-          Active Nests
-        </button>
-      </div>
-
       {activeTab === "available" && (
-        <div>
-          <div className="mb-4">
-            <p className="text-xs text-white/50">
-              These nests are available on your Pterodactyl panel. Click "Add Nest" to import them into your dashboard.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableNests.map((nest) => (
-              <div
-                key={nest.id}
-                className="rounded-lg border border-white/10 bg-white/5 p-4 hover:border-white/20 transition-colors duration-200 flex flex-col"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Package size={20} className="text-white/60" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-white">{nest.name}</h3>
-                      <p className="text-xs text-white/40">support@pterodactyl.io</p>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-xs text-white/60 mb-4">{nest.description || "No description"}</p>
-
-                <div className="flex items-center justify-end mt-auto pt-2">
-                  <button
-                    onClick={() => handleAddNest(nest.id)}
-                    disabled={addingNestId === nest.id || importedNestIds.has(nest.id)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 flex-shrink-0 ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+        <div className="overflow-visible">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Nest Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Description</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Author</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {availableNests.map((nest) => (
+                  <tr
+                    key={nest.id}
+                    className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200"
                   >
-                    {addingNestId === nest.id ? (
-                      <>
-                        <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Adding...
-                      </>
-                    ) : importedNestIds.has(nest.id) ? (
-                      <>Added</>
-                    ) : (
-                      <>
-                        <Plus size={14} />
-                        Add Nest
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <td className="px-4 py-4">
+                      <span className="text-sm font-medium text-white">{nest.name}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-white/80">{nest.description || "No description"}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-white/60">support@pterodactyl.io</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end">
+                        <button
+                          onClick={() => handleAddNest(nest.id)}
+                          disabled={addingNestId === nest.id || importedNestIds.has(nest.id)}
+                          className="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+                          style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                        >
+                          {addingNestId === nest.id ? (
+                            <>
+                              <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Adding...
+                            </>
+                          ) : importedNestIds.has(nest.id) ? (
+                            <>Added</>
+                          ) : (
+                            <>
+                              <Plus size={14} />
+                              Add Nest
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {activeTab === "active" && (
         <div>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs text-white/50">
-              These nests are currently active and available for server creation in your dashboard.
-            </p>
-            <span className="text-xs text-white/40">{activeNests.length} active</span>
-          </div>
 
           {activeNests.length === 0 ? (
             <div className="rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent p-12 text-center">
@@ -268,54 +267,62 @@ export default function AdminSoftware() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {activeNests.map((nest) => (
-                <div
-                  key={nest.id}
-                  className="rounded-lg border border-white/10 bg-white/5 p-4 flex flex-col"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center">
-                        <Package size={20} style={{ color: "#14b8a6" }} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-white">{nest.name}</h3>
-                        <p className="text-xs text-white/40">Available eggs: {nest.eggCount}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-white/60 mb-4">{nest.description || "No description"}</p>
-
-                  <div className="flex items-center justify-end gap-2 mt-auto pt-2">
-                    <button
-                      onClick={() => confirmDeleteNest(nest)}
-                      disabled={deletingNestId === nest.id}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Nest Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Description</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Eggs</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeNests.map((nest) => (
+                    <tr
+                      key={nest.id}
+                      className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200"
                     >
-                      {deletingNestId === nest.id ? (
-                        <>
-                          <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Deleting...
-                        </>
-                      ) : (
-                        "Delete"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleViewEggs(nest)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 border border-white/10 text-white/60 hover:bg-white/5 hover:text-white flex items-center gap-1.5"
-                    >
-                      <Code size={14} />
-                      View Eggs
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <td className="px-4 py-4">
+                        <span className="text-sm font-medium text-white">{nest.name}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-white/80">{nest.description || "No description"}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-white/70">{nest.eggCount || 0} eggs</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleViewEggs(nest)}
+                            className="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer"
+                          >
+                            View Eggs
+                          </button>
+                          <button
+                            onClick={() => confirmDeleteNest(nest)}
+                            disabled={deletingNestId === nest.id}
+                            className="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white hover:bg-white/5 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+                          >
+                            {deletingNestId === nest.id ? (
+                              <>
+                                <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Deleting...
+                              </>
+                            ) : (
+                              "Delete"
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -381,9 +388,9 @@ export default function AdminSoftware() {
         <div className="p-6 pb-4">
           <h2 className="text-lg font-semibold text-white mb-4">Delete Nest</h2>
 
-          <p className="text-xs text-white/60 mb-2">Are you sure you want to delete this nest?</p>
-          <p className="text-sm font-semibold text-white mb-2">{nestToDelete?.name}</p>
-          <p className="text-xs text-white/50 mb-6">This will remove the nest and all its eggs from your dashboard. This action cannot be undone.</p>
+          <p className="text-xs text-white/60 mb-4">
+            Are you sure you want to delete <span className="font-semibold text-white">"{nestToDelete?.name}"</span>? This will remove the nest and all its eggs from your dashboard. This action cannot be undone.
+          </p>
 
           <div className="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-white/10">
             <button
