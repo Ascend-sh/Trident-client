@@ -2,6 +2,7 @@ import { Folder, File, Ellipsis } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
+import EditorModal from "../../../components/modals/editor-modal.jsx";
 
 const API_BASE = "/api/v1/client";
 
@@ -13,12 +14,18 @@ async function request(path, { method = "GET", body } = {}) {
     credentials: "include"
   });
 
+  const contentType = String(res.headers.get('content-type') || '').toLowerCase();
   const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
+
+  const isJson = contentType.includes('application/json');
+
+  let data = text;
+  if (isJson) {
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
   }
 
   if (!res.ok) {
@@ -137,6 +144,15 @@ export default function ServerFiles() {
   const menuAnchorRefs = useRef({});
   const [menuPos, setMenuPos] = useState(null);
 
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorPath, setEditorPath] = useState('');
+  const [editorApiFile, setEditorApiFile] = useState('');
+  const [editorValue, setEditorValue] = useState('');
+  const [editorSaving, setEditorSaving] = useState(false);
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorError, setEditorError] = useState('');
+  const [editorNotice, setEditorNotice] = useState('');
+
   const breadcrumb = useMemo(() => {
     const uiDir = normalizeUiDirectory(directory);
     const apiDir = uiToApiDirectory(uiDir);
@@ -238,25 +254,163 @@ export default function ServerFiles() {
 
     if (!filesToDelete.length) return;
 
+    setError('');
+    setLoading(true);
+
     try {
       await request(`/servers/${serverId}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
       await fetchListing();
     } catch (err) {
+      setLoading(false);
       setError(err?.message || 'failed_to_delete_files');
+    }
+  };
+
+  const isTextEditable = (fileName) => {
+    const n = String(fileName || '').toLowerCase();
+    const allowed = [
+      'txt',
+      'log',
+      'json',
+      'yml',
+      'yaml',
+      'properties',
+      'toml',
+      'conf',
+      'cfg',
+      'ini',
+      'md',
+      'sh',
+      'env',
+      'xml'
+    ];
+
+    const base = n.split('/').pop() || '';
+    const idx = base.lastIndexOf('.');
+    const ext = idx >= 0 ? base.slice(idx + 1) : '';
+    if (!ext) return true;
+    return allowed.includes(ext);
+  };
+
+  const openEditor = async ({ name }) => {
+    if (!name) return;
+
+    if (!isTextEditable(name)) {
+      return;
+    }
+
+    if (!Number.isInteger(serverId) || serverId <= 0) return;
+
+    const apiDir = uiToApiDirectory(directory);
+    const apiFile = joinPath(apiDir, name);
+    const uiFile = joinPath(normalizeUiDirectory(directory), name);
+
+    setEditorOpen(true);
+    setEditorError('');
+    setEditorNotice('');
+    setEditorLoading(true);
+    setEditorPath(uiFile);
+    setEditorApiFile(apiFile);
+    setEditorValue('');
+
+    try {
+      const content = await request(`/servers/${serverId}/files/contents?file=${encodeURIComponent(apiFile)}`);
+      const raw = typeof content === 'string' ? content : String(content ?? '');
+
+      const lower = String(name).toLowerCase();
+      if (lower.endsWith('.json')) {
+        try {
+          const parsed = JSON.parse(raw);
+          setEditorValue(JSON.stringify(parsed, null, 2));
+        } catch {
+          setEditorValue(raw);
+          setEditorNotice('This file is not valid JSON. Showing raw contents.');
+        }
+      } else {
+        setEditorValue(raw);
+      }
+    } catch (err) {
+      setEditorError(err?.message || 'failed_to_load_file');
+    } finally {
+      setEditorLoading(false);
+    }
+  };
+
+  const saveEditor = async () => {
+    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!editorApiFile) return;
+
+    setEditorSaving(true);
+    setEditorError('');
+
+    try {
+      const res = await fetch(`${API_BASE}/servers/${serverId}/files/write?file=${encodeURIComponent(editorApiFile)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'text/plain' },
+        body: editorValue ?? ''
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        let msg = text;
+        try {
+          const j = JSON.parse(text);
+          msg = j?.error || j?.message || msg;
+        } catch {
+        }
+        throw new Error(msg || 'failed_to_save_file');
+      }
+
+      setEditorOpen(false);
+      setEditorPath('');
+      setEditorApiFile('');
+      await fetchListing();
+    } catch (err) {
+      setEditorError(err?.message || 'failed_to_save_file');
+    } finally {
+      setEditorSaving(false);
     }
   };
 
   const handleRowClick = (item) => {
     const name = item?.name;
     const isFolder = item?.is_file === false || item?.is_file === 0 || item?.type === 'folder';
+    const isFile = item?.is_file === true || item?.is_file === 1;
+
     if (!name) return;
+
     if (isFolder) {
       setDirectory(joinPath(normalizeUiDirectory(directory), name));
+      return;
+    }
+
+    if (isFile) {
+      openEditor({ name });
     }
   };
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+      <EditorModal
+        isOpen={editorOpen}
+        onClose={() => {
+          if (editorSaving) return;
+          setEditorOpen(false);
+          setEditorError('');
+          setEditorNotice('');
+          setEditorLoading(false);
+        }}
+        path={editorPath}
+        value={editorValue}
+        onChange={setEditorValue}
+        onSave={saveEditor}
+        saving={editorSaving}
+        loading={editorLoading}
+        error={editorError}
+        notice={editorNotice}
+      />
+
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-white">File Manager</h1>

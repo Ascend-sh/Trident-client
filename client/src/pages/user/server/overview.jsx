@@ -684,7 +684,7 @@ export default function ServerOverview() {
                         </div>
 
                         <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
-                            <p className="text-sm font-medium text-white mb-0.5">{formatUptime(metrics.uptime)}</p>
+                            <p className="text-sm font-medium text-white mb-0.5">{(isOffline || !wsReady || !wsAuthed) ? 'Offline' : formatUptime(metrics.uptime)}</p>
                             <p className="text-[10px] text-white/60">Uptime</p>
                         </div>
 
