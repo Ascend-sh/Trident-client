@@ -1,5 +1,6 @@
 import { Folder, File, Ellipsis } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 
 const API_BASE = "/api/v1/client";
@@ -75,6 +76,27 @@ function normalizeDirectory(dir) {
   return s.startsWith("/") ? s : `/${s}`;
 }
 
+const UI_ROOT = '/home/container';
+
+function normalizeUiDirectory(uiDir) {
+  const s = normalizeDirectory(uiDir);
+  if (s === '/' || s === UI_ROOT || s.startsWith(`${UI_ROOT}/`)) return s === '/' ? UI_ROOT : s;
+  return UI_ROOT;
+}
+
+function uiToApiDirectory(uiDir) {
+  const ui = normalizeUiDirectory(uiDir);
+  if (ui === UI_ROOT) return '/';
+  const rest = ui.slice(UI_ROOT.length);
+  return normalizeDirectory(rest);
+}
+
+function apiToUiDirectory(apiDir) {
+  const api = normalizeDirectory(apiDir);
+  if (api === '/') return UI_ROOT;
+  return `${UI_ROOT}${api}`;
+}
+
 function joinPath(dir, name) {
   const base = normalizeDirectory(dir);
   if (base === "/") return `/${name}`;
@@ -105,45 +127,80 @@ export default function ServerFiles() {
   const { id } = useParams();
   const serverId = Number(id);
 
-  const [directory, setDirectory] = useState("/");
+  const [directory, setDirectory] = useState(UI_ROOT);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
+  const menuAnchorRefs = useRef({});
+  const [menuPos, setMenuPos] = useState(null);
 
-  const breadcrumb = useMemo(() => splitBreadcrumb({ dir: directory }), [directory]);
+  const breadcrumb = useMemo(() => {
+    const uiDir = normalizeUiDirectory(directory);
+    const apiDir = uiToApiDirectory(uiDir);
+    return splitBreadcrumb({ dir: apiDir });
+  }, [directory]);
 
   useEffect(() => {
+    const onDocClick = () => {
+      setOpenMenuIndex(null);
+      setMenuPos(null);
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setOpenMenuIndex(null);
+        setMenuPos(null);
+      }
+    };
+
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  const fetchListing = async () => {
     if (!Number.isInteger(serverId) || serverId <= 0) return;
 
     setLoading(true);
     setError("");
-    request(`/servers/${serverId}/files/list?directory=${encodeURIComponent(directory)}`)
-      .then((res) => {
-        const files = Array.isArray(res?.files) ? res.files : [];
-        const sorted = files
-          .slice()
-          .sort((a, b) => {
-            const aFolder = a?.is_file ? 0 : 1;
-            const bFolder = b?.is_file ? 0 : 1;
-            if (aFolder !== bFolder) return bFolder - aFolder;
-            const an = String(a?.name || '').toLowerCase();
-            const bn = String(b?.name || '').toLowerCase();
-            return an.localeCompare(bn);
-          });
-        setItems(sorted);
-        setSelectedRows([]);
-        setOpenMenuIndex(null);
-      })
-      .catch((err) => {
-        setItems([]);
-        setSelectedRows([]);
-        setOpenMenuIndex(null);
-        setError(err?.message || "failed_to_load_files");
-      })
-      .finally(() => setLoading(false));
+    const apiDir = uiToApiDirectory(directory);
+
+    try {
+      const res = await request(`/servers/${serverId}/files/list?directory=${encodeURIComponent(apiDir)}`);
+      const files = Array.isArray(res?.files) ? res.files : [];
+      const sorted = files
+        .slice()
+        .sort((a, b) => {
+          const aFolder = a?.is_file ? 0 : 1;
+          const bFolder = b?.is_file ? 0 : 1;
+          if (aFolder !== bFolder) return bFolder - aFolder;
+          const an = String(a?.name || '').toLowerCase();
+          const bn = String(b?.name || '').toLowerCase();
+          return an.localeCompare(bn);
+        });
+      setItems(sorted);
+      setSelectedRows([]);
+      setOpenMenuIndex(null);
+      setMenuPos(null);
+    } catch (err) {
+      setItems([]);
+      setSelectedRows([]);
+      setOpenMenuIndex(null);
+      setMenuPos(null);
+      setError(err?.message || "failed_to_load_files");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchListing();
   }, [serverId, directory]);
 
   const toggleSelectAll = () => {
@@ -162,12 +219,39 @@ export default function ServerFiles() {
     }
   };
 
+  const deleteFilesAction = async ({ rowIndex } = {}) => {
+    if (!Number.isInteger(serverId) || serverId <= 0) return;
+
+    const root = uiToApiDirectory(directory);
+
+    const selectedNames = selectedRows
+      .map(i => items?.[i]?.name)
+      .filter(Boolean);
+
+    const rowName = typeof rowIndex === 'number' ? items?.[rowIndex]?.name : null;
+
+    const filesToDelete = selectedNames.length
+      ? selectedNames
+      : rowName
+      ? [rowName]
+      : [];
+
+    if (!filesToDelete.length) return;
+
+    try {
+      await request(`/servers/${serverId}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
+      await fetchListing();
+    } catch (err) {
+      setError(err?.message || 'failed_to_delete_files');
+    }
+  };
+
   const handleRowClick = (item) => {
     const name = item?.name;
     const isFolder = item?.is_file === false || item?.is_file === 0 || item?.type === 'folder';
     if (!name) return;
     if (isFolder) {
-      setDirectory(joinPath(directory, name));
+      setDirectory(joinPath(normalizeUiDirectory(directory), name));
     }
   };
 
@@ -200,7 +284,7 @@ export default function ServerFiles() {
               <div key={`${c.path}-${idx}`} className="flex items-center gap-1">
                 <span className="text-white/30">/</span>
                 <button
-                  onClick={() => setDirectory(c.path)}
+                  onClick={() => setDirectory(apiToUiDirectory(c.path))}
                   className={isLast ? 'text-white cursor-default' : 'text-white/40 hover:text-white/70 transition-colors duration-200 cursor-pointer'}
                   disabled={isLast}
                 >
@@ -219,7 +303,7 @@ export default function ServerFiles() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/10">
@@ -291,19 +375,37 @@ export default function ServerFiles() {
                 <td className="px-4 py-4 text-right">
                   <div className="relative">
                     <button
+                      ref={(el) => {
+                        if (el) menuAnchorRefs.current[idx] = el;
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenMenuIndex(openMenuIndex === idx ? null : idx);
+
+                        const next = openMenuIndex === idx ? null : idx;
+                        setOpenMenuIndex(next);
+
+                        if (next === null) {
+                          setMenuPos(null);
+                          return;
+                        }
+
+                        const el = menuAnchorRefs.current[idx];
+                        if (!el) return;
+                        const rect = el.getBoundingClientRect();
+                        setMenuPos({
+                          top: rect.bottom + 6,
+                          right: window.innerWidth - rect.right
+                        });
                       }}
                       className="p-1.5 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer inline-flex items-center justify-center"
                     >
                       <Ellipsis size={16} className="text-white/60" />
                     </button>
 
-                    {openMenuIndex === idx && (
+                    {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
                       <div
-                        className="absolute right-0 mt-1 w-36 rounded-md border border-white/10 z-[9999]"
-                        style={{ backgroundColor: '#27272a' }}
+                        className="fixed w-36 rounded-md border border-white/10 z-[99999]"
+                        style={{ backgroundColor: '#27272a', top: menuPos.top, right: menuPos.right }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="py-1.5 px-1">
@@ -311,6 +413,7 @@ export default function ServerFiles() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuIndex(null);
+                              setMenuPos(null);
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
                           >
@@ -320,6 +423,7 @@ export default function ServerFiles() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuIndex(null);
+                              setMenuPos(null);
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
                           >
@@ -329,6 +433,7 @@ export default function ServerFiles() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuIndex(null);
+                              setMenuPos(null);
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
                           >
@@ -338,6 +443,7 @@ export default function ServerFiles() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuIndex(null);
+                              setMenuPos(null);
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
                           >
@@ -347,14 +453,15 @@ export default function ServerFiles() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenMenuIndex(null);
+                              deleteFilesAction({ rowIndex: idx });
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
                           >
                             Delete
                           </button>
                         </div>
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 </td>

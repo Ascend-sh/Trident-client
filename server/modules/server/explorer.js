@@ -58,3 +58,21 @@ export async function writeFileContents({ identifier, file, content }) {
 
   return null;
 }
+
+export async function deleteFiles({ identifier, root = '/', files = [] }) {
+  const id = String(identifier ?? '').trim();
+  if (!id) throw new Error('missing_identifier');
+
+  const r = toPath(root, '/');
+  const list = Array.isArray(files) ? files.map(f => String(f ?? '').trim()).filter(Boolean) : [];
+  if (!list.length) throw new Error('missing_files');
+
+  await pteroClientRequest({
+    path: `/api/client/servers/${id}/files/delete`,
+    method: 'POST',
+    body: { root: r, files: list },
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  return null;
+}

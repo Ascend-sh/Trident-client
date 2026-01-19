@@ -8,7 +8,7 @@ import { getPteroServerWebsocket } from './server/websocket.js';
 import { connectServerConsole } from './server/console.js';
 import { sendPowerSignal } from './server/state.js';
 import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
-import { listDirectory, readFileContents, writeFileContents } from './server/explorer.js';
+import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel } from './server/explorer.js';
 
 const serverLogger = getLogger('server');
 
@@ -550,6 +550,27 @@ export async function writeServerFile({ userId, serverId, file, content }) {
   if (!identifier) throw new Error('missing_identifier');
 
   await writeFileContents({ identifier, file, content });
+  return { ok: true };
+}
+
+export async function deleteServerFiles({ userId, serverId, root = '/', files = [] }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await deleteServerFilesInPanel({ identifier, root, files });
   return { ok: true };
 }
 

@@ -9,7 +9,7 @@ import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
-import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile } from "../modules/server.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 
 const wsLogger = getLogger('ws');
@@ -837,6 +837,51 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'server_files_write_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/delete", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const root = typeof body?.root === 'string' ? body.root : '/';
+    const files = Array.isArray(body?.files) ? body.files : [];
+
+    if (!files.length) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await deleteServerFiles({ userId: res.body.user.id, serverId: id, root, files });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_delete_failed', set.status));
     }
   })
   .post("/servers/:id/power", async ({ request, set, params }) => {
