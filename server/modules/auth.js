@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { sessions, users } from '../db/schema.js';
 import { ensureWallet } from '../utils/economy.js';
@@ -204,14 +204,25 @@ export async function register({ username, email, password }) {
 }
 
 export async function login({ email, password }) {
-  const cleanEmail = normalizeEmail(email);
+  const identifier = String(email ?? '').trim();
   const cleanPassword = String(password ?? '');
 
-  if (!cleanEmail || !cleanPassword) {
+  if (!identifier || !cleanPassword) {
     return badRequest('invalid_input');
   }
 
-  const found = await db.select().from(users).where(eq(users.email, cleanEmail)).limit(1);
+  const cleanIdentifier = identifier.includes('@') ? normalizeEmail(identifier) : identifier;
+
+  const found = await db
+    .select()
+    .from(users)
+    .where(
+      or(
+        eq(users.email, cleanIdentifier),
+        eq(users.username, cleanIdentifier)
+      )
+    )
+    .limit(1);
   const user = found[0];
 
   if (!user) {
@@ -223,7 +234,7 @@ export async function login({ email, password }) {
     return unauthorized('invalid_credentials');
   }
 
-  const panelIsAdmin = await fetchPteroAdminByEmail(cleanEmail);
+  const panelIsAdmin = await fetchPteroAdminByEmail(user.email);
   if (panelIsAdmin !== null && Boolean(user.isAdmin) !== panelIsAdmin) {
     await db.update(users).set({ isAdmin: panelIsAdmin }).where(eq(users.id, user.id));
     user.isAdmin = panelIsAdmin;

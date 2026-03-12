@@ -9,7 +9,7 @@ import AdminSoftware from "./pages/admin/software";
 import AdminLocations from "./pages/admin/locations";
 import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
-import Sidebar from "./components/navigation/sidebar";
+import Navbar from "./components/navigation/navbar.jsx";
 import ServerNav from "./components/navigation/server-nav";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
@@ -30,11 +30,10 @@ const AppLayout = () => {
   const isServerRoute = location.pathname.startsWith('/app/server');
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#18181b" }}>
+    <div className="flex flex-col h-screen w-full bg-surface text-brand">
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
-      {isServerRoute ? <ServerNav /> : <Sidebar />}
+      {isServerRoute ? <ServerNav /> : <Navbar />}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>

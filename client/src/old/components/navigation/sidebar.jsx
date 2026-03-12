@@ -30,8 +30,8 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#18181b" }}>
-            <div className="h-14 px-5 border-b border-white/10 flex items-center justify-between">
+        <aside className="w-64 h-screen flex flex-col border-r border-surface-light bg-surface">
+            <div className="h-14 px-5 border-b border-surface-light flex items-center justify-between">
                 <img src="/Logo.png" alt="Torqen" className="h-8" />
                 <button className="text-white/60 hover:text-white transition-colors duration-200">
                     <PanelLeft size={20} />
@@ -53,10 +53,10 @@ const Sidebar = () => {
                                     ? "text-white"
                                     : "text-white/60 hover:text-white"
                             }`}
-                            style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                            style={location.pathname === item.path ? { backgroundColor: "var(--color-surface-light)" } : { backgroundColor: "transparent" }}
                             onMouseEnter={(e) => {
                                 if (location.pathname !== item.path) {
-                                    e.currentTarget.style.backgroundColor = "#27272a";
+                                    e.currentTarget.style.backgroundColor = "var(--color-surface-light)";
                                 }
                             }}
                             onMouseLeave={(e) => {
@@ -79,10 +79,10 @@ const Sidebar = () => {
                                 ? "text-white"
                                 : "text-white/60 hover:text-white"
                         }`}
-                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "var(--color-surface-light)" } : { backgroundColor: "transparent" }}
                         onMouseEnter={(e) => {
                             if (!location.pathname.startsWith("/app/account")) {
-                                e.currentTarget.style.backgroundColor = "#27272a";
+                                e.currentTarget.style.backgroundColor = "var(--color-surface-light)";
                             }
                         }}
                         onMouseLeave={(e) => {
@@ -109,10 +109,10 @@ const Sidebar = () => {
                                                 ? "text-white"
                                                 : "text-white/60 hover:text-white"
                                         }`}
-                                        style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                        style={location.pathname === item.path ? { backgroundColor: "var(--color-surface-light)" } : { backgroundColor: "transparent" }}
                                         onMouseEnter={(e) => {
                                             if (location.pathname !== item.path) {
-                                                e.currentTarget.style.backgroundColor = "#27272a";
+                                                e.currentTarget.style.backgroundColor = "var(--color-surface-light)";
                                             }
                                         }}
                                         onMouseLeave={(e) => {
@@ -146,10 +146,10 @@ const Sidebar = () => {
                                             ? "text-white"
                                             : "text-white/60 hover:text-white"
                                     }`}
-                                    style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                    style={location.pathname === item.path ? { backgroundColor: "var(--color-surface-light)" } : { backgroundColor: "transparent" }}
                                     onMouseEnter={(e) => {
                                         if (location.pathname !== item.path) {
-                                            e.currentTarget.style.backgroundColor = "#27272a";
+                                            e.currentTarget.style.backgroundColor = "var(--color-surface-light)";
                                         }
                                     }}
                                     onMouseLeave={(e) => {
@@ -168,7 +168,7 @@ const Sidebar = () => {
             </nav>
 
             <div className="mx-3 mb-3">
-                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-white/10">
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-surface-light">
                     <div className="flex items-center gap-2.5">
                         <Wallet size={15} className="text-white/60" />
                         <span className="text-xs text-white/70 font-medium">Balance</span>
@@ -177,12 +177,12 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            <div className="p-3 border-t border-white/10 relative">
+            <div className="p-3 border-t border-surface-light relative">
                 <button 
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/80 hover:bg-white/5 transition-colors duration-200"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/80 hover:bg-surface-light transition-colors duration-200"
                 >
-                    <div className="w-8 h-8 flex items-center justify-center text-sm font-semibold text-black" style={{ backgroundColor: "#FCD34D", borderRadius: "7px" }}>
+                    <div className="w-8 h-8 flex items-center justify-center text-sm font-semibold text-black rounded-md bg-brand">
                         {(user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()}
                     </div>
                     <div className="flex-1 text-left min-w-0 flex flex-col justify-center">
@@ -199,12 +199,11 @@ const Sidebar = () => {
                             onClick={() => setUserMenuOpen(false)}
                         />
                         <div 
-                            className="absolute bottom-0 left-full ml-2 z-50 w-52 rounded-lg border border-white/10 overflow-hidden shadow-xl"
-                            style={{ backgroundColor: "#18181b" }}
+                            className="absolute bottom-0 left-full ml-2 z-50 w-52 rounded-lg border border-surface-light overflow-hidden shadow-xl bg-surface"
                         >
-                            <div className="px-3 py-2 border-b border-white/10">
+                            <div className="px-3 py-2 border-b border-surface-light">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold text-black" style={{ backgroundColor: "#FCD34D", borderRadius: "6px" }}>
+                                    <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold text-black rounded-md bg-brand">
                                         {(user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -218,7 +217,7 @@ const Sidebar = () => {
                                 <Link
                                     to="/app/account/settings"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors duration-200"
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-surface-light transition-colors duration-200"
                                 >
                                     <Settings size={14} />
                                     <span className="text-xs font-medium">Settings</span>
