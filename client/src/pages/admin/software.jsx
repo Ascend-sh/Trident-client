@@ -146,7 +146,7 @@ export default function AdminSoftware() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+    <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -218,7 +218,7 @@ export default function AdminSoftware() {
                           onClick={() => handleAddNest(nest.id)}
                           disabled={addingNestId === nest.id || importedNestIds.has(nest.id)}
                           className="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
-                          style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                          style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
                         >
                           {addingNestId === nest.id ? (
                             <>
@@ -260,7 +260,7 @@ export default function AdminSoftware() {
               <button
                 onClick={() => setActiveTab("available")}
                 className="px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center gap-2 mx-auto"
-                style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
               >
                 <Plus size={14} />
                 Browse Available Nests

@@ -38,7 +38,7 @@ export default function EditorModal({
             onClick={onSave}
             disabled={saving || loading}
             className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-            style={{ backgroundColor: '#14b8a6', color: '#18181b' }}
+            style={{ backgroundColor: '#E0FE58', color: '#18181b' }}
           >
             {saving ? (
               <>
@@ -67,7 +67,7 @@ export default function EditorModal({
         </div>
       ) : null}
 
-      <div className="relative rounded-lg border border-white/10 overflow-hidden" style={{ backgroundColor: '#18181b' }}>
+      <div className="relative rounded-lg border border-white/10 overflow-hidden" style={{ backgroundColor: '#1F1F1E' }}>
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
             <div className="h-6 w-6 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />

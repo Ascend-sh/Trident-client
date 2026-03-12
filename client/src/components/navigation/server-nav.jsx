@@ -27,7 +27,7 @@ export default function ServerNav() {
     ];
 
     return (
-        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#18181b" }}>
+        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#1F1F1E" }}>
             <div className="h-14 px-5 border-b border-white/10 flex items-center justify-between">
                 <img src="/Logo.png" alt="Torqen" className="h-8" />
                 <button className="text-white/60 hover:text-white transition-colors duration-200">
@@ -55,7 +55,7 @@ export default function ServerNav() {
                                     ? "text-white"
                                     : "text-white/60 hover:text-white hover:bg-white/5"
                             }`}
-                            style={location.pathname === link.path ? { backgroundColor: "#27272a" } : {}}
+                            style={location.pathname === link.path ? { backgroundColor: "#40413F" } : {}}
                         >
                             <Icon size={18} className="flex-shrink-0" />
                             <span className="text-sm font-medium leading-none">{link.label}</span>
@@ -97,7 +97,7 @@ export default function ServerNav() {
                         />
                         <div 
                             className="absolute bottom-0 left-full ml-2 z-50 w-52 rounded-lg border border-white/10 overflow-hidden shadow-xl"
-                            style={{ backgroundColor: "#18181b" }}
+                            style={{ backgroundColor: "#1F1F1E" }}
                         >
                             <div className="px-3 py-2 border-b border-white/10">
                                 <div className="flex items-center gap-2">

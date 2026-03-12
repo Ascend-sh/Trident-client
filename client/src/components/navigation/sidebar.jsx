@@ -1,17 +1,30 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, User, HeadphonesIcon, MoreVertical, PanelLeft, Wallet, ChevronDown, Settings, Shield, Palette, Earth, FileText, Package, LogOut } from "lucide-react";
-import { useState } from "react";
+import { LayoutDashboard, ShoppingCart, User, HeadphonesIcon, MoreVertical, PanelLeft, Wallet, ChevronDown, Settings, Shield, Palette, Earth, FileText, Package, LogOut, Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { logout, useAuth } from "../../context/auth-context.jsx";
+import SearchModal from "../modals/search-modal";
 
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [accountOpen, setAccountOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [searchModalOpen, setSearchModalOpen] = useState(false);
     const { user, balance, currencyName, refresh } = useAuth();
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setSearchModalOpen(true);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const navItems = [
-        { path: "/app/home", label: "Dashboard", icon: LayoutDashboard },
         { path: "/app/store", label: "Store", icon: ShoppingCart },
         { path: "/app/support", label: "Support", icon: HeadphonesIcon },
     ];
@@ -30,7 +43,7 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#18181b" }}>
+        <aside className="w-64 h-screen flex flex-col border-r border-white/10" style={{ backgroundColor: "#1F1F1E" }}>
             <div className="h-14 px-5 border-b border-white/10 flex items-center justify-between">
                 <img src="/Logo.png" alt="Torqen" className="h-8" />
                 <button className="text-white/60 hover:text-white transition-colors duration-200">
@@ -38,7 +51,53 @@ const Sidebar = () => {
                 </button>
             </div>
 
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <Link
+                    to="/app/home"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+                        location.pathname === "/app/home"
+                            ? "text-white"
+                            : "text-white/60 hover:text-white"
+                    }`}
+                    style={location.pathname === "/app/home" ? { backgroundColor: "#40413F" } : { backgroundColor: "transparent" }}
+                    onMouseEnter={(e) => {
+                        if (location.pathname !== "/app/home") {
+                            e.currentTarget.style.backgroundColor = "#40413F";
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (location.pathname !== "/app/home") {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                        }
+                    }}
+                >
+                    <LayoutDashboard size={18} className="flex-shrink-0" />
+                    <span className="text-sm font-medium leading-none">Home</span>
+                </Link>
+
+                <button
+                    onClick={() => setSearchModalOpen(true)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white transition-colors duration-200 mb-3"
+                    style={{ backgroundColor: "transparent" }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#40413F";
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                >
+                    <Search size={18} className="flex-shrink-0" />
+                    <span className="text-sm font-medium leading-none flex-1 text-left">Search</span>
+                    <div className="flex items-center gap-1">
+                        <kbd className="px-1 py-0.5 text-[9px] rounded border border-white/10 bg-white/5 text-white/40">
+                            ⌘
+                        </kbd>
+                        <kbd className="px-1 py-0.5 text-[9px] rounded border border-white/10 bg-white/5 text-white/40">
+                            K
+                        </kbd>
+                    </div>
+                </button>
+
                 <div className="px-3 mb-3">
                     <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">General</p>
                 </div>
@@ -53,10 +112,10 @@ const Sidebar = () => {
                                     ? "text-white"
                                     : "text-white/60 hover:text-white"
                             }`}
-                            style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                            style={location.pathname === item.path ? { backgroundColor: "#40413F" } : { backgroundColor: "transparent" }}
                             onMouseEnter={(e) => {
                                 if (location.pathname !== item.path) {
-                                    e.currentTarget.style.backgroundColor = "#27272a";
+                                    e.currentTarget.style.backgroundColor = "#40413F";
                                 }
                             }}
                             onMouseLeave={(e) => {
@@ -79,10 +138,10 @@ const Sidebar = () => {
                                 ? "text-white"
                                 : "text-white/60 hover:text-white"
                         }`}
-                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                        style={location.pathname.startsWith("/app/account") ? { backgroundColor: "#40413F" } : { backgroundColor: "transparent" }}
                         onMouseEnter={(e) => {
                             if (!location.pathname.startsWith("/app/account")) {
-                                e.currentTarget.style.backgroundColor = "#27272a";
+                                e.currentTarget.style.backgroundColor = "#40413F";
                             }
                         }}
                         onMouseLeave={(e) => {
@@ -109,10 +168,10 @@ const Sidebar = () => {
                                                 ? "text-white"
                                                 : "text-white/60 hover:text-white"
                                         }`}
-                                        style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                        style={location.pathname === item.path ? { backgroundColor: "#40413F" } : { backgroundColor: "transparent" }}
                                         onMouseEnter={(e) => {
                                             if (location.pathname !== item.path) {
-                                                e.currentTarget.style.backgroundColor = "#27272a";
+                                                e.currentTarget.style.backgroundColor = "#40413F";
                                             }
                                         }}
                                         onMouseLeave={(e) => {
@@ -146,10 +205,10 @@ const Sidebar = () => {
                                             ? "text-white"
                                             : "text-white/60 hover:text-white"
                                     }`}
-                                    style={location.pathname === item.path ? { backgroundColor: "#27272a" } : { backgroundColor: "transparent" }}
+                                    style={location.pathname === item.path ? { backgroundColor: "#40413F" } : { backgroundColor: "transparent" }}
                                     onMouseEnter={(e) => {
                                         if (location.pathname !== item.path) {
-                                            e.currentTarget.style.backgroundColor = "#27272a";
+                                            e.currentTarget.style.backgroundColor = "#40413F";
                                         }
                                     }}
                                     onMouseLeave={(e) => {
@@ -200,7 +259,7 @@ const Sidebar = () => {
                         />
                         <div 
                             className="absolute bottom-0 left-full ml-2 z-50 w-52 rounded-lg border border-white/10 overflow-hidden shadow-xl"
-                            style={{ backgroundColor: "#18181b" }}
+                            style={{ backgroundColor: "#1F1F1E" }}
                         >
                             <div className="px-3 py-2 border-b border-white/10">
                                 <div className="flex items-center gap-2">
@@ -244,6 +303,11 @@ const Sidebar = () => {
                     </>
                 )}
             </div>
+
+            <SearchModal 
+                isOpen={searchModalOpen}
+                onClose={() => setSearchModalOpen(false)}
+            />
         </aside>
     );
 };

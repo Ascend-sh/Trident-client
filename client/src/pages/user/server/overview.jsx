@@ -72,7 +72,8 @@ const chartOptions = {
         },
         tooltip: {
             enabled: true,
-            backgroundColor: '#18181b',
+            backgroundColor: '#121212',
+            borderRadius: '0.75rem',
             padding: 6,
             bodyColor: '#fff',
             titleColor: '#fff',
@@ -596,7 +597,7 @@ export default function ServerOverview() {
                             onClick={() => setPower('start')}
                             disabled={!serverId || powerActionLoading || !canStart || isStarting}
                             className="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                            style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
                         >
                             {powerActionLoading === 'start' || isStarting ? (
                                 <>
@@ -840,7 +841,7 @@ export default function ServerOverview() {
                         By clicking "Accept EULA", you agree to Mojang's End User License Agreement.
                     </p>
                     <p className="text-xs text-white/50 mb-6">
-                        Read the full EULA at: <a href="https://account.mojang.com/documents/minecraft_eula" target="_blank" rel="noopener noreferrer" className="text-[#14b8a6] hover:underline">https://account.mojang.com/documents/minecraft_eula</a>
+                        Read the full EULA at: <a href="https://account.mojang.com/documents/minecraft_eula" target="_blank" rel="noopener noreferrer" className="text-[#E0FE58] hover:underline">https://account.mojang.com/documents/minecraft_eula</a>
                     </p>
                     <div className="flex gap-2 justify-end">
                         <button
@@ -858,7 +859,7 @@ export default function ServerOverview() {
                             onClick={acceptEula}
                             disabled={acceptingEula}
                             className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                            style={{ backgroundColor: "#14b8a6" }}
+                            style={{ backgroundColor: "#E0FE58" }}
                         >
                             {acceptingEula ? (
                                 <>

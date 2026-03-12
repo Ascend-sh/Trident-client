@@ -65,13 +65,13 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-    background-color: #14b8a6 !important;
-    border-color: #14b8a6 !important;
+    background-color: #E0FE58 !important;
+    border-color: #E0FE58 !important;
 }
 
 input[type="checkbox"]:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+    box-shadow: 0 0 0 2px rgba(224, 254, 88, 0.2);
 }
 
 @keyframes fadeIn {

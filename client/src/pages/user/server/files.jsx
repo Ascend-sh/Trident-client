@@ -391,7 +391,7 @@ export default function ServerFiles() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+    <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
       <EditorModal
         isOpen={editorOpen}
         onClose={() => {
@@ -423,7 +423,7 @@ export default function ServerFiles() {
             </button>
             <button
               className="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer"
-              style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+              style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
             >
               Upload
             </button>
@@ -466,7 +466,7 @@ export default function ServerFiles() {
                   type="checkbox"
                   checked={selectedRows.length === items.length && items.length > 0}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0 cursor-pointer"
+                  className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#E0FE58] focus:ring-[#E0FE58] focus:ring-offset-0 cursor-pointer"
                 />
               </th>
               <th className="pl-2 pr-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
@@ -507,7 +507,7 @@ export default function ServerFiles() {
                       e.stopPropagation();
                       toggleSelectRow(idx);
                     }}
-                    className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0 cursor-pointer"
+                    className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#E0FE58] focus:ring-[#E0FE58] focus:ring-offset-0 cursor-pointer"
                   />
                 </td>
                 <td className="pl-2 pr-4 py-4">
@@ -559,7 +559,7 @@ export default function ServerFiles() {
                     {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
                       <div
                         className="fixed w-36 rounded-md border border-white/10 z-[99999]"
-                        style={{ backgroundColor: '#27272a', top: menuPos.top, right: menuPos.right }}
+                        style={{ backgroundColor: '#40413F', top: menuPos.top, right: menuPos.right }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="py-1.5 px-1">

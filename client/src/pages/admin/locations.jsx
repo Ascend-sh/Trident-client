@@ -167,7 +167,7 @@ export default function AdminLocations() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+    <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
@@ -177,7 +177,7 @@ export default function AdminLocations() {
           <button 
             onClick={() => setSetupModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
-            style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+            style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
           >
             <Plus size={15} />
             Setup Locations
@@ -332,7 +332,7 @@ export default function AdminLocations() {
                     onClick={() => handleImport(location.id)}
                     disabled={importingLocationId === location.id || importedLocationIds.has(location.id)}
                     className="px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
-                    style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                    style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
                   >
                     {importingLocationId === location.id ? (
                       <>

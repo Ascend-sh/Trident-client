@@ -352,7 +352,7 @@ export default function Servers() {
         };
     }, [servers]);
     return (
-        <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+        <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -362,7 +362,7 @@ export default function Servers() {
                     <button 
                         onClick={() => setIsCreateModalOpen(true)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer" 
-                        style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+                        style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
                     >
                         <Plus size={15} />
                         Create Server
@@ -633,7 +633,7 @@ export default function Servers() {
                                                         {openActionMenuId === server.id && (
                                                             <div 
                                                                 className="absolute right-0 mt-1 w-36 rounded-md border border-white/10 z-[9999]"
-                                                                style={{ backgroundColor: '#27272a' }}
+                                                                style={{ backgroundColor: '#40413F' }}
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <div className="py-1.5 px-1">
@@ -771,7 +771,7 @@ export default function Servers() {
                                         ? 'text-black' 
                                         : 'bg-white/10 text-white/50'
                                 }`}
-                                style={step <= createStep ? { backgroundColor: "#14b8a6" } : {}}
+                                style={step <= createStep ? { backgroundColor: "#E0FE58" } : {}}
                                 >
                                     {step < createStep ? <Check size={14} /> : step}
                                 </div>
@@ -779,7 +779,7 @@ export default function Servers() {
                                     <div className={`flex-1 h-0.5 mx-2 transition-all duration-200 ${
                                         step < createStep ? '' : 'bg-white/10'
                                     }`}
-                                    style={step < createStep ? { backgroundColor: "#14b8a6" } : {}}
+                                    style={step < createStep ? { backgroundColor: "#E0FE58" } : {}}
                                     />
                                 )}
                             </div>
@@ -829,7 +829,7 @@ export default function Servers() {
                                 onClick={handleNext}
                                 disabled={!serverData.name}
                                 className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ backgroundColor: "#14b8a6" }}
+                                style={{ backgroundColor: "#E0FE58" }}
                             >
                                 Next
                             </button>
@@ -863,7 +863,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
                                         }`}
-                                        style={serverData.location?.id === location.id ? { borderColor: "#14b8a6" } : {}}
+                                        style={serverData.location?.id === location.id ? { borderColor: "#E0FE58" } : {}}
                                     >
                                         <div className="flex items-center gap-2.5">
                                             <img 
@@ -889,7 +889,7 @@ export default function Servers() {
                                 onClick={handleNext}
                                 disabled={!serverData.location}
                                 className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ backgroundColor: "#14b8a6" }}
+                                style={{ backgroundColor: "#E0FE58" }}
                             >
                                 Next
                             </button>
@@ -923,7 +923,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
                                         }`}
-                                        style={serverData.software?.id === egg.id ? { borderColor: "#14b8a6" } : {}}
+                                        style={serverData.software?.id === egg.id ? { borderColor: "#E0FE58" } : {}}
                                     >
                                         <div>
                                             <h3 className="text-sm font-medium text-white">{egg.name}</h3>
@@ -944,7 +944,7 @@ export default function Servers() {
                                 onClick={handleNext}
                                 disabled={!serverData.software}
                                 className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ backgroundColor: "#14b8a6" }}
+                                style={{ backgroundColor: "#E0FE58" }}
                             >
                                 Next
                             </button>
@@ -1030,7 +1030,7 @@ export default function Servers() {
                                 }}
                                 disabled={creatingServer}
                                 className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
-                                style={{ backgroundColor: "#14b8a6" }}
+                                style={{ backgroundColor: "#E0FE58" }}
                             >
                                 {creatingServer ? (
                                     <>
@@ -1101,7 +1101,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                                         }`}
-                                        style={editData.location?.id === location.id ? { borderColor: "#14b8a6" } : {}}
+                                        style={editData.location?.id === location.id ? { borderColor: "#E0FE58" } : {}}
                                     >
                                         <div className="flex items-center gap-2">
                                             <img 
@@ -1151,7 +1151,7 @@ export default function Servers() {
                                                 ? 'bg-white/10'
                                                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                                         }`}
-                                        style={editData.software?.id === egg.id ? { borderColor: "#14b8a6" } : {}}
+                                        style={editData.software?.id === egg.id ? { borderColor: "#E0FE58" } : {}}
                                     >
                                         <p className="text-white font-medium">{egg.name}</p>
                                         <p className="text-white/50 text-[10px]">{egg.nestName}</p>
@@ -1189,7 +1189,7 @@ export default function Servers() {
                         </button>
                         <button
                             className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90"
-                            style={{ backgroundColor: "#14b8a6" }}
+                            style={{ backgroundColor: "#E0FE58" }}
                         >
                             Save Changes
                         </button>
