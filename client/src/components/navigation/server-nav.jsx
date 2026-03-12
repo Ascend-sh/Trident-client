@@ -47,7 +47,6 @@ export default function ServerNav() {
 
     return (
         <header className="w-full h-16 bg-surface-light border-b border-surface-lighter flex items-center justify-between px-16 sticky top-0 z-50">
-            {/* Left: Branding & Team */}
             <div className="flex items-center gap-6">
                 <Link to="/app/home" className="flex items-center">
                     <img src="/Logo-dark.png" alt="Torqen" className="h-7" />
@@ -61,9 +60,7 @@ export default function ServerNav() {
                 </button>
             </div>
 
-            {/* Right: Server Nav, Exit, Utils, Profile */}
             <div className="flex-1 flex items-center justify-end gap-2">
-                {/* Server Specific Navigation */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[50%] lg:max-w-none">
                     <Link to="/app/home" className="pr-2 mr-2 border-r border-surface-lighter">
                         <Button
@@ -98,7 +95,6 @@ export default function ServerNav() {
 
                 <div className="h-8 w-px bg-surface-lighter mx-2 flex-shrink-0" />
 
-                {/* Utils & Profile */}
                 <div className="flex items-center gap-4 ml-2 flex-shrink-0">
                     <div className="bg-white px-3 py-1 rounded-full border border-surface-lighter text-[10px] font-bold text-brand/70 uppercase tracking-wider">
                         {balance} {currencyName}

@@ -11,6 +11,7 @@ import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
 import Navbar from "./components/navigation/navbar.jsx";
 import ServerNav from "./components/navigation/server-nav";
+import AdminNav from "./components/navigation/admin-nav";
 import Header from "./components/navigation/header";
 import GlobalLoader from "./components/loader/global-loader";
 import { useAuth } from "./context/auth-context.jsx";
@@ -28,11 +29,12 @@ const AppLayout = () => {
   }, [location.pathname, prevPath]);
 
   const isServerRoute = location.pathname.startsWith('/app/server');
+  const isAdminRoute = location.pathname.startsWith('/app/admin');
 
   return (
     <div className="flex flex-col h-screen w-full bg-surface text-brand">
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
-      {isServerRoute ? <ServerNav /> : <Navbar />}
+      {isAdminRoute ? <AdminNav /> : isServerRoute ? <ServerNav /> : <Navbar />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto">
           <Outlet />

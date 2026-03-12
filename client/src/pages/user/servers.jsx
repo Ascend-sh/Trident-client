@@ -374,7 +374,6 @@ export default function Servers() {
                 </Button>
             </div>
 
-            {/* Overview Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-2 border border-surface-lighter rounded-lg p-5 flex flex-col justify-between min-h-fit">
                     <h2 className="text-[16px] font-bold text-brand mb-4">Overview</h2>
@@ -462,7 +461,6 @@ export default function Servers() {
                 </div>
             </div>
 
-            {/* Server List Section */}
             <div className="mt-8">
                 <div className="flex items-center justify-between gap-6 mb-6">
                     <div className="flex items-center gap-2">
@@ -478,22 +476,24 @@ export default function Servers() {
                         </button>
                         <button
                             onClick={() => setActiveFilter('online')}
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
                                 activeFilter === 'online' 
                                     ? 'bg-surface-highlight border border-surface-lighter text-brand' 
                                     : 'text-brand/30 hover:text-brand/60 hover:bg-surface-lighter'
                             }`}
                         >
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                             Running
                         </button>
                         <button
                             onClick={() => setActiveFilter('offline')}
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
                                 activeFilter === 'offline' 
                                     ? 'bg-surface-highlight border border-surface-lighter text-brand' 
                                     : 'text-brand/30 hover:text-brand/60 hover:bg-surface-lighter'
                             }`}
                         >
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                             Stopped
                         </button>
                     </div>
@@ -512,7 +512,6 @@ export default function Servers() {
 
                 <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
                     <div className="w-full">
-                        {/* Table Headers - Positioned on the gray parent card */}
                         <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr] px-6 py-3">
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Address</span>
@@ -520,8 +519,6 @@ export default function Servers() {
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Status</span>
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
                         </div>
-
-                        {/* White Inner Card for rows or empty state */}
                         {(() => {
                             const q = (searchQuery || '').trim().toLowerCase();
                             let filtered = servers;
@@ -663,6 +660,366 @@ export default function Servers() {
                     </div>
                 </div>
             </div>
+            <CenterModal
+                isOpen={isCreateModalOpen}
+                onClose={handleCloseModal}
+                maxWidth="max-w-2xl"
+            >
+                <div className="p-6">
+                    <h2 className="text-[16px] font-bold text-brand mb-6">Create Server</h2>
+                    
+                    <div className="mb-8">
+                        <div className="flex items-center gap-2 mb-3">
+                            {[1, 2, 3, 4].map((step) => (
+                                <div key={step} className="flex items-center flex-1">
+                                    <div className={`flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold transition-all duration-200 ${
+                                        step < createStep 
+                                            ? 'bg-brand text-surface' 
+                                            : step === createStep 
+                                            ? 'bg-brand text-surface' 
+                                            : 'bg-surface-light border border-surface-lighter text-brand/30'
+                                    }`}>
+                                        {step < createStep ? <Check size={12} strokeWidth={3} /> : step}
+                                    </div>
+                                    {step < 4 && (
+                                        <div className={`flex-1 h-[1px] mx-2 ${
+                                            step < createStep ? 'bg-brand' : 'bg-surface-lighter'
+                                        }`} />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">
+                            Step {createStep} of 4 · {
+                                createStep === 1 ? 'Server Details' :
+                                createStep === 2 ? 'Location' :
+                                createStep === 3 ? 'Software' :
+                                'Confirm'
+                            }
+                        </p>
+                    </div>
+
+                    {createStep === 1 && (
+                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Server Name</label>
+                                <input
+                                    type="text"
+                                    value={serverData.name}
+                                    onChange={(e) => setServerData({ ...serverData, name: e.target.value })}
+                                    placeholder="e.g. My Vanilla Survival"
+                                    className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Description</label>
+                                <textarea
+                                    value={serverData.description}
+                                    onChange={(e) => setServerData({ ...serverData, description: e.target.value })}
+                                    placeholder="Optional description..."
+                                    rows={3}
+                                    className="w-full px-4 py-3 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all resize-none"
+                                />
+                            </div>
+                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleNext}
+                                    disabled={!serverData.name}
+                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {createStep === 2 && (
+                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
+                            {loadingLocations ? (
+                                <div className="py-12 text-center">
+                                    <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
+                                    <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">Loading locations...</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {locations.map((loc) => (
+                                        <button
+                                            key={loc.id}
+                                            onClick={() => setServerData({ ...serverData, location: loc })}
+                                            className={`p-4 rounded-md border text-left transition-all cursor-pointer ${
+                                                serverData.location?.id === loc.id
+                                                    ? 'bg-surface-highlight border-brand text-brand shadow-none'
+                                                    : 'bg-surface-light border-surface-lighter text-brand/60 hover:border-brand/20'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <img 
+                                                    src={`https://flagsapi.com/${loc.shortCode}/flat/64.png`} 
+                                                    alt={loc.shortCode} 
+                                                    className="w-6 h-4 rounded-sm object-cover" 
+                                                />
+                                                <span className="text-[12px] font-bold uppercase tracking-tight">{loc.description || loc.shortCode}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+                                <button
+                                    onClick={handleBack}
+                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={handleNext}
+                                    disabled={!serverData.location}
+                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {createStep === 3 && (
+                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
+                            {loadingNests ? (
+                                <div className="py-12 text-center">
+                                    <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
+                                    <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">Loading software...</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {availableEggs.map((egg) => (
+                                        <button
+                                            key={egg.id}
+                                            onClick={() => setServerData({ ...serverData, software: egg })}
+                                            className={`p-4 rounded-md border text-left transition-all cursor-pointer ${
+                                                serverData.software?.id === egg.id
+                                                    ? 'bg-surface-highlight border-brand text-brand shadow-none'
+                                                    : 'bg-surface-light border-surface-lighter text-brand/60 hover:border-brand/20'
+                                            }`}
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[12px] font-bold uppercase tracking-tight">{egg.name}</span>
+                                                <span className="text-[9px] font-bold text-brand/60 uppercase tracking-widest">{egg.nestName}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+                                <button
+                                    onClick={handleBack}
+                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={handleNext}
+                                    disabled={!serverData.software}
+                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {createStep === 4 && (
+                        <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
+                            <div className="bg-surface-light border border-surface-lighter rounded-md p-5 space-y-4">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Server Name</p>
+                                        <p className="text-[12px] font-bold text-brand">{serverData.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Location</p>
+                                        <div className="flex items-center gap-2">
+                                            <img 
+                                                src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`} 
+                                                alt={serverData.location?.shortCode} 
+                                                className="w-5 h-3.5 rounded-sm object-cover" 
+                                            />
+                                            <p className="text-[12px] font-bold text-brand">{serverData.location?.description || serverData.location?.shortCode}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Software</p>
+                                        <p className="text-[12px] font-bold text-brand">{serverData.software?.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Architecture</p>
+                                        <p className="text-[12px] font-bold text-brand">{serverData.software?.nestName}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {createServerError && (
+                                <div className="px-4 py-3 rounded-md bg-red-500/10 border border-red-500/20">
+                                    <p className="text-[11px] font-bold text-red-500">{createServerError}</p>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+                                <button
+                                    onClick={handleBack}
+                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        setCreateServerError("");
+                                        setCreatingServer(true);
+                                        try {
+                                            await request('/create-server', {
+                                                method: 'POST',
+                                                body: {
+                                                    name: serverData.name,
+                                                    description: serverData.description || '',
+                                                    locationId: serverData.location?.id,
+                                                    eggId: serverData.software?.id,
+                                                    dockerImage: serverData.software?.dockerImage,
+                                                    startup: serverData.software?.startup,
+                                                    nestId: serverData.software?.nestId
+                                                }
+                                            });
+                                            await fetchServers();
+                                            await fetchRecentActivity({ retry: true });
+                                            handleCloseModal();
+                                        } catch (err) {
+                                            setCreateServerError(err?.message || 'Failed to create server');
+                                        } finally {
+                                            setCreatingServer(false);
+                                        }
+                                    }}
+                                    disabled={creatingServer}
+                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shadow-none"
+                                >
+                                    {creatingServer ? (
+                                        <>
+                                            <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        'Confirm & Create'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </CenterModal>
+
+            <CenterModal
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                maxWidth="max-w-xl"
+            >
+                <div className="p-6">
+                    <h2 className="text-[16px] font-bold text-brand mb-6">Rename Instance</h2>
+                    <div className="space-y-5">
+                        <div>
+                            <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Instance Name</label>
+                            <input
+                                type="text"
+                                value={editData.name}
+                                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                                placeholder="Enter new name"
+                                className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all"
+                            />
+                        </div>
+                        <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+                            <button
+                                onClick={handleCloseEditModal}
+                                className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await request(`/servers/${editingServer.id}/rename`, {
+                                            method: 'POST',
+                                            body: { name: editData.name }
+                                        });
+                                        await fetchServers();
+                                        handleCloseEditModal();
+                                    } catch (err) {
+                                        console.error('Failed to rename server:', err);
+                                    }
+                                }}
+                                disabled={!editData.name || editData.name === editingServer?.name}
+                                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </CenterModal>
+
+            <CenterModal
+                isOpen={deleteModalOpen}
+                onClose={() => !deletingServer && setDeleteModalOpen(false)}
+                maxWidth="max-w-md"
+            >
+                <div className="p-6">
+                    <h2 className="text-[16px] font-bold text-brand mb-4">Delete Instance</h2>
+                    <p className="text-[12px] font-bold text-brand/60 mb-6">
+                        Are you sure you want to delete <span className="text-brand">"{serverToDelete?.name}"</span>? This action is permanent and cannot be undone.
+                    </p>
+                    {deleteError && (
+                        <div className="px-4 py-3 rounded-md bg-red-500/10 border border-red-500/20 mb-6">
+                            <p className="text-[11px] font-bold text-red-500">{deleteError}</p>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
+                        <button
+                            onClick={() => setDeleteModalOpen(false)}
+                            disabled={deletingServer}
+                            className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={async () => {
+                                setDeletingServer(true);
+                                setDeleteError("");
+                                try {
+                                    await request(`/servers/${serverToDelete?.id}/delete`, { method: 'DELETE' });
+                                    setDeleteModalOpen(false);
+                                    setServerToDelete(null);
+                                    await fetchServers();
+                                    await fetchRecentActivity({ retry: true });
+                                } catch (err) {
+                                    setDeleteError(err?.message || 'Failed to delete server');
+                                } finally {
+                                    setDeletingServer(false);
+                                }
+                            }}
+                            disabled={deletingServer}
+                            className="h-9 px-6 bg-red-500 text-white hover:bg-red-600 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-none"
+                        >
+                            {deletingServer ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete Instance'
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </CenterModal>
         </div>
     );
 }

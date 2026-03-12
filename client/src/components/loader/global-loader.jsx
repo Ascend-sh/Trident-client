@@ -6,9 +6,8 @@ export default function GlobalLoader({ onLoadingComplete }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Progress bar animation
-    const duration = 600; // total duration in ms
-    const interval = 10; // update every 10ms
+    const duration = 600;
+    const interval = 10;
     const step = 100 / (duration / interval);
     
     const progressTimer = setInterval(() => {
@@ -51,7 +50,6 @@ export default function GlobalLoader({ onLoadingComplete }) {
       <div className="flex flex-col items-center w-full max-w-[240px]">
         <img src="/Logo-dark.png" alt="Torqen" className="h-8 mb-8" />
         
-        {/* Progress Bar Container */}
         <div className="w-full h-[2px] bg-brand/5 rounded-full overflow-hidden">
           <div 
             className="h-full bg-brand transition-all duration-150 ease-out"

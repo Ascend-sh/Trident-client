@@ -10,13 +10,17 @@ import {
     ChevronDown,
     LogOut,
     Shield,
-    Settings
+    Settings,
+    LayoutDashboard,
+    Box,
+    MapPin,
+    Undo2
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout, useAuth } from "@/context/auth-context.jsx";
 
-const Navbar = () => {
+const AdminNav = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, balance, currencyName, refresh } = useAuth();
@@ -27,10 +31,9 @@ const Navbar = () => {
     const menuRef = useRef(null);
 
     const navItems = [
-        { path: "/app/home", label: "Servers", icon: HardDrive },
-        { path: "/app/store", label: "Store", icon: ShoppingCart },
-        { path: "/app/support", label: "Support", icon: HeadphonesIcon },
-        { path: "/app/account/settings", label: "Settings", icon: Settings },
+        { path: "/app/admin/overview", label: "Overview", icon: LayoutDashboard },
+        { path: "/app/admin/software", label: "Software", icon: Box },
+        { path: "/app/admin/locations", label: "Locations", icon: MapPin },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -84,13 +87,6 @@ const Navbar = () => {
                 <Link to="/app/home" className="flex items-center">
                     <img src="/Logo-dark.png" alt="Torqen" className="h-7" />
                 </Link>
-                
-                <span className="text-brand/20 font-light text-xl">/</span>
-                
-                <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-surface-lighter transition-colors cursor-pointer group border border-transparent hover:border-surface-lighter">
-                    <span className="text-sm font-medium text-brand/70 group-hover:text-brand">No Instance Selected</span>
-                    <ChevronDown size={14} className="text-brand/40 group-hover:text-brand" />
-                </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -166,16 +162,14 @@ const Navbar = () => {
                                 </div>
 
                                 <div className="p-1">
-                                    {user?.isAdmin && (
-                                        <Link 
-                                            to="/app/admin/overview" 
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group"
-                                        >
-                                            <Shield size={13} className="group-hover:text-brand" />
-                                            <span className="text-[11px] font-bold">Admin Dashboard</span>
-                                        </Link>
-                                    )}
+                                    <Link 
+                                        to="/app/home" 
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group"
+                                    >
+                                        <Undo2 size={13} className="group-hover:text-brand" />
+                                        <span className="text-[11px] font-bold">Exit Admin</span>
+                                    </Link>
                                     
                                     <button
                                         onClick={handleLogout}
@@ -226,4 +220,4 @@ const Navbar = () => {
     );
 };
 
-export default Navbar;
+export default AdminNav;
