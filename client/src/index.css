@@ -66,12 +66,13 @@
 .xterm-viewport,
 .xterm-screen,
 .xterm canvas {
-    background: transparent !important;
+    background: var(--color-brand) !important;
 }
 
 .xterm,
 .xterm * {
     font-family: Consolas, "DejaVu Sans Mono", "Liberation Mono", Menlo, Monaco, monospace !important;
+    font-size: 14px !important;
     letter-spacing: 0 !important;
     font-kerning: none !important;
     font-variant-ligatures: none !important;

@@ -1,8 +1,10 @@
-import { Folder, File, Ellipsis } from "lucide-react";
+import { Folder, File, Ellipsis, Plus, Upload, ChevronRight, Search, FileCode, Trash2, MoreVertical } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 import EditorModal from "../../../components/modals/editor-modal.jsx";
+import { Button } from "@/components/ui/button";
+import ServerNav from "../../../components/navigation/server-nav";
 
 const API_BASE = "/api/v1/client";
 
@@ -131,8 +133,8 @@ function splitBreadcrumb({ base = ['home','container'], dir }) {
 }
 
 export default function ServerFiles() {
-  const { id } = useParams();
-  const serverId = Number(id);
+  const { identifier } = useParams();
+  const [serverInfo, setServerInfo] = useState(null);
 
   const [directory, setDirectory] = useState(UI_ROOT);
   const [items, setItems] = useState([]);
@@ -160,6 +162,16 @@ export default function ServerFiles() {
   }, [directory]);
 
   useEffect(() => {
+    if (!identifier) return;
+    request('/servers')
+      .then((res) => {
+        const found = (res?.servers || []).find((s) => s.identifier === identifier);
+        setServerInfo(found || null);
+      })
+      .catch(() => setServerInfo(null));
+  }, [identifier]);
+
+  useEffect(() => {
     const onDocClick = () => {
       setOpenMenuIndex(null);
       setMenuPos(null);
@@ -181,14 +193,14 @@ export default function ServerFiles() {
   }, []);
 
   const fetchListing = async () => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!serverInfo?.id) return;
 
     setLoading(true);
     setError("");
     const apiDir = uiToApiDirectory(directory);
 
     try {
-      const res = await request(`/servers/${serverId}/files/list?directory=${encodeURIComponent(apiDir)}`);
+      const res = await request(`/servers/${serverInfo.id}/files/list?directory=${encodeURIComponent(apiDir)}`);
       const files = Array.isArray(res?.files) ? res.files : [];
       const sorted = files
         .slice()
@@ -217,7 +229,7 @@ export default function ServerFiles() {
 
   useEffect(() => {
     fetchListing();
-  }, [serverId, directory]);
+  }, [serverInfo?.id, directory]);
 
   const toggleSelectAll = () => {
     if (selectedRows.length === items.length) {
@@ -236,7 +248,7 @@ export default function ServerFiles() {
   };
 
   const deleteFilesAction = async ({ rowIndex } = {}) => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!serverInfo?.id) return;
 
     const root = uiToApiDirectory(directory);
 
@@ -258,7 +270,7 @@ export default function ServerFiles() {
     setLoading(true);
 
     try {
-      await request(`/servers/${serverId}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
+      await request(`/servers/${serverInfo.id}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
       await fetchListing();
     } catch (err) {
       setLoading(false);
@@ -299,7 +311,7 @@ export default function ServerFiles() {
       return;
     }
 
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!serverInfo?.id) return;
 
     const apiDir = uiToApiDirectory(directory);
     const apiFile = joinPath(apiDir, name);
@@ -314,7 +326,7 @@ export default function ServerFiles() {
     setEditorValue('');
 
     try {
-      const content = await request(`/servers/${serverId}/files/contents?file=${encodeURIComponent(apiFile)}`);
+      const content = await request(`/servers/${serverInfo.id}/files/contents?file=${encodeURIComponent(apiFile)}`);
       const raw = typeof content === 'string' ? content : String(content ?? '');
 
       const lower = String(name).toLowerCase();
@@ -337,14 +349,14 @@ export default function ServerFiles() {
   };
 
   const saveEditor = async () => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!serverInfo?.id) return;
     if (!editorApiFile) return;
 
     setEditorSaving(true);
     setEditorError('');
 
     try {
-      const res = await fetch(`${API_BASE}/servers/${serverId}/files/write?file=${encodeURIComponent(editorApiFile)}`, {
+      const res = await fetch(`${API_BASE}/servers/${serverInfo.id}/files/write?file=${encodeURIComponent(editorApiFile)}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'text/plain' },
@@ -391,7 +403,7 @@ export default function ServerFiles() {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#18181b" }}>
+    <div className="bg-surface px-16 py-10 min-h-screen">
       <EditorModal
         isOpen={editorOpen}
         onClose={() => {
@@ -411,219 +423,184 @@ export default function ServerFiles() {
         notice={editorNotice}
       />
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold text-white">File Manager</h1>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-[20px] font-bold text-brand tracking-tight">File Manager</h1>
+            <p className="text-[12px] font-bold text-brand/30 uppercase tracking-widest mt-1">Direct instance filesystem access</p>
+          </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer">
+            <button className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer">
               New File
             </button>
-            <button className="px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer">
+            <button className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer">
               New Folder
             </button>
             <button
-              className="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer"
-              style={{ backgroundColor: "#14b8a6", color: "#18181b" }}
+              className="h-8 px-4 text-[10px] font-bold bg-brand text-surface hover:bg-brand/90 transition-all rounded-md uppercase tracking-widest cursor-pointer shadow-none"
             >
               Upload
             </button>
           </div>
         </div>
 
-        <div className="text-sm font-mono flex items-center gap-1">
+        <ServerNav />
+
+        <div className="flex items-center gap-2 mb-6 bg-surface-light p-2 rounded-lg border border-surface-lighter overflow-x-auto no-scrollbar">
           {breadcrumb.map((c, idx) => {
             const isLast = idx === breadcrumb.length - 1;
             const label = c.label;
             return (
-              <div key={`${c.path}-${idx}`} className="flex items-center gap-1">
-                <span className="text-white/30">/</span>
+              <div key={`${c.path}-${idx}`} className="flex items-center gap-2">
                 <button
                   onClick={() => setDirectory(apiToUiDirectory(c.path))}
-                  className={isLast ? 'text-white cursor-default' : 'text-white/40 hover:text-white/70 transition-colors duration-200 cursor-pointer'}
+                  className={`px-2 py-1 text-[11px] font-bold uppercase tracking-tight transition-all rounded-md ${
+                    isLast 
+                      ? 'text-brand bg-white border border-surface-lighter cursor-default shadow-sm' 
+                      : 'text-brand/40 hover:text-brand hover:bg-white/50 cursor-pointer'
+                  }`}
                   disabled={isLast}
                 >
                   {label}
                 </button>
+                {!isLast && <ChevronRight size={12} className="text-brand/20" />}
               </div>
             );
           })}
-          <span className="text-white/30">/</span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-          <p className="text-sm text-red-200">{error}</p>
+        <div className="mb-6 px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
+          <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{error}</p>
         </div>
       )}
 
-      <div className="overflow-x-auto overflow-y-visible">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="pl-4 pr-2 py-3 text-left w-10">
-                <input
-                  type="checkbox"
-                  checked={selectedRows.length === items.length && items.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0 cursor-pointer"
-                />
-              </th>
-              <th className="pl-2 pr-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Size</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Modified</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
+        <div className="w-full">
+          <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3">
+            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
+            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Size</span>
+            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Modified</span>
+            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
+          </div>
+          <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col divide-y divide-surface-lighter">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-b border-white/10 animate-pulse">
-                  <td className="pl-4 pr-2 py-4 w-10"><div className="h-4 w-4 bg-white/10 rounded" /></td>
-                  <td className="pl-2 pr-4 py-4"><div className="h-3 w-48 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4"><div className="h-3 w-16 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4"><div className="h-3 w-28 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4 text-right"><div className="h-6 w-6 bg-white/10 rounded ml-auto" /></td>
-                </tr>
+                <div key={i} className="h-14 border-b border-surface-lighter animate-pulse bg-brand/[0.01] grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-4 bg-brand/5 rounded" />
+                    <div className="h-3 w-32 bg-brand/5 rounded" />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="h-3 w-16 bg-brand/5 rounded" />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="h-3 w-24 bg-brand/5 rounded" />
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <div className="h-6 w-6 bg-brand/5 rounded" />
+                  </div>
+                </div>
               ))
             ) : items.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="px-4 py-12 text-center text-sm text-white/40">
-                  This folder is empty
-                </td>
-              </tr>
+              <div className="py-12 text-center">
+                <span className="text-[12px] font-bold text-brand/40 italic">This folder is empty</span>
+              </div>
             ) : (
               items.map((item, idx) => (
-              <tr
-                key={idx}
-                onClick={() => handleRowClick(item)}
-                className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer"
-              >
-                <td className="pl-4 pr-2 py-4 w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.includes(idx)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      toggleSelectRow(idx);
-                    }}
-                    className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#14b8a6] focus:ring-[#14b8a6] focus:ring-offset-0 cursor-pointer"
-                  />
-                </td>
-                <td className="pl-2 pr-4 py-4">
-                  <div className="flex items-center gap-2.5">
+                <div
+                  key={idx}
+                  onClick={() => handleRowClick(item)}
+                  className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 hover:bg-surface-light/30 transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
                     {item?.is_file ? (
-                      <File size={16} className="text-white/40 shrink-0" />
+                      <File size={16} className="text-brand/30 shrink-0" />
                     ) : (
-                      <Folder size={16} className="text-white/60 shrink-0" />
+                      <Folder size={16} className="text-brand/50 shrink-0" />
                     )}
-                    <span className="text-sm font-medium text-white">{item?.name || '-'}</span>
+                    <span className="text-[12px] font-bold text-brand truncate tracking-tight">{item?.name || '-'}</span>
                   </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-sm text-white/60">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-sm text-white/60">{formatRelativeTime(item?.modified_at)}</span>
-                </td>
-                <td className="px-4 py-4 text-right">
-                  <div className="relative">
-                    <button
-                      ref={(el) => {
-                        if (el) menuAnchorRefs.current[idx] = el;
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-
-                        const next = openMenuIndex === idx ? null : idx;
-                        setOpenMenuIndex(next);
-
-                        if (next === null) {
-                          setMenuPos(null);
-                          return;
-                        }
-
-                        const el = menuAnchorRefs.current[idx];
-                        if (!el) return;
-                        const rect = el.getBoundingClientRect();
-                        setMenuPos({
-                          top: rect.bottom + 6,
-                          right: window.innerWidth - rect.right
-                        });
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer inline-flex items-center justify-center"
-                    >
-                      <Ellipsis size={16} className="text-white/60" />
-                    </button>
-
-                    {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
-                      <div
-                        className="fixed w-36 rounded-md border border-white/10 z-[99999]"
-                        style={{ backgroundColor: '#27272a', top: menuPos.top, right: menuPos.right }}
-                        onClick={(e) => e.stopPropagation()}
+                  <div className="flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-brand/40 uppercase tracking-widest">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-brand/40 uppercase tracking-widest">{formatRelativeTime(item?.modified_at)}</span>
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <div className="relative">
+                      <button
+                        ref={(el) => {
+                          if (el) menuAnchorRefs.current[idx] = el;
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = openMenuIndex === idx ? null : idx;
+                          setOpenMenuIndex(next);
+                          if (next === null) {
+                            setMenuPos(null);
+                            return;
+                          }
+                          const el = menuAnchorRefs.current[idx];
+                          if (!el) return;
+                          const rect = el.getBoundingClientRect();
+                          setMenuPos({
+                            top: rect.bottom + 6,
+                            right: window.innerWidth - rect.right
+                          });
+                        }}
+                        className="p-1.5 rounded-md hover:bg-surface-lighter text-brand/20 hover:text-brand/60 transition-all cursor-pointer"
                       >
-                        <div className="py-1.5 px-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Rename
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Move
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Permissions
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Archive
-                          </button>
-                          <div className="h-px bg-white/10 my-1"></div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteFilesAction({ rowIndex: idx });
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>,
-                      document.body
-                    )}
+                        <Ellipsis size={14} />
+                      </button>
+
+                      {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
+                        <div
+                          className="fixed w-36 rounded-md border border-surface-lighter shadow-xl z-[99999] overflow-hidden bg-white"
+                          style={{ top: menuPos.top, right: menuPos.right }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="py-1 px-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                            >
+                              Rename
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                            >
+                              Move
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                            >
+                              Permissions
+                            </button>
+                            <div className="h-px bg-surface-lighter my-1"></div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteFilesAction({ rowIndex: idx });
+                              }}
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-50 transition-all rounded-md uppercase tracking-tight"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
+                    </div>
                   </div>
-                </td>
-              </tr>
-            )))
-            }
-          </tbody>
-        </table>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

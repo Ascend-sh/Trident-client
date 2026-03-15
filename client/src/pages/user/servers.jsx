@@ -10,7 +10,8 @@ import {
     Shield,
     Activity,
     Search,
-    Check
+    Check,
+    Earth
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -57,7 +58,8 @@ export default function Servers() {
         name: "",
         description: "",
         location: null,
-        software: null
+        software: null,
+        plan: "free"
     });
     const [locations, setLocations] = useState([]);
     const [nests, setNests] = useState([]);
@@ -146,7 +148,7 @@ export default function Servers() {
     const handleCloseModal = () => {
         setIsCreateModalOpen(false);
         setCreateStep(1);
-        setServerData({ name: "", description: "", location: null, software: null });
+        setServerData({ name: "", description: "", location: null, software: null, plan: "free" });
         setLocations([]);
         setNests([]);
         setCreateServerError("");
@@ -512,11 +514,12 @@ export default function Servers() {
 
                 <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
                     <div className="w-full">
-                        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr] px-6 py-3">
+                        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-3">
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Address</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Usage</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Status</span>
+                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Address</span>
+                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Location</span>
+                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Usage</span>
+                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Status</span>
                             <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
                         </div>
                         {(() => {
@@ -545,7 +548,25 @@ export default function Servers() {
                                 return (
                                     <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
                                         {Array.from({ length: 3 }).map((_, i) => (
-                                            <div key={i} className="h-16 border-b border-surface-lighter last:border-0 animate-pulse bg-brand/[0.01]" />
+                                            <div key={i} className="h-16 border-b border-surface-lighter animate-pulse bg-brand/[0.01] grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6">
+                                                <div className="flex flex-col justify-center gap-1.5">
+                                                    <div className="h-3 w-24 bg-brand/5 rounded" />
+                                                    <div className="h-2 w-12 bg-brand/5 rounded" />
+                                                </div>
+                                                <div className="flex items-center justify-center">
+                                                    <div className="h-3 w-20 bg-brand/5 rounded" />
+                                                </div>
+                                                <div className="flex items-center justify-center">
+                                                    <div className="h-3 w-16 bg-brand/5 rounded" />
+                                                </div>
+                                                <div className="flex items-center justify-center gap-4">
+                                                    <div className="h-6 w-12 bg-brand/5 rounded" />
+                                                    <div className="h-6 w-12 bg-brand/5 rounded" />
+                                                </div>
+                                                <div className="flex items-center justify-center">
+                                                    <div className="h-3 w-16 bg-brand/5 rounded" />
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 );
@@ -575,14 +596,14 @@ export default function Servers() {
                                         return (
                                             <div 
                                                 key={server.id} 
-                                                onClick={() => navigate(`/app/server/${server.id}/overview`)}
-                                                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr] px-6 py-4 hover:bg-surface-light/50 transition-colors cursor-pointer group border-b border-surface-lighter last:border-0"
+                                                onClick={() => navigate(`/app/server/${server.identifier}/overview`)}
+                                                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 hover:bg-surface-light/50 transition-colors cursor-pointer group border-b border-surface-lighter"
                                             >
                                                 <div className="flex flex-col">
                                                     <span className="text-[12px] font-bold text-brand uppercase tracking-tight">{server.name}</span>
                                                     <span className="text-[9px] font-bold text-brand/20 uppercase tracking-tighter">{server.identifier}</span>
                                                 </div>
-                                                <div className="flex items-center">
+                                                <div className="flex items-center justify-center">
                                                     {server?.allocation?.ip_alias || server?.allocation?.ip ? (
                                                         <span className="text-[11px] font-bold text-brand/60 font-mono">
                                                             {server?.allocation?.ip_alias || server?.allocation?.ip}:{server?.allocation?.port}
@@ -591,17 +612,32 @@ export default function Servers() {
                                                         <span className="text-[11px] font-bold text-brand/20 italic">Assigning...</span>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex flex-col gap-0.5 min-w-[60px]">
+                                                <div className="flex items-center justify-center">
+                                                    <div className="flex items-center gap-2">
+                                                        {server.location?.shortCode && (
+                                                            <img
+                                                                src={`https://flagsapi.com/${server.location.shortCode}/flat/64.png`}
+                                                                alt={server.location.shortCode}
+                                                                className="w-4 h-3 rounded-sm object-cover opacity-80"
+                                                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                            />
+                                                        )}
+                                                        <span className="text-[11px] font-bold text-brand/60 truncate max-w-[100px]">
+                                                            {server.location?.description || server.location?.shortCode || '-'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-4">
+                                                    <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
                                                         <span className="text-[9px] font-bold text-brand/30 uppercase tracking-widest">CPU</span>
                                                         <span className="text-[11px] font-bold text-brand/60">{Math.round(cpu)}%</span>
                                                     </div>
-                                                    <div className="flex flex-col gap-0.5 min-w-[60px]">
+                                                    <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
                                                         <span className="text-[9px] font-bold text-brand/30 uppercase tracking-widest">RAM</span>
                                                         <span className="text-[11px] font-bold text-brand/60">{Math.round(mem)}%</span>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-center gap-2">
                                                     <div className={`w-1.5 h-1.5 rounded-full ${
                                                         isOnline ? 'bg-green-500' : isStarting ? 'bg-yellow-500' : 'bg-red-500'
                                                     }`} />
@@ -835,42 +871,47 @@ export default function Servers() {
 
                     {createStep === 4 && (
                         <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-                            <div className="bg-surface-light border border-surface-lighter rounded-md p-5 space-y-4">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Server Name</p>
-                                        <p className="text-[12px] font-bold text-brand">{serverData.name}</p>
+                            <div className="bg-surface-light border border-surface-lighter rounded-xl overflow-hidden">
+                                <div className="px-5 py-3 border-b border-surface-lighter bg-brand/[0.01]">
+                                    <p className="text-[10px] font-bold text-brand/40 uppercase tracking-[0.2em]">Deployment Manifest</p>
+                                </div>
+                                <div className="divide-y divide-surface-lighter">
+                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
+                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Instance Identity</p>
+                                        <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.name}</p>
                                     </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Location</p>
+                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
+                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Software</p>
+                                        <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.software?.name}</p>
+                                    </div>
+                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
+                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Region</p>
                                         <div className="flex items-center gap-2">
                                             <img 
                                                 src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`} 
                                                 alt={serverData.location?.shortCode} 
-                                                className="w-5 h-3.5 rounded-sm object-cover" 
+                                                className="w-4 h-3 rounded-sm object-cover opacity-80" 
                                             />
-                                            <p className="text-[12px] font-bold text-brand">{serverData.location?.description || serverData.location?.shortCode}</p>
+                                            <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.location?.description}</p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Software</p>
-                                        <p className="text-[12px] font-bold text-brand">{serverData.software?.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-brand/60 uppercase tracking-widest mb-1">Architecture</p>
-                                        <p className="text-[12px] font-bold text-brand">{serverData.software?.nestName}</p>
+                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
+                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Architecture</p>
+                                        <p className="text-[13px] font-bold text-brand tracking-tight uppercase tracking-tighter">{serverData.software?.nestName}</p>
                                     </div>
                                 </div>
                             </div>
+
                             {createServerError && (
-                                <div className="px-4 py-3 rounded-md bg-red-500/10 border border-red-500/20">
-                                    <p className="text-[11px] font-bold text-red-500">{createServerError}</p>
+                                <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
+                                    <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{createServerError}</p>
                                 </div>
                             )}
-                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
                                 <button
                                     onClick={handleBack}
-                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                    className="px-4 py-2 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
                                 >
                                     Back
                                 </button>
@@ -888,7 +929,8 @@ export default function Servers() {
                                                     eggId: serverData.software?.id,
                                                     dockerImage: serverData.software?.dockerImage,
                                                     startup: serverData.software?.startup,
-                                                    nestId: serverData.software?.nestId
+                                                    nestId: serverData.software?.nestId,
+                                                    plan: serverData.plan
                                                 }
                                             });
                                             await fetchServers();
@@ -906,10 +948,10 @@ export default function Servers() {
                                     {creatingServer ? (
                                         <>
                                             <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
-                                            Creating...
+                                            Initializing...
                                         </>
                                     ) : (
-                                        'Confirm & Create'
+                                        'Deploy Instance'
                                     )}
                                 </button>
                             </div>

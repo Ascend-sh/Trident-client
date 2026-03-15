@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, matchPath } from "react-router-dom";
 import { 
     HardDrive,
     ShoppingCart, 
@@ -10,11 +10,20 @@ import {
     ChevronDown,
     LogOut,
     Shield,
-    Settings
+    Settings,
+    LayoutDashboard
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout, useAuth } from "@/context/auth-context.jsx";
+
+const API_BASE = "/api/v1/client";
+
+async function request(path) {
+    const res = await fetch(`${API_BASE}${path}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed");
+    return res.json();
+}
 
 const Navbar = () => {
     const location = useLocation();
@@ -24,7 +33,27 @@ const Navbar = () => {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutProgress, setLogoutProgress] = useState(0);
+    const [currentServer, setCurrentServer] = useState(null);
     const menuRef = useRef(null);
+
+    const match = matchPath("/app/server/:identifier/*", location.pathname);
+    const identifier = match?.params?.identifier;
+
+    useEffect(() => {
+        if (!identifier) {
+            setCurrentServer(null);
+            return;
+        }
+
+        request('/servers')
+            .then((res) => {
+                const found = (res?.servers || []).find((s) => 
+                    String(s.identifier || '').toLowerCase() === String(identifier || '').toLowerCase()
+                );
+                setCurrentServer(found || null);
+            })
+            .catch(() => setCurrentServer(null));
+    }, [identifier]);
 
     const navItems = [
         { path: "/app/home", label: "Servers", icon: HardDrive },
@@ -88,7 +117,9 @@ const Navbar = () => {
                 <span className="text-brand/20 font-light text-xl">/</span>
                 
                 <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-surface-lighter transition-colors cursor-pointer group border border-transparent hover:border-surface-lighter">
-                    <span className="text-sm font-medium text-brand/70 group-hover:text-brand">No Instance Selected</span>
+                    <span className="text-sm font-medium text-brand/70 group-hover:text-brand">
+                        {currentServer?.name || "No Instance Selected"}
+                    </span>
                     <ChevronDown size={14} className="text-brand/40 group-hover:text-brand" />
                 </button>
             </div>
@@ -179,9 +210,9 @@ const Navbar = () => {
                                     
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-red-500/60 hover:text-red-500 hover:bg-red-50/50 transition-all group cursor-pointer"
+                                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group cursor-pointer"
                                     >
-                                        <LogOut size={13} className="group-hover:text-red-500" />
+                                        <LogOut size={13} className="group-hover:text-brand" />
                                         <span className="text-[11px] font-bold">Sign Out</span>
                                     </button>
                                 </div>

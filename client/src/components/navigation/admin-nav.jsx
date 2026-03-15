@@ -13,7 +13,7 @@ import {
     Settings,
     LayoutDashboard,
     Box,
-    MapPin,
+    Earth,
     Undo2
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -33,7 +33,7 @@ const AdminNav = () => {
     const navItems = [
         { path: "/app/admin/overview", label: "Overview", icon: LayoutDashboard },
         { path: "/app/admin/software", label: "Software", icon: Box },
-        { path: "/app/admin/locations", label: "Locations", icon: MapPin },
+        { path: "/app/admin/locations", label: "Locations", icon: Earth },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -82,15 +82,92 @@ const AdminNav = () => {
     const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${user?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 
     return (
-        <header className="w-full h-16 bg-surface-light border-b border-surface-lighter flex items-center justify-between px-16 sticky top-0 z-50">
-            <div className="flex items-center gap-3">
-                <Link to="/app/home" className="flex items-center">
-                    <img src="/Logo-dark.png" alt="Torqen" className="h-7" />
-                </Link>
+        <header className="w-full bg-surface-light border-b border-surface-lighter sticky top-0 z-50">
+            <div className="px-16">
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center gap-3">
+                        <Link to="/app/home" className="flex items-center">
+                            <img src="/Logo-dark.png" alt="Torqen" className="h-7" />
+                        </Link>
+                    </div>
+
+                    <div className="flex items-center gap-3 ml-1">
+                        <div className="bg-surface-highlight px-3 py-1 rounded-full border border-surface-lighter text-[10px] font-bold text-brand/70 uppercase tracking-wider">
+                            {balance} {currencyName}
+                        </div>
+
+                        <button className="text-brand/40 hover:text-brand transition-colors cursor-pointer">
+                            <Bell size={18} />
+                        </button>
+
+                        <button 
+                            onClick={() => setIsDark(!isDark)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-brand/40 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
+                        >
+                            {isDark ? <Moon size={16} /> : <Sun size={16} />}
+                        </button>
+
+                        <div className="relative" ref={menuRef}>
+                            <button 
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="flex items-center focus:outline-none"
+                            >
+                                <img 
+                                    src={avatarUrl}
+                                    alt="Avatar"
+                                    className="w-8 h-8 rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-white border border-surface-lighter"
+                                />
+                            </button>
+
+                            {userMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-none z-[100] overflow-hidden animate-in fade-in zoom-in duration-150">
+                                    <div className="p-3 border-b border-surface-lighter bg-surface-lighter/20">
+                                        <div className="flex items-center gap-2.5">
+                                            <img 
+                                                src={avatarUrl}
+                                                alt="Avatar"
+                                                className="w-7 h-7 rounded-full bg-white border border-surface-lighter"
+                                            />
+                                            <div className="flex flex-col min-w-0">
+                                                <p className="text-[12px] font-bold text-brand truncate leading-none mb-0.5">
+                                                    {user?.username || "Account"}
+                                                </p>
+                                                <p className="text-[9px] font-medium text-brand/40 truncate leading-none uppercase tracking-wider">
+                                                    {user?.email}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-1">
+                                        <Link 
+                                            to="/app/home" 
+                                            onClick={() => setUserMenuOpen(false)}
+                                            className="flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group"
+                                        >
+                                            <Undo2 size={13} className="group-hover:text-brand" />
+                                            <span className="text-[11px] font-bold">Exit Admin</span>
+                                        </Link>
+                                        
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group cursor-pointer"
+                                        >
+                                            <LogOut size={13} className="group-hover:text-brand" />
+                                            <span className="text-[11px] font-bold">Sign Out</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 mr-1">
+            <div className="h-px w-full bg-surface-lighter" />
+
+            <div className="px-16">
+                <div className="flex items-center gap-1 py-3">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.path);
@@ -109,79 +186,6 @@ const AdminNav = () => {
                             </Link>
                         );
                     })}
-                </div>
-
-                <div className="h-8 w-px bg-surface-lighter mx-1" />
-
-                <div className="flex items-center gap-3 ml-1">
-                    <div className="bg-surface-highlight px-3 py-1 rounded-full border border-surface-lighter text-[10px] font-bold text-brand/70 uppercase tracking-wider">
-                        {balance} {currencyName}
-                    </div>
-
-                    <button className="text-brand/40 hover:text-brand transition-colors cursor-pointer">
-                        <Bell size={18} />
-                    </button>
-
-                    <button 
-                        onClick={() => setIsDark(!isDark)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-brand/40 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
-                    >
-                        {isDark ? <Moon size={16} /> : <Sun size={16} />}
-                    </button>
-
-                    <div className="relative" ref={menuRef}>
-                        <button 
-                            onClick={() => setUserMenuOpen(!userMenuOpen)}
-                            className="flex items-center focus:outline-none"
-                        >
-                            <img 
-                                src={avatarUrl}
-                                alt="Avatar"
-                                className="w-8 h-8 rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-white border border-surface-lighter"
-                            />
-                        </button>
-
-                        {userMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-none z-[100] overflow-hidden animate-in fade-in zoom-in duration-150">
-                                <div className="p-3 border-b border-surface-lighter bg-surface-lighter/20">
-                                    <div className="flex items-center gap-2.5">
-                                        <img 
-                                            src={avatarUrl}
-                                            alt="Avatar"
-                                            className="w-7 h-7 rounded-full bg-white border border-surface-lighter"
-                                        />
-                                        <div className="flex flex-col min-w-0">
-                                            <p className="text-[12px] font-bold text-brand truncate leading-none mb-0.5">
-                                                {user?.username || "Account"}
-                                            </p>
-                                            <p className="text-[9px] font-medium text-brand/40 truncate leading-none uppercase tracking-wider">
-                                                {user?.email}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-1">
-                                    <Link 
-                                        to="/app/home" 
-                                        onClick={() => setUserMenuOpen(false)}
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group"
-                                    >
-                                        <Undo2 size={13} className="group-hover:text-brand" />
-                                        <span className="text-[11px] font-bold">Exit Admin</span>
-                                    </Link>
-                                    
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-red-500/60 hover:text-red-500 hover:bg-red-50/50 transition-all group cursor-pointer"
-                                    >
-                                        <LogOut size={13} className="group-hover:text-red-500" />
-                                        <span className="text-[11px] font-bold">Sign Out</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
 

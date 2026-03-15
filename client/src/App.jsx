@@ -34,7 +34,7 @@ const AppLayout = () => {
   return (
     <div className="flex flex-col h-screen w-full bg-surface text-brand">
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
-      {isAdminRoute ? <AdminNav /> : isServerRoute ? <ServerNav /> : <Navbar />}
+      {isAdminRoute ? <AdminNav /> : <Navbar />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto">
           <Outlet />
@@ -78,8 +78,8 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/app/home" element={<Servers />} />
-            <Route path="/app/server/:id/overview" element={<ServerOverview />} />
-            <Route path="/app/server/:id/files" element={<ServerFiles />} />
+            <Route path="/app/server/:identifier/overview" element={<ServerOverview />} />
+            <Route path="/app/server/:identifier/files" element={<ServerFiles />} />
 
             <Route element={<RequireAdmin />}>
               <Route path="/app/admin/overview" element={<AdminOverview />} />

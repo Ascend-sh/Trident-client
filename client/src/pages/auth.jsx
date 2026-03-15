@@ -66,8 +66,8 @@ export default function Auth() {
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-[400px] mx-auto lg:mx-0"
                 >
-                    <div className="mb-12 flex items-center gap-2 group">
-                        <img src="/Logo-dark.png" alt="Torqen" className="h-14 transition-transform duration-300" />
+                    <div className="mb-14 flex items-center gap-2 group -ml-1">
+                        <img src="/Logo-dark.png" alt="Torqen" className="h-10 transition-transform duration-300" />
                     </div>
 
                     <div className="space-y-2 mb-10">
@@ -82,6 +82,12 @@ export default function Auth() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Dummy fields to trick browser autofill */}
+                        <div className="absolute opacity-0 -z-50 pointer-events-none h-0 w-0 overflow-hidden">
+                            <input type="text" name="fake-username-autofill" />
+                            <input type="password" name="fake-password-autofill" />
+                        </div>
+
                         <AnimatePresence mode="wait">
                             {error && (
                                 <motion.div
@@ -123,6 +129,7 @@ export default function Auth() {
                                         value={formData.username}
                                         onChange={handleChange}
                                         required={!isLogin}
+                                        autoComplete="username-new"
                                         className="h-11 bg-surface-light border-transparent focus:border-brand/10 focus:bg-surface transition-all duration-200 ring-offset-transparent focus-visible:ring-brand/5 shadow-none"
                                     />
                                 </motion.div>
@@ -138,6 +145,7 @@ export default function Auth() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="off-email"
                                     className="h-11 bg-surface-light border-transparent focus:border-brand/10 focus:bg-surface transition-all duration-200 ring-offset-transparent focus-visible:ring-brand/5 shadow-none"
                                 />
                             </div>
@@ -159,6 +167,7 @@ export default function Auth() {
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="new-password"
                                     className="h-11 bg-surface-light border-transparent focus:border-brand/10 focus:bg-surface transition-all duration-200 ring-offset-transparent focus-visible:ring-brand/5 shadow-none"
                                 />
                             </div>
@@ -210,7 +219,7 @@ export default function Auth() {
                     </div>
                 </motion.div>
 
-                <div className="mt-auto pt-12 flex items-center justify-center lg:justify-start gap-6 text-[10px] text-brand/30 uppercase tracking-widest font-bold">
+                <div className={`mt-auto ${isLogin ? 'pt-2' : 'pt-10'} flex items-center justify-center lg:justify-start gap-6 text-[10px] text-brand/30 uppercase tracking-widest font-bold`}>
                     <div className="flex items-center gap-1.5">
                         v0.5.0-beta
                     </div>
