@@ -23,21 +23,21 @@ export default function EditorModal({
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="min-w-0">
-          <p className="text-xs text-white/50">Path</p>
-          <p className="text-sm text-white font-mono truncate">{filePath || '-'}</p>
+          <p className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">Path</p>
+          <p className="text-[11px] text-brand font-mono truncate">{filePath || '-'}</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-surface-light hover:border-surface-lighter transition-colors duration-200 cursor-pointer"
+            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-brand/40 hover:text-brand rounded-lg border border-surface-light hover:border-surface-lighter transition-colors duration-200 cursor-pointer shadow-none"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
             disabled={saving || loading}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 bg-brand text-white"
+            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 bg-brand text-surface shadow-none"
           >
             {saving ? (
               <>
@@ -55,14 +55,14 @@ export default function EditorModal({
       </div>
 
       {notice ? (
-        <div className="mb-4 px-4 py-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10">
-          <p className="text-sm text-yellow-100">{notice}</p>
+        <div className="mb-4 px-4 py-2 rounded-lg border border-yellow-500/10 bg-yellow-500/5">
+          <p className="text-[11px] font-medium text-yellow-700">{notice}</p>
         </div>
       ) : null}
 
       {error ? (
-        <div className="mb-4 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-          <p className="text-sm text-red-200">{error}</p>
+        <div className="mb-4 px-4 py-2 rounded-lg border border-red-500/10 bg-red-500/5">
+          <p className="text-[11px] font-medium text-red-700">{error}</p>
         </div>
       ) : null}
 
@@ -78,13 +78,13 @@ export default function EditorModal({
           onChange={(e) => onChange?.(e.target.value)}
           spellCheck={false}
           readOnly={loading}
-          className="w-full h-[60vh] resize-none bg-transparent text-sm text-white/80 font-mono px-4 py-3 focus:outline-none"
+          className="w-full h-[60vh] resize-none bg-transparent text-[13px] text-brand/80 font-mono px-4 py-3 focus:outline-none leading-relaxed"
         />
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-[10px] text-white/40">Changes are not saved until you click Save</p>
-        <p className="text-[10px] text-white/40">esc closes (if wired by parent)</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-brand/20">Changes are not saved until you click Save</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-brand/20">esc closes</p>
       </div>
     </CenterModal>
   );

@@ -544,27 +544,40 @@ export default function Servers() {
                                 });
                             }
 
-                            if (serversLoading && servers.length === 0) {
+                            if (serversLoading || (servers.length > 0 && !metricsLoaded)) {
                                 return (
                                     <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
-                                        {Array.from({ length: 3 }).map((_, i) => (
-                                            <div key={i} className="h-16 border-b border-surface-lighter animate-pulse bg-brand/[0.01] grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6">
-                                                <div className="flex flex-col justify-center gap-1.5">
-                                                    <div className="h-3 w-24 bg-brand/5 rounded" />
-                                                    <div className="h-2 w-12 bg-brand/5 rounded" />
+                                        {Array.from({ length: Math.max(3, servers.length) }).map((_, i) => (
+                                            <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 border-b border-surface-lighter animate-pulse">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="h-3 w-28 bg-brand/5 rounded-sm" />
+                                                    <div className="h-2 w-16 bg-brand/5 rounded-sm" />
                                                 </div>
                                                 <div className="flex items-center justify-center">
-                                                    <div className="h-3 w-20 bg-brand/5 rounded" />
+                                                    <div className="h-3 w-32 bg-brand/5 rounded-sm" />
                                                 </div>
-                                                <div className="flex items-center justify-center">
-                                                    <div className="h-3 w-16 bg-brand/5 rounded" />
+                                                <div className="flex items-center justify-center pr-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-4 h-3 bg-brand/5 rounded-sm" />
+                                                        <div className="h-3 w-16 bg-brand/5 rounded-sm" />
+                                                    </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
-                                                    <div className="h-6 w-12 bg-brand/5 rounded" />
-                                                    <div className="h-6 w-12 bg-brand/5 rounded" />
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
+                                                        <div className="h-3 w-8 bg-brand/5 rounded-sm" />
+                                                    </div>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
+                                                        <div className="h-3 w-8 bg-brand/5 rounded-sm" />
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center justify-center">
-                                                    <div className="h-3 w-16 bg-brand/5 rounded" />
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-brand/10" />
+                                                    <div className="h-3 w-12 bg-brand/5 rounded-sm" />
+                                                </div>
+                                                <div className="flex items-center justify-end">
+                                                    <div className="w-8 h-8 rounded-md bg-brand/5" />
                                                 </div>
                                             </div>
                                         ))}

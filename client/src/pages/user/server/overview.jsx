@@ -462,7 +462,7 @@ export default function ServerOverview() {
                         {powerLoading === 'restart' ? (
                             <>
                                 <div className="w-3 h-3 border-2 border-brand/20 border-t-brand/60 rounded-full animate-spin" />
-                                ...
+                                Restarting...
                             </>
                         ) : (
                             <>
@@ -480,7 +480,7 @@ export default function ServerOverview() {
                         {powerLoading === 'stop' || isStopping ? (
                             <>
                                 <div className="w-3 h-3 border-2 border-brand/20 border-t-brand/60 rounded-full animate-spin" />
-                                ...
+                                Stopping...
                             </>
                         ) : (
                             <>
@@ -512,16 +512,29 @@ export default function ServerOverview() {
             </div>
 
             <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
-                <div className="p-6">
-                    <h2 className="text-[14px] font-bold text-brand uppercase tracking-widest mb-4">Minecraft EULA Agreement</h2>
-                    <p className="text-[11px] text-brand/60 leading-relaxed mb-6">
+                <div className="flex flex-col p-8">
+                    <h2 className="text-[12px] font-bold text-brand uppercase tracking-wider mb-4">
+                        EULA Acceptance
+                    </h2>
+                    
+                    <p className="text-[11px] font-medium text-brand/60 leading-relaxed mb-8">
                         Your server has detected that the Minecraft EULA has not been accepted. 
-                        By clicking "Accept EULA", you agree to Mojang's End User License Agreement.
+                        By clicking "Accept", you agree to the Mojang End User License Agreement.
                     </p>
-                    <p className="text-[10px] text-brand/40 mb-8">
-                        Read the full EULA at: <a href="https://account.mojang.com/documents/minecraft_eula" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">https://account.mojang.com/documents/minecraft_eula</a>
-                    </p>
-                    <div className="flex gap-2 justify-end">
+
+                    <div className="flex items-center justify-between gap-4 mb-8">
+                        <span className="text-[9px] font-bold text-brand/40 uppercase tracking-widest">Document</span>
+                        <a 
+                            href="https://account.mojang.com/documents/minecraft_eula" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-[9px] font-bold text-brand/60 hover:text-brand transition-colors uppercase tracking-widest"
+                        >
+                            Open License
+                        </a>
+                    </div>
+
+                    <div className="flex items-center gap-2 justify-end">
                         <Button
                             variant="outline"
                             onClick={() => {
@@ -530,18 +543,18 @@ export default function ServerOverview() {
                                 eulaCheckInFlightRef.current = false;
                             }}
                             disabled={acceptingEula}
-                            className="h-8 px-4 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest text-brand/40 hover:text-brand"
+                            className="h-8 px-4 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest text-brand/30 hover:text-brand cursor-pointer shadow-none"
                         >
-                            Cancel
+                            Decline
                         </Button>
                         <Button
                             onClick={acceptEula}
                             disabled={acceptingEula}
-                            className="h-8 px-4 bg-brand text-surface hover:opacity-90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2"
+                            className="h-8 px-5 bg-brand text-surface hover:opacity-90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-none"
                         >
                             {acceptingEula ? (
                                 <>
-                                    <RefreshCw size={12} className="animate-spin" />
+                                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
                                     Accepting...
                                 </>
                             ) : (

@@ -33,8 +33,8 @@ const CenterModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }
                     onClick={(e) => e.stopPropagation()}
                 >
                     {title && (
-                        <div className="flex items-center px-4 py-3 border-b border-surface-light">
-                            <h2 className="text-sm font-semibold text-white">{title}</h2>
+                        <div className="flex items-center px-4 py-2 border-b border-surface-light">
+                            <h2 className="text-[10px] font-bold text-brand uppercase tracking-wider">{title}</h2>
                         </div>
                     )}
 

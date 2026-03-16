@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate, useParams, matchPath } from "react-router-dom";
 import { 
+    Plus,
     HardDrive,
     ShoppingCart, 
     HeadphonesIcon, 
@@ -149,8 +150,14 @@ const Navbar = () => {
                 <div className="h-8 w-px bg-surface-lighter mx-1" />
 
                 <div className="flex items-center gap-3 ml-1">
-                    <div className="bg-surface-highlight px-3 py-1 rounded-full border border-surface-lighter text-[10px] font-bold text-brand/70 uppercase tracking-wider">
-                        {balance} {currencyName}
+                    <div className="bg-surface-highlight pl-3 pr-0.5 py-0.5 rounded-full border border-surface-lighter flex items-center gap-2.5 text-[10px] font-bold text-brand/70 uppercase tracking-wider">
+                        <span>{balance} {currencyName}</span>
+                        <button 
+                            onClick={() => navigate('/app/billing')}
+                            className="w-5 h-5 rounded-full bg-brand/5 text-brand/40 flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus shadow-none"
+                        >
+                            <Plus size={10} strokeWidth={4} className="transition-transform group-hover/plus:rotate-90" />
+                        </button>
                     </div>
 
                     <button className="text-brand/40 hover:text-brand transition-colors cursor-pointer">

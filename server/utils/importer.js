@@ -35,6 +35,10 @@ async function request({ url, method = 'GET', headers, query, body, signal }) {
   }
 
   const cacheKey = `${method}:${u.toString()}:${JSON.stringify(headers)}:${JSON.stringify(body)}`;
+  
+  if (method !== 'GET') {
+    cache.clear();
+  }
 
   if (method === 'GET') {
     const cached = cache.get(cacheKey);

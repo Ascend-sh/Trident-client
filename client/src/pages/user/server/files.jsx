@@ -446,24 +446,23 @@ export default function ServerFiles() {
 
         <ServerNav />
 
-        <div className="flex items-center gap-2 mb-6 bg-surface-light p-2 rounded-lg border border-surface-lighter overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 mb-6 overflow-x-auto no-scrollbar">
           {breadcrumb.map((c, idx) => {
             const isLast = idx === breadcrumb.length - 1;
-            const label = c.label;
             return (
-              <div key={`${c.path}-${idx}`} className="flex items-center gap-2">
+              <div key={`${c.path}-${idx}`} className="flex items-center gap-1.5">
                 <button
                   onClick={() => setDirectory(apiToUiDirectory(c.path))}
-                  className={`px-2 py-1 text-[11px] font-bold uppercase tracking-tight transition-all rounded-md ${
+                  className={`text-[11px] font-bold uppercase tracking-widest transition-colors ${
                     isLast 
-                      ? 'text-brand bg-white border border-surface-lighter cursor-default shadow-sm' 
-                      : 'text-brand/40 hover:text-brand hover:bg-white/50 cursor-pointer'
+                      ? 'text-brand cursor-default' 
+                      : 'text-brand/30 hover:text-brand/60 cursor-pointer'
                   }`}
                   disabled={isLast}
                 >
-                  {label}
+                  {c.label}
                 </button>
-                {!isLast && <ChevronRight size={12} className="text-brand/20" />}
+                {!isLast && <span className="text-[10px] font-bold text-brand">/</span>}
               </div>
             );
           })}
