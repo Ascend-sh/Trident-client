@@ -66,7 +66,7 @@ export default function Auth() {
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-[400px] mx-auto lg:mx-0"
                 >
-                    <div className="mb-14 flex items-center gap-2 group -ml-1">
+                    <div className={`${isLogin ? 'mb-32' : 'mb-14'} flex items-center gap-2 group -ml-1`}>
                         <img src="/Logo-dark.png" alt="Torqen" className="h-10 transition-transform duration-300" />
                     </div>
 
@@ -82,7 +82,6 @@ export default function Auth() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Dummy fields to trick browser autofill */}
                         <div className="absolute opacity-0 -z-50 pointer-events-none h-0 w-0 overflow-hidden">
                             <input type="text" name="fake-username-autofill" />
                             <input type="password" name="fake-password-autofill" />
@@ -219,7 +218,7 @@ export default function Auth() {
                     </div>
                 </motion.div>
 
-                <div className={`mt-auto ${isLogin ? 'pt-2' : 'pt-10'} flex items-center justify-center lg:justify-start gap-6 text-[10px] text-brand/30 uppercase tracking-widest font-bold`}>
+                <div className={`mt-auto ${isLogin ? 'pt-0' : 'pt-10'} flex items-center justify-center lg:justify-start gap-6 text-[10px] text-brand/30 uppercase tracking-widest font-bold`}>
                     <div className="flex items-center gap-1.5">
                         v0.5.0-beta
                     </div>
