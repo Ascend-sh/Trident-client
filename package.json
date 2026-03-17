@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio",
     "dev:client": "npm --prefix client run dev",
     "build:client": "npm --prefix client run build",
+    "cli:help": "bun server/modules/cli.js help",
     "cli:users": "bun server/modules/cli.js users",
     "cli:sessions": "bun server/modules/cli.js sessions",
     "cli:user-delete": "bun server/modules/cli.js user-delete",

@@ -281,11 +281,41 @@ export async function statusCli({ baseUrl } = {}) {
   };
 }
 
+export function helpCli() {
+  console.log('Torqen CLI - Available Commands:');
+  console.log('');
+  const commands = [
+    { cmd: 'help', desc: 'Show this help message' },
+    { cmd: 'users', desc: 'List all registered users' },
+    { cmd: 'sessions', desc: 'List all active and expired sessions' },
+    { cmd: 'nests', desc: 'List all nests and their associated eggs' },
+    { cmd: 'locations', desc: 'List all physical locations and nodes' },
+    { cmd: 'default-resources', desc: 'Show default server resource configurations' },
+    { cmd: 'servers', desc: 'List all provisioned instances' },
+    { cmd: 'user-delete=<id>', desc: 'Delete a user and all their sessions by ID' },
+    { cmd: 'status', desc: 'Check the health of the database and API' },
+    { cmd: 'reset', desc: 'WIPE ALL DATA and re-run migrations' }
+  ];
+
+  commands.forEach(c => {
+    console.log(`  ${c.cmd.padEnd(20)} ${c.desc}`);
+  });
+  console.log('');
+  console.log('Examples:');
+  console.log('  bun server/modules/cli.js user-delete=1');
+  console.log('  bun run cli:status');
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const raw = args[0] ?? '';
   const [cmd, inline] = String(raw).split('=');
   const arg1 = inline ?? args[1] ?? (cmd === '' && args[0] ? args[0] : undefined);
+
+  if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
+    helpCli();
+    process.exit(0);
+  }
 
   if (cmd === 'users') {
     const rows = await listUsersCli();
@@ -342,13 +372,9 @@ async function main() {
     process.exit(res.ok ? 0 : 1);
   }
 
-  console.error('Unknown command');
-  console.error('Usage: bun server/modules/cli.js users|sessions|nests|locations|servers|default-resources|user-delete=<id>|status|reset');
-  console.error('Examples:');
-  console.error('  bun server/modules/cli.js user-delete=123');
-  console.error('  bun server/modules/cli.js user-delete 123');
-  console.error('  bun run cli:user-delete -- 123');
-  process.exit(1);
+  if (cmd !== '') console.error(`Unknown command: ${cmd}`);
+  helpCli();
+  process.exit(cmd === '' ? 0 : 1);
 }
 
 if (import.meta.main) {
