@@ -9,6 +9,8 @@ import AdminSoftware from "./pages/admin/software";
 import AdminLocations from "./pages/admin/locations";
 import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
+import AddCredits from "./pages/economy/AddCredits";
+import Settings from "./pages/user/Settings";
 import Navbar from "./components/navigation/navbar.jsx";
 import ServerNav from "./components/navigation/server-nav";
 import AdminNav from "./components/navigation/admin-nav";
@@ -78,6 +80,9 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/app/home" element={<Servers />} />
+            <Route path="/app/billing" element={<AddCredits />} />
+            <Route path="/app/economy/add-credits" element={<AddCredits />} />
+            <Route path="/app/account/settings" element={<Settings />} />
             <Route path="/app/server/:identifier/overview" element={<ServerOverview />} />
             <Route path="/app/server/:identifier/files" element={<ServerFiles />} />
 

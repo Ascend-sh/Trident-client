@@ -5,6 +5,7 @@
   "scripts": {
     "dev:server": "bun --watch server/app.js",
     "start:server": "bun server/app.js",
+    "st": "cd client; bun run build; cd ../; bun server/app.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun server/db/migrate.js",
     "db:studio": "drizzle-kit studio",

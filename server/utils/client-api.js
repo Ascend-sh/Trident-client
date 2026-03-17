@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import fs from 'fs';
 import path from 'path';
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
+import { updateAccount } from "../modules/account.js";
 import { errorHandler, fail, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
 import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
 import { authLogger, getLogger } from "../middlewares/logger.js";
@@ -175,6 +176,32 @@ export const clientApi = new Elysia({ name: "client-api" })
     const out = ok({ user: res.body.user, ...wallet }, 200);
     set.status = out.status;
     return out.body;
+  })
+  .patch("/account", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const updateRes = await updateAccount({
+      userId,
+      username: body?.username,
+      email: body?.email,
+      password: body?.password
+    });
+
+    set.status = updateRes.status;
+    return updateRes.body;
   })
   .get("/recent-activity", async ({ request, set, query }) => {
     const limited = checkRateLimit({ request, set });
