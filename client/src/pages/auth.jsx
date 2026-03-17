@@ -59,14 +59,14 @@ export default function Auth() {
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-surface overflow-hidden">
-            <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 py-4 relative z-10 bg-surface">
+            <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 py-8 relative z-10 bg-surface">
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="w-full max-w-[400px] mx-auto lg:mx-0 pb-48"
+                    className="w-full max-w-[400px] mx-auto lg:mx-0 pb-12"
                 >
-                    <div className={`${isLogin ? 'mb-12' : 'mb-12'} flex items-center gap-2 group -ml-1`}>
+                    <div className={`${isLogin ? 'mb-24' : 'mb-12'} flex items-center gap-2 group -ml-1`}>
                         <img src="/Logo-dark.png" alt="Torqen" className="h-10 transition-transform duration-300" />
                     </div>
 
