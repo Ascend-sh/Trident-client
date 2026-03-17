@@ -3,22 +3,15 @@ import { useState, useEffect } from 'react';
 export default function GlobalLoader({ onLoadingComplete }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const duration = 600;
-    const interval = 10;
-    const step = 100 / (duration / interval);
     
-    const progressTimer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressTimer);
-          return 100;
-        }
-        return Math.min(100, prev + step);
-      });
-    }, interval);
+    // Start progress animation on mount
+    requestAnimationFrame(() => {
+      setIsAnimating(true);
+    });
 
     const fadeTimer = setTimeout(() => {
       setIsFadingOut(true);
@@ -32,7 +25,6 @@ export default function GlobalLoader({ onLoadingComplete }) {
     }, duration + 300);
 
     return () => {
-      clearInterval(progressTimer);
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
@@ -52,8 +44,8 @@ export default function GlobalLoader({ onLoadingComplete }) {
         
         <div className="w-full h-[2px] bg-brand/5 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-brand transition-all duration-150 ease-out"
-            style={{ width: `${progress}%` }}
+            className="h-full bg-brand transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+            style={{ width: isAnimating ? '100%' : '0%' }}
           />
         </div>
         

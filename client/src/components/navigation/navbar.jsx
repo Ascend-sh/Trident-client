@@ -17,6 +17,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout, useAuth } from "@/context/auth-context.jsx";
+import AddCredits from "../../pages/economy/AddCredits";
 
 const API_BASE = "/api/v1/client";
 
@@ -35,6 +36,7 @@ const Navbar = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutProgress, setLogoutProgress] = useState(0);
     const [currentServer, setCurrentServer] = useState(null);
+    const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const menuRef = useRef(null);
 
     const match = matchPath("/app/server/:identifier/*", location.pathname);
@@ -153,7 +155,7 @@ const Navbar = () => {
                     <div className="bg-surface-highlight pl-3 pr-0.5 py-0.5 rounded-full border border-surface-lighter flex items-center gap-2.5 text-[10px] font-bold text-brand/70 uppercase tracking-wider">
                         <span>{balance} {currencyName}</span>
                         <button 
-                            onClick={() => navigate('/app/billing')}
+                            onClick={() => setIsCreditsModalOpen(true)}
                             className="w-5 h-5 rounded-full bg-brand/5 text-brand/40 flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus shadow-none"
                         >
                             <Plus size={10} strokeWidth={4} className="transition-transform group-hover/plus:rotate-90" />
@@ -260,6 +262,10 @@ const Navbar = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <AddCredits 
+                isOpen={isCreditsModalOpen} 
+                onClose={() => setIsCreditsModalOpen(false)} 
+            />
         </header>
     );
 };

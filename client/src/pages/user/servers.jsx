@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import CenterModal from "../../components/modals/center-modal";
 import { useAuth } from "../../context/auth-context.jsx";
 import { Button } from "@/components/ui/button";
+import AddCredits from "../economy/AddCredits";
 
 const API_BASE = "/api/v1/client";
 
@@ -82,6 +83,7 @@ export default function Servers() {
     const [deleteError, setDeleteError] = useState("");
     const [recentActivity, setRecentActivity] = useState([]);
     const [recentActivityLoading, setRecentActivityLoading] = useState(false);
+    const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
 
     const availableEggs = nests.flatMap(nest =>
         (nest.eggs || []).map(egg => ({
@@ -393,7 +395,7 @@ export default function Servers() {
                             <div className="flex items-baseline gap-3">
                                 <p className="text-[20px] font-bold text-brand/80">{balance} {currencyName}</p>
                                 <button 
-                                    onClick={() => navigate('/app/billing')}
+                                    onClick={() => setIsCreditsModalOpen(true)}
                                     className="text-[10px] font-bold text-brand/30 hover:text-brand underline underline-offset-2 uppercase tracking-widest transition-colors cursor-pointer"
                                 >
                                     Add Funds
@@ -1075,6 +1077,10 @@ export default function Servers() {
                     </div>
                 </div>
             </CenterModal>
+            <AddCredits 
+                isOpen={isCreditsModalOpen} 
+                onClose={() => setIsCreditsModalOpen(false)} 
+            />
         </div>
     );
 }
