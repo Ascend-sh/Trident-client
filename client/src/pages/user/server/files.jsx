@@ -3,6 +3,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 import EditorModal from "../../../components/modals/editor-modal.jsx";
+import PromptModal from "../../../components/modals/prompt-modal.jsx";
+import ImageModal from "../../../components/modals/image-modal.jsx";
+import CenterModal from "../../../components/modals/center-modal";
+import UploadModal from "../../../components/modals/upload-modal.jsx";
 import { Button } from "@/components/ui/button";
 import ServerNav from "../../../components/navigation/server-nav";
 
@@ -140,6 +144,8 @@ export default function ServerFiles() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
@@ -154,6 +160,14 @@ export default function ServerFiles() {
   const [editorLoading, setEditorLoading] = useState(false);
   const [editorError, setEditorError] = useState('');
   const [editorNotice, setEditorNotice] = useState('');
+
+  const [promptState, setPromptState] = useState({ open: false, type: '', title: '', desc: '', initial: '', placeholder: '', submitLabel: '', context: null });
+
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageName, setImageName] = useState('');
+
+  const [deleteModalState, setDeleteModalState] = useState({ open: false, items: [] });
 
   const breadcrumb = useMemo(() => {
     const uiDir = normalizeUiDirectory(directory);
@@ -247,34 +261,147 @@ export default function ServerFiles() {
     }
   };
 
-  const deleteFilesAction = async ({ rowIndex } = {}) => {
-    if (!serverInfo?.id) return;
-
-    const root = uiToApiDirectory(directory);
-
-    const selectedNames = selectedRows
-      .map(i => items?.[i]?.name)
-      .filter(Boolean);
-
+  const triggerDelete = ({ rowIndex } = {}) => {
+    const selectedNames = selectedRows.map(i => items?.[i]?.name).filter(Boolean);
     const rowName = typeof rowIndex === 'number' ? items?.[rowIndex]?.name : null;
-
-    const filesToDelete = selectedNames.length
-      ? selectedNames
-      : rowName
-      ? [rowName]
-      : [];
+    
+    let filesToDelete = [];
+    if (typeof rowIndex === 'number' && rowName) {
+      // If mass selected but clicked specific row delete, typical behavior is mass delete if that row is among selection, 
+      // but simpler to just delete the clicked row if from context menu unless we want to clear.
+      // Let's stick to mass delete if selected, else row
+      filesToDelete = selectedNames.length ? selectedNames : [rowName];
+    } else {
+      filesToDelete = selectedNames;
+    }
 
     if (!filesToDelete.length) return;
+
+    setDeleteModalState({ open: true, items: filesToDelete });
+    setOpenMenuIndex(null);
+    setMenuPos(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!serverInfo?.id || !deleteModalState.items.length) return;
+    setDeleteModalState({ ...deleteModalState, open: false });
+
+    const root = uiToApiDirectory(directory);
+    const filesToDelete = deleteModalState.items;
 
     setError('');
     setLoading(true);
 
     try {
       await request(`/servers/${serverInfo.id}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
+      setSelectedRows([]);
       await fetchListing();
     } catch (err) {
       setLoading(false);
       setError(err?.message || 'failed_to_delete_files');
+    }
+  };
+
+  const openNewFilePrompt = () => {
+    setPromptState({ 
+      open: true, 
+      type: 'new_file', 
+      title: 'Create New File', 
+      desc: 'Enter a name for the new file.', 
+      initial: '', 
+      placeholder: 'e.g., config.yml', 
+      submitLabel: 'Create', 
+      context: null 
+    });
+  };
+
+  const openNewFolderPrompt = () => {
+    setPromptState({ 
+      open: true, 
+      type: 'new_folder', 
+      title: 'Create New Folder', 
+      desc: 'Enter a name for the new folder.', 
+      initial: '', 
+      placeholder: 'e.g., plugins', 
+      submitLabel: 'Create', 
+      context: null 
+    });
+  };
+
+  const openRenamePrompt = (idx) => {
+    const item = items[idx];
+    if (!item) return;
+    setPromptState({ 
+      open: true, 
+      type: 'rename', 
+      title: 'Rename Item', 
+      desc: 'Enter a new name for this item.', 
+      initial: item.name, 
+      placeholder: 'New name...', 
+      submitLabel: 'Rename', 
+      context: { oldName: item.name } 
+    });
+    setOpenMenuIndex(null);
+    setMenuPos(null);
+  };
+
+  const handlePromptSubmit = async (val) => {
+    if (!serverInfo?.id) return;
+    setError('');
+    
+    if (promptState.type === 'new_file') {
+      const apiDir = uiToApiDirectory(directory);
+      const filePath = joinPath(apiDir, val);
+      await request(`/servers/${serverInfo.id}/files/write?file=${encodeURIComponent(filePath)}`, { method: 'POST', body: '' });
+      await fetchListing();
+    } else if (promptState.type === 'new_folder') {
+      const root = uiToApiDirectory(directory);
+      await request(`/servers/${serverInfo.id}/files/create-folder`, { method: 'POST', body: { root, name: val } });
+      await fetchListing();
+    } else if (promptState.type === 'rename') {
+      const root = uiToApiDirectory(directory);
+      const files = [{ from: promptState.context.oldName, to: val }];
+      await request(`/servers/${serverInfo.id}/files/rename`, { method: 'PUT', body: { root, files } });
+      await fetchListing();
+    }
+  };
+
+  const handleUploadFiles = async (fileList) => {
+    if (!fileList?.length || !serverInfo?.id) return;
+
+    setError('');
+    setUploading(true);
+
+    try {
+      const urlRes = await request(`/servers/${serverInfo.id}/files/upload-url`);
+      let signedUrl = urlRes?.url;
+      if (!signedUrl) throw new Error('invalid_upload_url');
+
+      const formData = new FormData();
+      for (let i = 0; i < fileList.length; i++) {
+        formData.append('files', fileList[i]);
+      }
+
+      const apiDir = uiToApiDirectory(directory);
+      if (signedUrl.includes('?')) {
+        signedUrl += `&directory=${encodeURIComponent(apiDir)}`;
+      } else {
+        signedUrl += `?directory=${encodeURIComponent(apiDir)}`;
+      }
+
+      const uploadRes = await fetch(signedUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!uploadRes.ok) throw new Error('failed_to_upload_files');
+
+      setUploadModalOpen(false);
+      await fetchListing();
+    } catch (err) {
+      setError(err?.message || 'failed_to_upload_files');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -301,6 +428,16 @@ export default function ServerFiles() {
     const idx = base.lastIndexOf('.');
     const ext = idx >= 0 ? base.slice(idx + 1) : '';
     if (!ext) return true;
+    return allowed.includes(ext);
+  };
+
+  const isImageViewable = (fileName) => {
+    const n = String(fileName || '').toLowerCase();
+    const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'];
+    const base = n.split('/').pop() || '';
+    const idx = base.lastIndexOf('.');
+    const ext = idx >= 0 ? base.slice(idx + 1) : '';
+    if (!ext) return false;
     return allowed.includes(ext);
   };
 
@@ -398,7 +535,35 @@ export default function ServerFiles() {
     }
 
     if (isFile) {
-      openEditor({ name });
+      if (isTextEditable(name)) {
+        openEditor({ name });
+      } else if (isImageViewable(name)) {
+        openImageViewer({ name });
+      }
+    }
+  };
+
+  const openImageViewer = async ({ name }) => {
+    if (!serverInfo?.id || !name) return;
+    
+    setError('');
+    setImageName(name);
+    setImageUrl('');
+    setImageModalOpen(true);
+
+    try {
+      const apiDir = uiToApiDirectory(directory);
+      const apiFile = joinPath(apiDir, name);
+      const urlRes = await request(`/servers/${serverInfo.id}/files/download?file=${encodeURIComponent(apiFile)}`);
+      
+      if (urlRes?.url) {
+        setImageUrl(urlRes.url);
+      } else {
+        throw new Error('invalid_image_url');
+      }
+    } catch (err) {
+      setError(err?.message || 'failed_to_load_image');
+      setImageModalOpen(false);
     }
   };
 
@@ -423,20 +588,84 @@ export default function ServerFiles() {
         notice={editorNotice}
       />
 
+      <PromptModal
+        isOpen={promptState.open}
+        onClose={() => setPromptState({ ...promptState, open: false })}
+        title={promptState.title}
+        description={promptState.desc}
+        initialValue={promptState.initial}
+        placeholder={promptState.placeholder}
+        submitLabel={promptState.submitLabel}
+        onSubmit={handlePromptSubmit}
+      />
+
+      <ImageModal
+        isOpen={imageModalOpen}
+        onClose={() => {
+          setImageModalOpen(false);
+          setTimeout(() => setImageUrl(''), 300); // clear after animation
+        }}
+        url={imageUrl}
+        filename={imageName}
+      />
+
+      <UploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUpload={handleUploadFiles}
+        uploading={uploading}
+      />
+
+      <CenterModal
+        isOpen={deleteModalState.open}
+        onClose={() => setDeleteModalState({ open: false, items: [] })}
+        maxWidth="max-w-md"
+      >
+        <div className="p-6">
+          <div className="mb-6">
+            <h2 className="text-[16px] font-bold text-brand tracking-tight">Delete Items</h2>
+            <p className="text-[12px] font-bold text-brand/40 mt-1">
+              Are you sure you want to delete {deleteModalState.items.length === 1 ? 'this item' : `these ${deleteModalState.items.length} items`}? This action cannot be undone.
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-end gap-3 mt-8">
+            <button
+              onClick={() => setDeleteModalState({ open: false, items: [] })}
+              className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <Button
+              onClick={confirmDelete}
+              className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none relative"
+            >
+              {loading ? 'Deleting...' : 'Confirm Delete'}
+            </Button>
+          </div>
+        </div>
+      </CenterModal>
+
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-[20px] font-bold text-brand tracking-tight">File Manager</h1>
-            <p className="text-[12px] font-bold text-brand/30 uppercase tracking-widest mt-1">Direct instance filesystem access</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer">
+            <button 
+              onClick={openNewFilePrompt}
+              className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
+            >
               New File
             </button>
-            <button className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer">
+            <button 
+              onClick={openNewFolderPrompt}
+              className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
+            >
               New Folder
             </button>
             <button
+              onClick={() => setUploadModalOpen(true)}
               className="h-8 px-4 text-[10px] font-bold bg-brand text-surface hover:bg-brand/90 transition-all rounded-md uppercase tracking-widest cursor-pointer shadow-none"
             >
               Upload
@@ -562,7 +791,7 @@ export default function ServerFiles() {
                         >
                           <div className="py-1 px-1">
                             <button
-                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                              onClick={(e) => { e.stopPropagation(); openRenamePrompt(idx); }}
                               className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
                             >
                               Rename
@@ -583,7 +812,7 @@ export default function ServerFiles() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteFilesAction({ rowIndex: idx });
+                                triggerDelete({ rowIndex: idx });
                               }}
                               className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-50 transition-all rounded-md uppercase tracking-tight"
                             >

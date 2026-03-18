@@ -271,8 +271,8 @@ const Settings = () => {
 
                         <div className="pt-6 border-t border-surface-lighter flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[14px] font-bold text-brand/80 uppercase tracking-tight">Two-Factor Authentication</span>
-                                <span className="text-[11px] font-bold text-brand/40 uppercase tracking-tight">Multi-factor enforcement via Google Authenticator, Authy, or Microsoft</span>
+                                <span className="text-[14px] font-bold text-brand/80 tracking-tight">Two-Factor Authentication</span>
+                                <span className="text-[11px] font-bold text-brand/40 tracking-tight">Multi-factor enforcement via Google Authenticator, Authy, or Microsoft</span>
                             </div>
                             <Button 
                                 className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest border-0 shadow-none cursor-pointer"
@@ -283,8 +283,8 @@ const Settings = () => {
 
                         <div className="pt-6 border-t border-surface-lighter flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[14px] font-bold text-brand/80 uppercase tracking-tight">Account Lifecycle</span>
-                                <span className="text-[11px] font-bold text-brand/40 uppercase tracking-tight">Permanent instance decommissioning or session termination</span>
+                                <span className="text-[14px] font-bold text-brand/80 tracking-tight">Account Lifecycle</span>
+                                <span className="text-[11px] font-bold text-brand/40 tracking-tight">Permanent instance decommissioning or session termination</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Button 

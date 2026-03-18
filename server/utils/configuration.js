@@ -26,6 +26,7 @@ export async function getServerDefaults() {
   const allocationsRaw = Number(row?.allocations);
   const databases = Number(row?.databases);
   const backups = Number(row?.backups);
+  const slots = Number(row?.slots);
 
   const io = Math.min(1000, Math.max(10, Number.isFinite(ioRaw) && ioRaw > 0 ? ioRaw : 500));
   const allocations = Math.max(1, Number.isFinite(allocationsRaw) && allocationsRaw > 0 ? allocationsRaw : 1);
@@ -38,7 +39,8 @@ export async function getServerDefaults() {
     io,
     databases: Number.isFinite(databases) && databases >= 0 ? databases : 0,
     allocations,
-    backups: Number.isFinite(backups) && backups >= 0 ? backups : 0
+    backups: Number.isFinite(backups) && backups >= 0 ? backups : 0,
+    slots: Number.isFinite(slots) && slots > 0 ? slots : 1
   };
 }
 
@@ -61,6 +63,7 @@ export async function updateServerDefaults(patch) {
   if (patch?.databases !== undefined) next.databases = Math.max(0, toInt(patch.databases, current.databases));
   if (patch?.allocations !== undefined) next.allocations = Math.max(1, toInt(patch.allocations, current.allocations));
   if (patch?.backups !== undefined) next.backups = Math.max(0, toInt(patch.backups, current.backups));
+  if (patch?.slots !== undefined) next.slots = Math.max(1, toInt(patch.slots, current.slots));
 
   await ensureServerDefaults();
   await db.update(serverDefaults).set(next).where(eq(serverDefaults.id, 1));

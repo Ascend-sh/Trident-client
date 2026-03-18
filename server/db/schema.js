@@ -29,7 +29,8 @@ export const serverDefaults = sqliteTable('server_defaults', {
   io: integer('io').notNull().default(0),
   databases: integer('databases').notNull().default(0),
   allocations: integer('allocations').notNull().default(0),
-  backups: integer('backups').notNull().default(0)
+  backups: integer('backups').notNull().default(0),
+  slots: integer('slots').notNull().default(1)
 });
 
 export const economySettings = sqliteTable('economy_settings', {

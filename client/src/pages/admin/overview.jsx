@@ -70,7 +70,8 @@ export default function AdminOverview() {
     io: 0,
     databases: 0,
     backups: 0,
-    allocations: 0
+    allocations: 0,
+    slots: 1
   });
   const [defaultsLoading, setDefaultsLoading] = useState(false);
   const [defaultsSaving, setDefaultsSaving] = useState(false);
@@ -99,7 +100,8 @@ export default function AdminOverview() {
           io: Number(d.io ?? 0),
           databases: Number(d.databases ?? 0),
           backups: Number(d.backups ?? 0),
-          allocations: Number(d.allocations ?? 0)
+          allocations: Number(d.allocations ?? 0),
+          slots: Number(d.slots ?? 1)
         });
       })
       .catch((err) => {
@@ -182,7 +184,7 @@ export default function AdminOverview() {
                   { label: "Swap (MB)", key: "swap" },
                   { label: "Disk (MB)", key: "disk" },
                   { label: "CPU (%)", key: "cpu" },
-                  { label: "IO Weight", key: "io" },
+                  { label: "Server Slots", key: "slots" },
                   { label: "Databases", key: "databases" },
                   { label: "Backups", key: "backups" },
                   { label: "Allocations", key: "allocations" },

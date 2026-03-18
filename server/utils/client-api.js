@@ -10,7 +10,7 @@ import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
-import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles } from "../modules/server.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 
 const wsLogger = getLogger('ws');
@@ -663,7 +663,8 @@ export const clientApi = new Elysia({ name: "client-api" })
     }
 
     const servers = await listUserServers({ userId: res.body.user.id });
-    const out = ok({ servers }, 200);
+    const defaults = await getServerDefaults();
+    const out = ok({ servers, slots: defaults.slots }, 200);
     set.status = out.status;
     return out.body;
   })
@@ -909,6 +910,208 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'server_files_delete_failed', set.status));
+    }
+  })
+  .put("/servers/:id/files/rename", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const root = typeof body?.root === 'string' ? body.root : '/';
+    const files = Array.isArray(body?.files) ? body.files : [];
+
+    if (!files.length) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await renameServerFiles({ userId: res.body.user.id, serverId: id, root, files });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_rename_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/create-folder", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const root = typeof body?.root === 'string' ? body.root : '/';
+    const name = typeof body?.name === 'string' ? body.name : '';
+
+    if (!name.trim()) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await createServerFolder({ userId: res.body.user.id, serverId: id, root, name });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_create_folder_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/copy", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const location = typeof body?.location === 'string' ? body.location : '';
+
+    if (!location.trim()) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await copyServerFile({ userId: res.body.user.id, serverId: id, location });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_copy_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/download", async ({ request, set, params, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const file = typeof query?.file === 'string' ? query.file : '';
+    if (!file) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getServerFileDownloadUrl({ userId: res.body.user.id, serverId: id, file });
+      const out = ok({ url: data.url }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_download_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/upload-url", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getServerFileUploadUrl({ userId: res.body.user.id, serverId: id });
+      const out = ok({ url: data.url }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_upload_url_failed', set.status));
     }
   })
   .post("/servers/:id/power", async ({ request, set, params }) => {

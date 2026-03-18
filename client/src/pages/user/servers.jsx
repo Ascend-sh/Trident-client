@@ -184,7 +184,8 @@ export default function Servers() {
     };
     
     const [servers, setServers] = useState([]);
-    const [serversLoading, setServersLoading] = useState(false);
+    const [slotsLimit, setSlotsLimit] = useState(1);
+    const [loading, setLoading] = useState(false);
     const [serversError, setServersError] = useState("");
     const [creatingServer, setCreatingServer] = useState(false);
     const [createServerError, setCreateServerError] = useState("");
@@ -195,14 +196,16 @@ export default function Servers() {
     const allocationsFetchRef = useRef(0);
 
     const fetchServers = async () => {
-        setServersLoading(true);
+        setLoading(true);
         setServersError("");
 
         try {
             const res = await request('/servers');
             const serversList = res?.servers || [];
+            const slots = res?.slots || 1;
 
             setServers(serversList);
+            setSlotsLimit(slots);
 
             const fetchId = ++allocationsFetchRef.current;
 
@@ -232,7 +235,7 @@ export default function Servers() {
             setServers([]);
             setServersError(err?.message || 'Failed to load servers');
         } finally {
-            setServersLoading(false);
+            setLoading(false);
         }
     };
 
@@ -384,7 +387,7 @@ export default function Servers() {
                     <div className="grid grid-cols-3 gap-8">
                         <div>
                             <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.15em] mb-1">Slots</p>
-                            <p className="text-[20px] font-bold text-brand/80">{onlineServers} <span className="text-brand/20 mx-1 font-medium">/</span> {Math.max(1, totalServers)}</p>
+                            <p className="text-[20px] font-bold text-brand/80">{totalServers} <span className="text-brand/20 mx-1 font-medium">/</span> {slotsLimit}</p>
                         </div>
                         <div>
                             <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.15em] mb-1">Instances</p>
@@ -546,7 +549,7 @@ export default function Servers() {
                                 });
                             }
 
-                            if (serversLoading || (servers.length > 0 && !metricsLoaded)) {
+                            if (loading || (servers.length > 0 && !metricsLoaded)) {
                                 return (
                                     <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
                                         {Array.from({ length: Math.max(3, servers.length) }).map((_, i) => (
@@ -1029,24 +1032,26 @@ export default function Servers() {
                 maxWidth="max-w-md"
             >
                 <div className="p-6">
-                    <h2 className="text-[16px] font-bold text-brand mb-4">Delete Instance</h2>
-                    <p className="text-[12px] font-bold text-brand/60 mb-6">
-                        Are you sure you want to delete <span className="text-brand">"{serverToDelete?.name}"</span>? This action is permanent and cannot be undone.
-                    </p>
+                    <div className="mb-6">
+                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Delete Instance</h2>
+                        <p className="text-[12px] font-bold text-brand/40 mt-1">
+                            Are you sure you want to delete <span className="text-brand">"{serverToDelete?.name}"</span>? This action cannot be undone.
+                        </p>
+                    </div>
                     {deleteError && (
-                        <div className="px-4 py-3 rounded-md bg-red-500/10 border border-red-500/20 mb-6">
-                            <p className="text-[11px] font-bold text-red-500">{deleteError}</p>
+                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 mb-6">
+                            <p className="text-[11px] font-bold text-red-600">{deleteError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
+                    <div className="flex items-center justify-end gap-3 mt-8">
                         <button
                             onClick={() => setDeleteModalOpen(false)}
                             disabled={deletingServer}
-                            className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50"
+                            className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <button
+                        <Button
                             onClick={async () => {
                                 setDeletingServer(true);
                                 setDeleteError("");
@@ -1063,17 +1068,10 @@ export default function Servers() {
                                 }
                             }}
                             disabled={deletingServer}
-                            className="h-9 px-6 bg-red-500 text-white hover:bg-red-600 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-none"
+                            className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
                         >
-                            {deletingServer ? (
-                                <>
-                                    <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                'Delete Instance'
-                            )}
-                        </button>
+                            {deletingServer ? 'Deleting...' : 'Confirm Delete'}
+                        </Button>
                     </div>
                 </div>
             </CenterModal>

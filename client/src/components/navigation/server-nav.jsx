@@ -2,12 +2,9 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { 
     LayoutDashboard, 
     FolderOpen, 
-    Database, 
-    Calendar, 
     Users, 
     Archive, 
-    Network, 
-    Power, 
+    ShieldCheck, 
     Settings, 
     ClipboardClock, 
 } from "lucide-react";
@@ -22,12 +19,9 @@ export default function ServerNav() {
     const navLinks = [
         { path: `${base}/overview`, icon: LayoutDashboard, label: "Overview" },
         { path: `${base}/files`, icon: FolderOpen, label: "Files" },
-        { path: `${base}/databases`, icon: Database, label: "Databases" },
-        { path: `${base}/schedule`, icon: Calendar, label: "Schedule" },
-        { path: `${base}/users`, icon: Users, label: "Users" },
+        { path: `${base}/users`, icon: Users, label: "Players" },
         { path: `${base}/backups`, icon: Archive, label: "Backups" },
-        { path: `${base}/network`, icon: Network, label: "Network" },
-        { path: `${base}/startup`, icon: Power, label: "Startup" },
+        { path: `${base}/access`, icon: ShieldCheck, label: "Access" },
         { path: `${base}/settings`, icon: Settings, label: "Settings" },
         { path: `${base}/activity`, icon: ClipboardClock, label: "Activity" },
     ];

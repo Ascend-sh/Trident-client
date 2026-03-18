@@ -8,7 +8,7 @@ import { getPteroServerWebsocket } from './server/websocket.js';
 import { connectServerConsole } from './server/console.js';
 import { sendPowerSignal } from './server/state.js';
 import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
-import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel } from './server/explorer.js';
+import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel, renameFiles, createFolder, copyFile, getDownloadUrl, getUploadUrl } from './server/explorer.js';
 
 const serverLogger = getLogger('server');
 
@@ -200,6 +200,13 @@ export async function createServer({ userId, userEmail, name, description = '', 
   if (!Number.isInteger(eId) || eId <= 0) throw new Error('eggId is required');
 
   const defaults = await getServerDefaults();
+
+  const userServers = await db.select().from(servers).where(eq(servers.userId, uid));
+  if (userServers.length >= defaults.slots) {
+    const err = new Error('server_slots_limit_reached');
+    err.status = 403;
+    throw err;
+  }
 
   const eggRow = await db.select().from(eggs).where(eq(eggs.id, eId)).limit(1);
   const importedEgg = eggRow[0] || null;
@@ -572,6 +579,111 @@ export async function deleteServerFiles({ userId, serverId, root = '/', files = 
 
   await deleteServerFilesInPanel({ identifier, root, files });
   return { ok: true };
+}
+
+export async function renameServerFiles({ userId, serverId, root = '/', files = [] }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await renameFiles({ identifier, root, files });
+  return { ok: true };
+}
+
+export async function createServerFolder({ userId, serverId, root = '/', name }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await createFolder({ identifier, root, name });
+  return { ok: true };
+}
+
+export async function copyServerFile({ userId, serverId, location }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await copyFile({ identifier, location });
+  return { ok: true };
+}
+
+export async function getServerFileDownloadUrl({ userId, serverId, file }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  const url = await getDownloadUrl({ identifier, file });
+  return { url };
+}
+
+export async function getServerFileUploadUrl({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  const url = await getUploadUrl({ identifier });
+  return { url };
 }
 
 export async function setServerPowerState({ userId, serverId, state }) { 
