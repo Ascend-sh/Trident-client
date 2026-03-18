@@ -7,6 +7,7 @@ import {
     ShieldCheck, 
     Settings, 
     ClipboardClock, 
+    Database,
 } from "lucide-react";
 
 export default function ServerNav() {
@@ -19,8 +20,9 @@ export default function ServerNav() {
     const navLinks = [
         { path: `${base}/overview`, icon: LayoutDashboard, label: "Overview" },
         { path: `${base}/files`, icon: FolderOpen, label: "Files" },
-        { path: `${base}/users`, icon: Users, label: "Players" },
         { path: `${base}/backups`, icon: Archive, label: "Backups" },
+        { path: `${base}/databases`, icon: Database, label: "Databases" },
+        { path: `${base}/users`, icon: Users, label: "Players" },
         { path: `${base}/access`, icon: ShieldCheck, label: "Access" },
         { path: `${base}/settings`, icon: Settings, label: "Settings" },
         { path: `${base}/activity`, icon: ClipboardClock, label: "Activity" },

@@ -9,6 +9,12 @@ import AdminSoftware from "./pages/admin/software";
 import AdminLocations from "./pages/admin/locations";
 import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
+import ServerBackups from "./pages/user/server/backups";
+import ServerDatabase from "./pages/user/server/database";
+import ServerPlayers from "./pages/user/server/users";
+import ServerAccess from "./pages/user/server/access";
+import ServerSettings from "./pages/user/server/settings";
+import ServerActivity from "./pages/user/server/activity";
 import Settings from "./pages/user/Settings";
 import Navbar from "./components/navigation/navbar.jsx";
 import ServerNav from "./components/navigation/server-nav";
@@ -82,6 +88,12 @@ function App() {
             <Route path="/app/account/settings" element={<Settings />} />
             <Route path="/app/server/:identifier/overview" element={<ServerOverview />} />
             <Route path="/app/server/:identifier/files" element={<ServerFiles />} />
+            <Route path="/app/server/:identifier/backups" element={<ServerBackups />} />
+            <Route path="/app/server/:identifier/databases" element={<ServerDatabase />} />
+            <Route path="/app/server/:identifier/users" element={<ServerPlayers />} />
+            <Route path="/app/server/:identifier/access" element={<ServerAccess />} />
+            <Route path="/app/server/:identifier/settings" element={<ServerSettings />} />
+            <Route path="/app/server/:identifier/activity" element={<ServerActivity />} />
 
             <Route element={<RequireAdmin />}>
               <Route path="/app/admin/overview" element={<AdminOverview />} />

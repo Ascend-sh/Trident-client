@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ServerNav from "../../../components/navigation/server-nav";
 
-export default function Database() {
+export default function Activity() {
     const { identifier } = useParams();
     const [serverInfo, setServerInfo] = useState(null);
 
@@ -35,7 +35,7 @@ export default function Database() {
                             {serverInfo?.name || 'Loading Instance...'}
                         </h1>
                         <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.1em] mt-1">
-                            Manage your instance databases
+                            View instance audit logs
                         </p>
                     </div>
                 </div>
@@ -45,7 +45,7 @@ export default function Database() {
 
             <div className="bg-surface-light border border-surface-lighter rounded-lg p-12 flex flex-col items-center justify-center min-h-[300px]">
                 <span className="text-[12px] font-bold text-brand/40 text-center px-6 italic">
-                    Database management is coming soon.
+                    Activity logs are coming soon.
                 </span>
             </div>
         </div>
