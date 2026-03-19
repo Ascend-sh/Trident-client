@@ -14,7 +14,8 @@ import {
     LayoutDashboard,
     Box,
     Earth,
-    Undo2
+    Undo2,
+    IndianRupee
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +33,7 @@ const AdminNav = () => {
 
     const navItems = [
         { path: "/app/admin/overview", label: "Overview", icon: LayoutDashboard },
+        { path: "/app/admin/payments", label: "Transactions", icon: IndianRupee },
         { path: "/app/admin/software", label: "Software", icon: Box },
         { path: "/app/admin/locations", label: "Locations", icon: Earth },
     ];

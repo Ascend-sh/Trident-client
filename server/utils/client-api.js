@@ -12,6 +12,7 @@ import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
 import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
+import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
 
 const wsLogger = getLogger('ws');
 
@@ -1274,6 +1275,190 @@ export const clientApi = new Elysia({ name: "client-api" })
 
     const imported = await importLocationToDb({ locationId });
     const out = ok({ ...imported }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/payments", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const items = await getPayments(userId);
+    set.status = items.status;
+    return items.body;
+  })
+  .post("/payments/create", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await createPayPalPayment({ userId, amount: body?.amount });
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/payments/execute", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await executePayPalPayment({ 
+      paymentId: body?.paymentId, 
+      payerId: body?.payerId, 
+      userId 
+    });
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/payments/:id/invoice", async ({ params, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await getPayment(userId, params.id);
+    if (!out.ok) {
+        set.status = out.status;
+        return out.body;
+    }
+
+    set.status = 200;
+    return out.body;
+  })
+  .post("/payments/upi/create", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await createUPIPayment({ userId, amount: body?.amount });
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/payments/upi/submit", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await submitUPIUTR({ 
+      userId, 
+      paymentId: body?.paymentId, 
+      utr: body?.utr 
+    });
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/payments", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const out = await adminGetAllPayments();
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/admin/payments/process", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const out = await adminProcessPayment({ 
+      paymentId: body?.paymentId, 
+      action: body?.action 
+    });
     set.status = out.status;
     return out.body;
   })

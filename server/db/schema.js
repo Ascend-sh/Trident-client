@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -40,7 +40,10 @@ export const economySettings = sqliteTable('economy_settings', {
 
 export const wallets = sqliteTable('wallets', {
   userId: integer('user_id').primaryKey(),
-  balance: integer('balance').notNull().default(0)
+  balance: real('balance').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
 });
 
 export const nests = sqliteTable('nests', {
@@ -118,3 +121,21 @@ export const servers = sqliteTable('servers', {
     .$defaultFn(() => new Date())
 });
 
+export const payments = sqliteTable('payments', {
+  id: text('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  amount: real('amount').notNull(), // Amount in USD
+  fee: real('fee').notNull().default(0), // Fee in USD
+  credits: real('credits').notNull(),
+  localAmount: text('local_amount'), // e.g. "8500.00"
+  localCurrency: text('local_currency'), // e.g. "INR"
+  status: text('status').notNull().default('pending'),
+  provider: text('provider').notNull().default('paypal'),
+  providerId: text('provider_id'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});

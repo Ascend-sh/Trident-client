@@ -1,0 +1,1 @@
+ALTER TABLE `wallets` ADD `updated_at` integer NOT NULL DEFAULT 0;

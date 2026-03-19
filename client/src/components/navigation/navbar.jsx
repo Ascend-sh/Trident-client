@@ -10,7 +10,8 @@ import {
     Shield,
     Settings,
     Search,
-    LogOut
+    LogOut,
+    CreditCard
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +42,7 @@ const Navbar = () => {
         { path: "/app/home", label: "Servers", icon: HardDrive },
         { path: "/app/store", label: "Store", icon: ShoppingCart },
         { path: "/app/support", label: "Support", icon: HeadphonesIcon },
+        { path: "/app/billing", label: "Billing", icon: CreditCard },
         { path: "/app/account/settings", label: "Settings", icon: Settings },
     ];
 
