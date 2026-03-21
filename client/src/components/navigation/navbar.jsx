@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
     Plus,
     HardDrive,
-    ShoppingCart, 
     HeadphonesIcon, 
     Sun,
     Moon,
@@ -36,11 +35,12 @@ const Navbar = () => {
     const [logoutProgress, setLogoutProgress] = useState(0);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const menuRef = useRef(null);
+    const searchRef = useRef(null);
+
 
 
     const navItems = [
         { path: "/app/home", label: "Servers", icon: HardDrive },
-        { path: "/app/store", label: "Store", icon: ShoppingCart },
         { path: "/app/support", label: "Support", icon: HeadphonesIcon },
         { path: "/app/billing", label: "Billing", icon: CreditCard },
         { path: "/app/account/settings", label: "Settings", icon: Settings },
@@ -89,6 +89,17 @@ const Navbar = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchRef.current?.focus();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${user?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 
     return (
@@ -102,14 +113,17 @@ const Navbar = () => {
 
                         <span className="text-brand/20 font-light text-xl">/</span>
 
-                        <div className="relative flex items-center">
-                            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 pointer-events-none" />
+                        <div className="relative group flex items-center">
+                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand/40 group-focus-within:text-brand/70 transition-colors pointer-events-none" />
                             <input
+                                ref={searchRef}
                                 type="text"
-                                placeholder="Search..."
-                                className="h-8 pl-9 pr-4 w-[280px] rounded-md text-[11px] font-bold text-black/50 placeholder:text-black/30 focus:outline-none transition-all uppercase tracking-widest"
-                                style={{ background: "#E5E5E5" }}
+                                placeholder="Search"
+                                className="h-8 pl-9 pr-12 w-[280px] bg-surface-highlight border border-surface-lighter rounded-md text-[11px] font-bold text-brand/80 placeholder:text-brand/40 focus:outline-none focus:bg-surface-highlight/80 focus:border-brand/40 hover:border-brand/20 transition-all"
                             />
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-surface-lighter bg-surface-highlight text-[9px] font-bold text-brand/40 pointer-events-none group-focus-within:opacity-0 transition-opacity">
+                                Ctrl K
+                            </div>
                         </div>
                     </div>
 

@@ -1,24 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-    CreditCard,
-    Plus,
     Download,
     History,
     CheckCircle2,
     XCircle,
     Clock,
-    ArrowRight
+    Rocket
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context.jsx";
-import { Button } from "@/components/ui/button";
-import { 
-    Card, 
-    CardHeader, 
-    CardTitle, 
-    CardContent
-} from "@/components/ui/card";
-import AddCredits from "../economy/AddCredits";
 
 const API_BASE = "/api/v1/client";
 
@@ -49,7 +39,6 @@ const Billing = () => {
     const { user, balance, currencyName, refresh } = useAuth();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
 
     const fetchPayments = async () => {
         setLoading(true);
@@ -120,60 +109,60 @@ const Billing = () => {
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-[20px] font-bold text-brand tracking-tight">Billing & Finance</h1>
-                    <p className="text-[11px] font-bold text-brand/40 uppercase tracking-widest mt-1">Manage your credits and transaction history</p>
+                    <h1 className="text-[20px] font-bold text-brand tracking-tight leading-none">Billing</h1>
+                    <p className="text-[14px] font-bold text-brand/60 mt-2">Manage your credits, transaction history and subscriptions</p>
                 </div>
-                <Button 
-                    onClick={() => setIsCreditsModalOpen(true)}
-                    className="h-9 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[11px] uppercase tracking-[0.1em] flex items-center gap-2 cursor-pointer shadow-none"
-                >
-                    <Plus size={14} strokeWidth={3} /> Add Credits
-                </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <Card className="bg-surface-light border-surface-lighter shadow-none rounded-xl overflow-hidden col-span-1">
-                    <CardHeader className="pb-2">
-                        <span className="text-[9px] font-bold text-brand/40 uppercase tracking-widest">Available Balance</span>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-[32px] font-bold text-brand tracking-tighter">{balance}</span>
-                            <span className="text-[14px] font-bold text-brand/40 uppercase tracking-widest">{currencyName}</span>
+            <div className="mb-8">
+                <div className="px-2 mb-4">
+                    <span className="text-[11px] font-bold text-brand/60 uppercase tracking-widest">Subscription Overview</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="border border-surface-lighter rounded-lg p-5 flex flex-col justify-between min-h-fit">
+                        <h2 className="text-[16px] font-bold text-brand mb-4">Current Plan</h2>
+                        <div className="flex items-end justify-between gap-4">
+                            <div>
+                                <span className="inline-block px-2.5 py-0.5 rounded-md bg-surface-highlight border border-surface-lighter text-[10px] font-bold text-brand/40 uppercase tracking-widest mb-2">Free tier</span>
+                                <p className="text-[16px] font-bold text-brand/40 uppercase tracking-[0.1em]">$0.00 / month</p>
+                            </div>
+                            <button className="h-8 px-4 rounded-md bg-brand text-surface hover:bg-brand/90 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap flex items-center gap-2">
+                                <Rocket size={12} strokeWidth={2.5} />
+                                Upgrade
+                            </button>
                         </div>
-                        <div className="mt-4 pt-4 border-t border-brand/5 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-brand/30 uppercase tracking-tight">Exchange Rate</span>
-                            <span className="text-[10px] font-bold text-brand/60">1.00 USD = 1.00 {currencyName}</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
-                <Card className="bg-surface-light border-surface-lighter shadow-none rounded-xl overflow-hidden col-span-1 lg:col-span-2">
-                    <CardHeader className="pb-2">
-                        <span className="text-[9px] font-bold text-brand/40 uppercase tracking-widest">Pricing Policy</span>
-                    </CardHeader>
-                    <CardContent className="flex flex-col h-full justify-between">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-brand/20" />
-                                <span className="text-[11px] font-bold text-brand/60 uppercase tracking-tight">Automated hourly billing for active instances</span>
+                    <div className="border border-surface-lighter rounded-lg p-5">
+                        <h2 className="text-[16px] font-bold text-brand mb-6">Usage Summary</h2>
+                        <div className="grid grid-cols-2 gap-10">
+                            <div>
+                                <p className="text-[18px] font-bold text-brand mb-2">1.7 GB / 2 GB</p>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex-1 h-1.5 rounded-full bg-brand/5 overflow-hidden">
+                                        <div className="h-full rounded-full bg-[#A2D2FF]" style={{ width: '85%' }} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-brand/40">85%</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-brand/50 uppercase tracking-widest">RAM Usage</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-brand/20" />
-                                <span className="text-[11px] font-bold text-brand/60 uppercase tracking-tight">Credits never expire while your account is active</span>
+                            <div>
+                                <p className="text-[18px] font-bold text-brand mb-2">2 GB / 5 GB</p>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex-1 h-1.5 rounded-full bg-brand/5 overflow-hidden">
+                                        <div className="h-full rounded-full bg-[#FFD8A8]" style={{ width: '40%' }} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-brand/40">40%</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-brand/50 uppercase tracking-widest">Disk Usage</p>
                             </div>
                         </div>
-                        <div className="mt-6 flex items-center gap-2 text-brand/40 group cursor-pointer hover:text-brand transition-colors">
-                            <span className="text-[10px] font-bold uppercase tracking-widest">View Detailed Resource Pricing</span>
-                            <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-4">
-                <div className="flex items-center gap-2 px-2">
-                    <History size={14} className="text-brand/40" />
+                <div className="px-2">
                     <span className="text-[11px] font-bold text-brand/60 uppercase tracking-widest">Transaction History</span>
                 </div>
 
@@ -244,14 +233,21 @@ const Billing = () => {
                 </div>
             </div>
 
-            <AddCredits 
-                isOpen={isCreditsModalOpen} 
-                onClose={() => {
-                    setIsCreditsModalOpen(false);
-                    fetchPayments();
-                    refresh();
-                }} 
-            />
+            <div className="space-y-4 mt-8">
+                <div className="flex items-center justify-between px-2">
+                    <span className="text-[11px] font-bold text-brand/60 uppercase tracking-widest">Payment Methods</span>
+                    <button className="h-7 px-3 rounded-md bg-brand text-surface hover:bg-brand/90 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer">
+                        + Add Method
+                    </button>
+                </div>
+
+                <div className="border border-surface-lighter rounded-lg overflow-hidden">
+                    <div className="py-16 flex flex-col items-center justify-center text-center px-4">
+                        <span className="text-[12px] font-bold text-brand/40 italic">No payment methods saved.</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     );
 };
