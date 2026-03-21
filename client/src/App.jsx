@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Auth from "./pages/auth";
+import Home from "./pages/landing/pages/Home";
 import Servers from "./pages/user/servers";
 import NotFound from "./pages/errors/404";
 import Forbidden from "./pages/errors/403";
@@ -83,7 +84,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Auth />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
 
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
