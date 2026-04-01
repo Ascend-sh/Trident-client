@@ -147,17 +147,18 @@ export default function Backups() {
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-sm bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
                         <img src="/defaulticon.webp" alt="Server" className="w-full h-full object-cover opacity-80" />
                     </div>
                     <div>
-                        <h1 className="text-[20px] font-bold text-brand tracking-tight">
+                        <h1 className="text-[20px] font-bold text-foreground tracking-tight">
                             {serverInfo?.name || "Loading Instance..."}
                         </h1>
-                        <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.1em] mt-1">
+                        <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.1em] mt-1">
                             Backups
                         </p>
                     </div>
+
                 </div>
                 <Button
                     onClick={() => { setCreateName(""); setActionError(""); setCreateModalOpen(true); }}
@@ -174,17 +175,19 @@ export default function Backups() {
             <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
                 <div className="w-full">
                     <div className="grid grid-cols-[2fr_1fr_1fr_0.6fr] px-6 py-3">
-                        <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
-                        <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Size</span>
-                        <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Created</span>
-                        <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Name</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Size</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Created</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</span>
                     </div>
+
 
                     {backups.length === 0 ? (
                         <div className="bg-surface border border-surface-lighter rounded-lg py-16 flex flex-col items-center justify-center min-h-[210px]">
-                            <Archive size={24} className="text-brand/10 mb-3" />
-                            <span className="text-[12px] font-bold text-brand/40 italic">No backups yet. Create your first one.</span>
+                            <Archive size={24} className="text-muted-foreground/10 mb-3" />
+                            <span className="text-[12px] font-bold text-muted-foreground italic">No backups yet. Create your first one.</span>
                         </div>
+
                     ) : (
                         <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
                             {backups.map((backup, idx) => (
@@ -195,37 +198,41 @@ export default function Backups() {
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${backup.is_successful ? 'bg-green-500' : 'bg-red-500'}`} />
                                         <div className="min-w-0">
-                                            <p className="text-[12px] font-bold text-brand truncate">
-                                                {backup.name || <span className="italic text-brand/30">Unnamed backup</span>}
+                                            <p className="text-[12px] font-bold text-foreground truncate">
+                                                {backup.name || <span className="italic text-muted-foreground">Unnamed backup</span>}
                                             </p>
+
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className={`text-[9px] font-bold uppercase tracking-widest ${backup.is_successful ? 'text-green-600' : 'text-red-500'}`}>
                                                     {backup.is_successful ? "Complete" : "Failed"}
                                                 </span>
                                                 {backup.is_locked && (
                                                     <>
-                                                        <span className="text-brand/10">·</span>
-                                                        <span className="text-[9px] font-bold text-brand/30 uppercase tracking-widest">Locked</span>
+                                                        <span className="text-foreground/10">·</span>
+                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Locked</span>
                                                     </>
                                                 )}
+
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-center">
-                                        <span className="text-[11px] font-bold text-brand/60 font-mono">{formatBytes(backup.bytes)}</span>
+                                        <span className="text-[11px] font-bold text-muted-foreground font-mono">{formatBytes(backup.bytes)}</span>
                                     </div>
                                     <div className="flex flex-col items-center justify-center">
-                                        <span className="text-[11px] font-bold text-brand/60">{relativeTime(backup.completed_at)}</span>
-                                        <span className="text-[9px] font-bold text-brand/20 uppercase tracking-widest">{formatDate(backup.completed_at)}</span>
+                                        <span className="text-[11px] font-bold text-muted-foreground">{relativeTime(backup.completed_at)}</span>
+                                        <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">{formatDate(backup.completed_at)}</span>
                                     </div>
+
                                     <div className="flex items-center justify-end">
                                         <div className="relative">
                                             <button
                                                 onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === backup.uuid ? null : backup.uuid); }}
-                                                className="p-2 rounded-md hover:bg-surface-lighter text-brand/30 hover:text-brand transition-all cursor-pointer"
+                                                className="p-2 rounded-md hover:bg-surface-lighter text-muted-foreground hover:text-foreground transition-all cursor-pointer"
                                             >
                                                 <Ellipsis size={14} />
                                             </button>
+
                                             {openMenuId === backup.uuid && (
                                                 <div
                                                     className="absolute right-0 mt-2 w-36 bg-surface border border-surface-lighter rounded-md z-50 shadow-none py-1"
@@ -234,11 +241,12 @@ export default function Backups() {
                                                     <button
                                                         onClick={() => { setOpenMenuId(null); setActionError(""); setRestoreTarget(backup); }}
                                                         disabled={!backup.is_successful}
-                                                        className="w-full px-4 py-2 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                                                        className="w-full px-4 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                                                     >
                                                         <RotateCcw size={11} />
                                                         Restore
                                                     </button>
+
                                                     <button
                                                         onClick={() => { setOpenMenuId(null); setActionError(""); setDeleteTarget(backup); }}
                                                         disabled={backup.is_locked}
@@ -261,9 +269,10 @@ export default function Backups() {
             <CenterModal isOpen={createModalOpen} onClose={() => !creating && setCreateModalOpen(false)} maxWidth="max-w-sm">
                 <div className="p-6">
                     <div className="mb-5">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Create Backup</h2>
-                        <p className="text-[11px] font-bold text-brand/30 uppercase tracking-widest mt-0.5">Optional name for this backup</p>
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Create Backup</h2>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Optional name for this backup</p>
                     </div>
+
                     <input
                         type="text"
                         value={createName}
@@ -272,8 +281,9 @@ export default function Backups() {
                         placeholder="e.g. Pre-update snapshot"
                         disabled={creating}
                         autoFocus
-                        className="w-full h-9 bg-surface-light border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-brand placeholder:text-brand/25 focus:outline-none focus:border-brand/30 transition-colors disabled:opacity-50"
+                        className="w-full h-9 bg-surface-light border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/30 transition-colors disabled:opacity-50"
                     />
+
                     {actionError && (
                         <div className="mt-3 px-3 py-2 rounded-md bg-red-500/5 border border-red-500/10">
                             <p className="text-[11px] font-bold text-red-600">{actionError}</p>

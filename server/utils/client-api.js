@@ -13,6 +13,7 @@ import { deleteImportedLocation, importLocationToDb, listImportedLocations, list
 import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
+import { getCustomization, updateCustomization } from "../utils/customization.js";
 
 const wsLogger = getLogger('ws');
 
@@ -411,6 +412,65 @@ export const clientApi = new Elysia({ name: "client-api" })
 
     const updated = await updateServerDefaults(body || {});
     const out = ok({ ...updated }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/customization", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const customization = await getCustomization();
+    const out = ok({ customization }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .patch("/admin/customization", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const updated = await updateCustomization(body || {});
+    const out = ok({ ...updated }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/site-settings", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const customization = await getCustomization();
+    const out = ok({ customization }, 200);
     set.status = out.status;
     return out.body;
   })

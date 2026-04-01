@@ -87,7 +87,7 @@ export default function ServerOverview() {
             fontSize: 14,
             fontFamily: "Consolas, 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Monaco, monospace",
             theme: {
-                background: "#18181b",
+                background: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || "#121212",
                 foreground: "rgba(255, 255, 255, 0.8)",
                 selectionBackground: "rgba(255, 255, 255, 0.1)",
             },
@@ -370,7 +370,7 @@ export default function ServerOverview() {
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-sm bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
                         <img 
                             src="/defaulticon.webp" 
                             alt="Minecraft" 
@@ -379,7 +379,8 @@ export default function ServerOverview() {
                     </div>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-[20px] font-bold text-brand tracking-tight">{serverInfo?.name || 'Loading Instance...'}</h1>
+                            <h1 className="text-[20px] font-bold text-foreground tracking-tight">{serverInfo?.name || 'Loading Instance...'}</h1>
+
                             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${
                                 status === 'running' || status === 'online' 
                                     ? 'bg-green-500/5 border-green-500/10 text-green-600' 
@@ -394,10 +395,10 @@ export default function ServerOverview() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-[12px] font-bold uppercase tracking-widest">
-                            <span className={`${status === 'running' || status === 'online' ? 'text-green-500' : 'text-brand/30'}`}>
+                            <span className={`${status === 'running' || status === 'online' ? 'text-green-500' : 'text-foreground/30'}`}>
                                 {status === 'running' || status === 'online' ? formatUptime(stats.uptime) : 'Uptime'}
                             </span>
-                            <span className="text-brand/10">•</span>
+                            <span className="text-foreground/10">•</span>
                             {serverInfo?.location && (
                                 <>
                                     <div className="flex items-center gap-1.5">
@@ -408,13 +409,14 @@ export default function ServerOverview() {
                                                 className="w-4 h-3 rounded-sm object-cover opacity-80"
                                             />
                                         )}
-                                        <span className="text-brand/40">{serverInfo.location.description || serverInfo.location.shortCode}</span>
+                                        <span className="text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
                                     </div>
-                                    <span className="text-brand/10">•</span>
+                                    <span className="text-foreground/10">•</span>
                                 </>
                             )}
+
                             <div className="flex items-center gap-1.5">
-                                <span className="text-brand/60">
+                                <span className="text-foreground/60">
                                     {primaryAllocation 
                                         ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
                                         : 'Assigning IP...'}
@@ -422,13 +424,14 @@ export default function ServerOverview() {
                                 {primaryAllocation && (
                                     <button 
                                         onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
-                                        className="text-brand/20 hover:text-brand transition-colors cursor-pointer"
+                                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                         title="Copy IP"
                                     >
                                         {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                                     </button>
                                 )}
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -513,26 +516,28 @@ export default function ServerOverview() {
 
             <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
                 <div className="flex flex-col p-8">
-                    <h2 className="text-[12px] font-bold text-brand uppercase tracking-wider mb-4">
+                    <h2 className="text-[12px] font-bold text-foreground uppercase tracking-wider mb-4">
                         EULA Acceptance
                     </h2>
                     
-                    <p className="text-[11px] font-medium text-brand/60 leading-relaxed mb-8">
+                    <p className="text-[11px] font-medium text-muted-foreground leading-relaxed mb-8">
                         Your server has detected that the Minecraft EULA has not been accepted. 
                         By clicking "Accept", you agree to the Mojang End User License Agreement.
                     </p>
 
+
                     <div className="flex items-center justify-between gap-4 mb-8">
-                        <span className="text-[9px] font-bold text-brand/40 uppercase tracking-widest">Document</span>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Document</span>
                         <a 
                             href="https://account.mojang.com/documents/minecraft_eula" 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-[9px] font-bold text-brand/60 hover:text-brand transition-colors uppercase tracking-widest"
+                            className="text-[9px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
                         >
                             Open License
                         </a>
                     </div>
+
 
                     <div className="flex items-center gap-2 justify-end">
                         <Button
@@ -543,8 +548,9 @@ export default function ServerOverview() {
                                 eulaCheckInFlightRef.current = false;
                             }}
                             disabled={acceptingEula}
-                            className="h-8 px-4 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest text-brand/30 hover:text-brand cursor-pointer shadow-none"
+                            className="h-8 px-4 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground cursor-pointer shadow-none"
                         >
+
                             Decline
                         </Button>
                         <Button

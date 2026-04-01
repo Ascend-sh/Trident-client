@@ -139,3 +139,35 @@ export const payments = sqliteTable('payments', {
     .notNull()
     .$defaultFn(() => new Date())
 });
+
+export const customization = sqliteTable('customization', {
+  id: integer('id').primaryKey(), // Always 1
+  siteName: text('site_name').notNull().default('Torqen Cloud'),
+  logoUrl: text('logo_url').notNull().default('/Logo-dark.png'),
+  brandColor: text('brand_color').notNull().default('#18181b'),
+  brandColorDark: text('brand_color_dark').notNull().default('#ffffff'),
+  brandHover: text('brand_hover').notNull().default('#27272a'),
+  brandHoverDark: text('brand_hover_dark').notNull().default('#f4f4f5'),
+  surface: text('surface').notNull().default('#ffffff'),
+  surfaceDark: text('surface_dark').notNull().default('#121212'),
+  surfaceLight: text('surface_light').notNull().default('#f4f4f5'),
+  surfaceLightDark: text('surface_light_dark').notNull().default('#18181b'),
+  surfaceHighlight: text('surface_highlight').notNull().default('#e5e5e5'),
+  surfaceHighlightDark: text('surface_highlight_dark').notNull().default('#27272a'),
+  surfaceLighter: text('surface_lighter').notNull().default('#e4e4e7'),
+  surfaceLighterDark: text('surface_lighter_dark').notNull().default('#3f3f46'),
+  mutedForeground: text('muted_foreground').notNull().default('#71717a'),
+  mutedForegroundDark: text('muted_foreground_dark').notNull().default('#a1a1aa'),
+  foreground: text('foreground').notNull().default('#18181b'),
+  foregroundDark: text('foreground_dark').notNull().default('#ffffff'),
+  borderColor: text('border_color').notNull().default('#e4e4e7'),
+  borderColorDark: text('border_color_dark').notNull().default('#3f3f46'),
+  borderRadius: text('border_radius').notNull().default('0.625rem'),
+  fontFamily: text('font_family').notNull().default("'Satoshi', sans-serif"),
+
+  isCompact: integer('is_compact', { mode: 'boolean' }).notNull().default(true),
+  isDark: integer('is_dark', { mode: 'boolean' }).notNull().default(true),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});

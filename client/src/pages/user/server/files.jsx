@@ -623,19 +623,21 @@ export default function ServerFiles() {
       >
         <div className="p-6">
           <div className="mb-6">
-            <h2 className="text-[16px] font-bold text-brand tracking-tight">Delete Items</h2>
-            <p className="text-[12px] font-bold text-brand/40 mt-1">
+            <h2 className="text-[16px] font-bold text-foreground tracking-tight">Delete Items</h2>
+            <p className="text-[12px] font-bold text-muted-foreground mt-1">
               Are you sure you want to delete {deleteModalState.items.length === 1 ? 'this item' : `these ${deleteModalState.items.length} items`}? This action cannot be undone.
             </p>
           </div>
+
           
           <div className="flex items-center justify-end gap-3 mt-8">
             <button
               onClick={() => setDeleteModalState({ open: false, items: [] })}
-              className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer"
+              className="px-4 py-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-colors cursor-pointer"
             >
               Cancel
             </button>
+
             <Button
               onClick={confirmDelete}
               className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none relative"
@@ -649,21 +651,23 @@ export default function ServerFiles() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-[20px] font-bold text-brand tracking-tight">File Manager</h1>
+            <h1 className="text-[20px] font-bold text-foreground tracking-tight">File Manager</h1>
           </div>
+
           <div className="flex items-center gap-2">
             <button 
               onClick={openNewFilePrompt}
-              className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
+              className="h-8 px-3 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
             >
               New File
             </button>
             <button 
               onClick={openNewFolderPrompt}
-              className="h-8 px-3 text-[10px] font-bold text-brand/60 uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
+              className="h-8 px-3 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
             >
               New Folder
             </button>
+
             <button
               onClick={() => setUploadModalOpen(true)}
               className="h-8 px-4 text-[10px] font-bold bg-brand text-surface hover:bg-brand/90 transition-all rounded-md uppercase tracking-widest cursor-pointer shadow-none"
@@ -684,14 +688,15 @@ export default function ServerFiles() {
                   onClick={() => setDirectory(apiToUiDirectory(c.path))}
                   className={`text-[11px] font-bold uppercase tracking-widest transition-colors ${
                     isLast 
-                      ? 'text-brand cursor-default' 
-                      : 'text-brand/30 hover:text-brand/60 cursor-pointer'
+                      ? 'text-foreground cursor-default' 
+                      : 'text-muted-foreground hover:text-foreground/60 cursor-pointer'
                   }`}
                   disabled={isLast}
                 >
                   {c.label}
                 </button>
-                {!isLast && <span className="text-[10px] font-bold text-brand">/</span>}
+                {!isLast && <span className="text-[10px] font-bold text-muted-foreground">/</span>}
+
               </div>
             );
           })}
@@ -707,11 +712,12 @@ export default function ServerFiles() {
       <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
         <div className="w-full">
           <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3">
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Size</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Modified</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Name</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Size</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Modified</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</span>
           </div>
+
           <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col divide-y divide-surface-lighter">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
@@ -733,8 +739,9 @@ export default function ServerFiles() {
               ))
             ) : items.length === 0 ? (
               <div className="py-12 text-center">
-                <span className="text-[12px] font-bold text-brand/40 italic">This folder is empty</span>
+                <span className="text-[12px] font-bold text-muted-foreground italic">This folder is empty</span>
               </div>
+
             ) : (
               items.map((item, idx) => (
                 <div
@@ -748,14 +755,15 @@ export default function ServerFiles() {
                     ) : (
                       <Folder size={16} className="text-brand/50 shrink-0" />
                     )}
-                    <span className="text-[12px] font-bold text-brand truncate tracking-tight">{item?.name || '-'}</span>
+                    <span className="text-[12px] font-bold text-foreground truncate tracking-tight">{item?.name || '-'}</span>
                   </div>
                   <div className="flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-brand/40 uppercase tracking-widest">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
                   </div>
                   <div className="flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-brand/40 uppercase tracking-widest">{formatRelativeTime(item?.modified_at)}</span>
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{formatRelativeTime(item?.modified_at)}</span>
                   </div>
+
                   <div className="flex items-center justify-end">
                     <div className="relative">
                       <button
@@ -792,10 +800,11 @@ export default function ServerFiles() {
                           <div className="py-1 px-1">
                             <button
                               onClick={(e) => { e.stopPropagation(); openRenamePrompt(idx); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
                             >
                               Rename
                             </button>
+
                             <button
                               onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
                               className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"

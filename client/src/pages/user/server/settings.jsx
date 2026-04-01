@@ -23,7 +23,7 @@ export default function ServerSettings() {
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-sm bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
                         <img 
                             src="/defaulticon.webp" 
                             alt="Server Icon" 
@@ -31,10 +31,11 @@ export default function ServerSettings() {
                         />
                     </div>
                     <div>
-                        <h1 className="text-[20px] font-bold text-brand tracking-tight">
+                        <h1 className="text-[20px] font-bold text-foreground tracking-tight">
                             {serverInfo?.name || 'Loading Instance...'}
                         </h1>
-                        <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.1em] mt-1">
+                        <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.1em] mt-1">
+
                             Instance-specific settings
                         </p>
                     </div>
@@ -44,7 +45,8 @@ export default function ServerSettings() {
             <ServerNav />
 
             <div className="bg-surface-light border border-surface-lighter rounded-lg p-12 flex flex-col items-center justify-center min-h-[300px]">
-                <span className="text-[12px] font-bold text-brand/40 text-center px-6 italic">
+                <span className="text-[12px] font-bold text-muted-foreground text-center px-6 italic">
+
                     Server settings are coming soon.
                 </span>
             </div>

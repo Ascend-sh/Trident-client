@@ -137,9 +137,10 @@ export default function AdminOverview() {
     <div className="bg-surface px-16 py-10">
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[20px] font-bold text-brand tracking-tight">Admin Overview</h1>
-          <p className="text-[12px] font-bold text-brand/30 uppercase tracking-widest mt-1">System Statistics & Configuration</p>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight">Admin Overview</h1>
+          <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest mt-1">System Statistics & Configuration</p>
         </div>
+
         <Button 
           onClick={() => setUpdateModalOpen(true)}
           className="h-8 px-3 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none"
@@ -151,13 +152,14 @@ export default function AdminOverview() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => (
-          <Card key={index} size="sm" className="shadow-none border border-surface-lighter ring-0">
-            <CardContent className="py-3">
-              <p className="text-[11px] font-bold text-brand/50 uppercase tracking-[0.2em] mb-0.5">{stat.label}</p>
-              <p className="text-[22px] font-bold text-brand tracking-tight">{stat.value}</p>
+          <Card key={index} className="border border-surface-lighter ring-0 bg-none transition-all group">
+            <CardContent className="py-1.5 px-6">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.25em] mb-1">{stat.label}</p>
+              <p className="text-[24px] font-bold text-foreground tracking-tighter leading-none">{stat.value}</p>
             </CardContent>
           </Card>
         ))}
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -166,9 +168,10 @@ export default function AdminOverview() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-[13px] font-bold text-brand uppercase tracking-[0.15em]">Default Resources</CardTitle>
-                  <CardDescription className="text-[10px] font-bold text-brand/40 uppercase tracking-widest mt-0.5">Global server allocation limits</CardDescription>
+                  <CardTitle className="text-[13px] font-bold text-foreground uppercase tracking-[0.15em]">Default Resources</CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Global server allocation limits</CardDescription>
                 </div>
+
                 {defaultsSaved && <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest animate-pulse">Saved Successfully</span>}
               </div>
             </CardHeader>
@@ -190,15 +193,16 @@ export default function AdminOverview() {
                   { label: "Allocations", key: "allocations" },
                 ].map((field) => (
                   <div key={field.key}>
-                    <label className="block text-[10px] font-bold text-brand/50 uppercase tracking-widest mb-1.5">{field.label}</label>
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">{field.label}</label>
                     <Input
                       type="number"
                       value={serverDefaults[field.key]}
                       onChange={(e) => setServerDefaults({ ...serverDefaults, [field.key]: Number(e.target.value) })}
-                      className="h-8.5 px-3 bg-surface-light/50 border-brand/[0.05] text-[12px] font-bold text-brand focus:border-brand/20 shadow-none transition-all"
+                      className="h-8.5 px-3 bg-surface-light/50 border-surface-lighter text-[12px] font-bold text-foreground focus:border-brand/20 shadow-none transition-all"
                     />
                   </div>
                 ))}
+
               </div>
             </CardContent>
             <CardFooter className="bg-brand/[0.01] border-t border-brand/[0.03] py-3 flex justify-end">
@@ -226,9 +230,10 @@ export default function AdminOverview() {
 
           <Card className="shadow-none border border-surface-lighter ring-0 overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-[13px] font-bold text-brand uppercase tracking-[0.15em]">System Management</CardTitle>
-              <CardDescription className="text-[10px] font-bold text-brand/40 uppercase tracking-widest mt-0.5">Toggle core platform features</CardDescription>
+              <CardTitle className="text-[13px] font-bold text-foreground uppercase tracking-[0.15em]">System Management</CardTitle>
+              <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Toggle core platform features</CardDescription>
             </CardHeader>
+
             <CardContent className="p-0 divide-y divide-brand/[0.03]">
               {[
                 { title: "Maintenance Mode", desc: "Temporarily disable access to the dashboard", icon: Shield, key: "maintenance" },
@@ -238,14 +243,15 @@ export default function AdminOverview() {
               ].map((item, i) => (
                 <div key={i} className={`px-6 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors ${item.disabled ? 'opacity-40' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-lg bg-surface-light border border-brand/[0.05] flex items-center justify-center text-brand/30 group-hover:text-brand/50 transition-colors">
+                    <div className="w-9 h-9 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
                       <item.icon size={17} />
                     </div>
                     <div>
-                      <p className="text-[13px] font-bold text-brand">{item.title}</p>
-                      <p className="text-[11px] font-bold text-brand/40 uppercase tracking-tight mt-0.5">{item.desc}</p>
+                      <p className="text-[13px] font-bold text-foreground">{item.title}</p>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight mt-0.5">{item.desc}</p>
                     </div>
                   </div>
+
                   <Switch 
                     checked={systemSettings[item.key]}
                     onCheckedChange={(checked) => setSystemSettings({ ...systemSettings, [item.key]: checked })}
@@ -262,9 +268,10 @@ export default function AdminOverview() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-[13px] font-bold text-brand uppercase tracking-[0.15em]">User Blacklist</CardTitle>
-                  <CardDescription className="text-[10px] font-bold text-brand/40 uppercase tracking-widest mt-0.5">Managed restricted accounts</CardDescription>
+                  <CardTitle className="text-[13px] font-bold text-foreground uppercase tracking-[0.15em]">User Blacklist</CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Managed restricted accounts</CardDescription>
                 </div>
+
                 <button className="text-brand/20 hover:text-brand/50 transition-colors cursor-pointer"><Plus size={16} /></button>
               </div>
             </CardHeader>
@@ -274,16 +281,17 @@ export default function AdminOverview() {
                   { email: "john.doe@example.com", date: "2024-01-15", initial: "JD" },
                   { email: "alice.baker@example.com", date: "2024-01-12", initial: "AB" },
                 ].map((user, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-brand/[0.03] bg-brand/[0.01] group hover:bg-brand/[0.02] transition-all">
+                  <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-surface-lighter/50 bg-surface group hover:bg-surface-light/30 transition-all">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand/[0.03] flex items-center justify-center text-[10px] font-bold text-brand/50">
+                      <div className="w-8 h-8 rounded-full bg-surface-light flex items-center justify-center text-[10px] font-bold text-muted-foreground">
                         {user.initial}
                       </div>
                       <div>
-                        <p className="text-[12px] font-bold text-brand">{user.email}</p>
-                        <p className="text-[9px] font-bold text-brand/40 uppercase tracking-tighter">{user.date}</p>
+                        <p className="text-[12px] font-bold text-foreground">{user.email}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">{user.date}</p>
                       </div>
                     </div>
+
                     <button className="text-[10px] font-bold text-brand/20 group-hover:text-red-500/50 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer">Unban</button>
                   </div>
                 ))}
@@ -292,8 +300,9 @@ export default function AdminOverview() {
                 <Input
                   type="email"
                   placeholder="USER EMAIL TO BAN..."
-                  className="h-9 px-4 bg-surface-light/50 border-brand/[0.05] text-[10px] font-bold text-brand placeholder:text-brand/30 uppercase tracking-widest focus:border-brand/20 shadow-none"
+                  className="h-9 px-4 bg-surface-light/50 border-surface-lighter text-[10px] font-bold text-foreground placeholder:text-muted-foreground uppercase tracking-widest focus:border-brand/20 shadow-none"
                 />
+
                 <Button className="h-9 w-full bg-red-500 text-white hover:bg-red-600 transition-all rounded-md font-bold text-[10px] uppercase tracking-[0.2em] shadow-none">
                   Add to Blacklist
                 </Button>
@@ -328,29 +337,31 @@ export default function AdminOverview() {
         maxWidth="max-w-md"
       >
         <div className="p-4">
-          <h2 className="text-[16px] font-bold text-brand mb-4 tracking-tight">Check for Updates</h2>
+          <h2 className="text-[16px] font-bold text-foreground mb-4 tracking-tight">Check for Updates</h2>
           <div className="space-y-4">
             <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-light border border-surface-lighter">
-              <AlertCircle size={20} className="text-brand/40 flex-shrink-0 mt-0.5" />
+              <AlertCircle size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-brand mb-1">Source Repository Update</p>
-                <p className="text-[11px] font-bold text-brand/30 uppercase tracking-tight leading-relaxed">This will pull the latest version of Torqen from the main branch. Local changes may be overwritten.</p>
+                <p className="text-[12px] font-bold text-foreground mb-1">Source Repository Update</p>
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight leading-relaxed">This will pull the latest version of Torqen from the main branch. Local changes may be overwritten.</p>
               </div>
             </div>
 
             <div className="rounded-lg border border-surface-lighter bg-surface-light p-4">
-              <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest mb-2">Update Sequence</p>
-              <code className="text-[11px] font-bold text-brand/60 font-mono break-all leading-relaxed tracking-tight">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Update Sequence</p>
+              <code className="text-[11px] font-bold text-foreground/60 font-mono break-all leading-relaxed tracking-tight">
                 git pull origin main && bun install && bun run db:migrate
               </code>
             </div>
+
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
               <button
                 onClick={() => setUpdateModalOpen(false)}
                 disabled={isUpdating}
-                className="px-4 py-2 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50"
               >
+
                 Cancel
               </button>
               <Button

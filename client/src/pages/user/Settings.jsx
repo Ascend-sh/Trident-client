@@ -5,7 +5,10 @@ import {
     Mail,
     Save,
     Activity,
-    Pencil
+    Pencil,
+    CheckCircle2,
+    AlertCircle,
+    Loader2
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context.jsx";
 import { Button } from "@/components/ui/button";
@@ -148,7 +151,7 @@ const Settings = () => {
     return (
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
-                <h1 className="text-[20px] font-bold text-brand tracking-tight">Account Settings</h1>
+                <h1 className="text-[20px] font-bold text-foreground tracking-tight">Account Settings</h1>
                 <div className="flex items-center gap-4">
                     <AnimatePresence mode="wait">
                         {saveStatus === 'error' && (
@@ -198,7 +201,7 @@ const Settings = () => {
             <div className="space-y-6">
                 <Card className="bg-transparent border-surface-lighter shadow-none font-sans rounded-xl overflow-hidden">
                     <CardHeader className="flex flex-row items-center gap-6 px-4 pb-6 border-b border-surface-lighter">
-                        <div className="w-16 h-16 rounded-xl bg-white border border-surface-lighter overflow-hidden p-0.5">
+                        <div className="w-16 h-16 rounded-xl bg-white border border-surface-lighter overflow-hidden p-0.5" style={{ backgroundColor: '#ffffff' }}>
                             <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-[10px]" />
                         </div>
                         <div className="flex-1">
@@ -214,30 +217,30 @@ const Settings = () => {
                                             if (e.key === 'Enter') handleSave();
                                             if (e.key === 'Escape') setIsEditingUsername(false);
                                         }}
-                                        className="h-7 w-48 bg-surface-light border-surface-lighter text-[16px] font-bold text-brand uppercase focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
+                                        className="h-7 w-48 bg-surface-light border-surface-lighter text-[16px] font-bold text-foreground uppercase focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
                                     />
                                 ) : (
                                     <div
                                         className="group flex items-center gap-2 cursor-pointer transition-all"
                                         onClick={() => setIsEditingUsername(true)}
                                     >
-                                        <CardTitle className="text-[16px] font-bold text-brand uppercase tracking-tight">
+                                        <CardTitle className="text-[16px] font-bold text-foreground uppercase tracking-tight">
                                             {formData.username}
                                         </CardTitle>
-                                        <Pencil size={12} className="text-brand/20 group-hover:text-brand/60 transition-colors opacity-0 group-hover:opacity-100" />
+                                        <Pencil size={12} className="text-foreground/20 group-hover:text-foreground/60 transition-colors opacity-0 group-hover:opacity-100" />
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center gap-4 mt-1">
-                                <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest lowercase">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest lowercase">
                                     email: {formData.email}
                                 </span>
-                                <span className="text-brand/40">•</span>
-                                <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                     role: {user?.isAdmin ? "Administrator" : "Standard Operator"}
                                 </span>
-                                <span className="text-brand/40">•</span>
-                                <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                     Joined {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
                                 </span>
                             </div>
@@ -246,33 +249,33 @@ const Settings = () => {
                     <CardContent className="px-4 pt-6 pb-2 space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-brand/40 uppercase tracking-widest px-1">New Password</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">New Password</Label>
                                 <Input
                                     type="password"
                                     name="password"
                                     value={formData.password}
                                     onChange={handleChange}
                                     placeholder="Enter new password"
-                                    className="h-9 bg-surface-light border-surface-lighter text-[11px] font-bold text-brand placeholder:text-brand/40 focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
+                                    className="h-9 bg-surface-light border-surface-lighter text-[11px] font-bold text-foreground placeholder:text-muted-foreground focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-brand/40 uppercase tracking-widest px-1">Verify Password</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Verify Password</Label>
                                 <Input
                                     type="password"
                                     name="confirmPassword"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     placeholder="Confirm new password"
-                                    className="h-9 bg-surface-light border-surface-lighter text-[11px] font-bold text-brand placeholder:text-brand/40 focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
+                                    className="h-9 bg-surface-light border-surface-lighter text-[11px] font-bold text-foreground placeholder:text-muted-foreground focus-visible:ring-brand/5 focus-visible:border-brand/20 rounded-md"
                                 />
                             </div>
                         </div>
 
                         <div className="pt-6 border-t border-surface-lighter flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[14px] font-bold text-brand/80 tracking-tight">Two-Factor Authentication</span>
-                                <span className="text-[11px] font-bold text-brand/40 tracking-tight">Multi-factor enforcement via Google Authenticator, Authy, or Microsoft</span>
+                                <span className="text-[14px] font-bold text-foreground/80 tracking-tight">Two-Factor Authentication</span>
+                                <span className="text-[11px] font-bold text-muted-foreground tracking-tight">Multi-factor enforcement via Google Authenticator, Authy, or Microsoft</span>
                             </div>
                             <Button
                                 className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest border-0 shadow-none cursor-pointer"
@@ -283,13 +286,13 @@ const Settings = () => {
 
                         <div className="pt-6 border-t border-surface-lighter flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[14px] font-bold text-brand/80 tracking-tight">Account Lifecycle</span>
-                                <span className="text-[11px] font-bold text-brand/40 tracking-tight">Permanent instance decommissioning or session termination</span>
+                                <span className="text-[14px] font-bold text-foreground/80 tracking-tight">Account Lifecycle</span>
+                                <span className="text-[11px] font-bold text-muted-foreground tracking-tight">Permanent instance decommissioning or session termination</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Button
                                     variant="ghost"
-                                    className="h-8 px-4 text-brand/70 hover:text-brand transition-all rounded-md font-bold text-[10px] uppercase tracking-widest border border-brand/20 shadow-none cursor-pointer"
+                                    className="h-8 px-4 text-muted-foreground hover:text-foreground transition-all rounded-md font-bold text-[10px] uppercase tracking-widest border border-foreground/20 shadow-none cursor-pointer"
                                 >
                                     Deactivate
                                 </Button>
@@ -309,23 +312,22 @@ const Settings = () => {
                 </Card>
 
                 <div className="mt-0">
-
                     <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
                         <div className="w-full">
                             <div className="grid grid-cols-[1.5fr_1fr_1fr] px-6 py-3">
-                                <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Activity Event</span>
-                                <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Address</span>
-                                <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Relative Time</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Activity Event</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Address</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Relative Time</span>
                             </div>
                             <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
                                 {activityLoading && recentActivity.length === 0 ? (
                                     <div className="py-20 flex flex-col items-center justify-center animate-pulse gap-3">
-                                        <Activity size={24} className="text-brand/10 mb-2" />
-                                        <span className="text-[10px] font-bold text-brand/20 uppercase tracking-[0.2em]">Querying Security Audit Logs...</span>
+                                        <Activity size={24} className="text-foreground/10 mb-2" />
+                                        <span className="text-[10px] font-bold text-foreground/20 uppercase tracking-[0.2em]">Querying Security Audit Logs...</span>
                                     </div>
                                 ) : recentActivity.length === 0 ? (
                                     <div className="py-20 flex flex-col items-center justify-center text-center px-4">
-                                        <span className="text-[12px] font-bold text-brand/40 italic">No security incidents detected.</span>
+                                        <span className="text-[12px] font-bold text-muted-foreground italic">No security incidents detected.</span>
                                     </div>
                                 ) : (
                                     recentActivity.map((item, idx) => (
@@ -334,19 +336,19 @@ const Settings = () => {
                                             className="grid grid-cols-[1.5fr_1fr_1fr] px-6 py-4 hover:bg-surface-light/50 transition-colors group border-b border-surface-lighter last:border-0 items-center"
                                         >
                                             <div className="flex flex-col">
-                                                <span className="text-[12px] font-bold text-brand uppercase tracking-tight">
+                                                <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">
                                                     {item.event === 'login' ? 'Authentication Success' :
                                                         item.event === 'logout' ? 'Session Termination' :
                                                             item.event === 'server_created' ? 'Instance Deployed' :
                                                                 item.event === 'server_deleted' ? 'Instance Decommissioned' : 'Identity Updated'}
                                                 </span>
-                                                <span className="text-[9px] font-bold text-brand/20 uppercase tracking-tighter">{item.event}</span>
+                                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">{item.event}</span>
                                             </div>
                                             <div className="flex items-center justify-center">
-                                                <span className="text-[11px] font-bold text-brand/60 font-mono tracking-tighter">{item.ip || 'INTERNAL'}</span>
+                                                <span className="text-[11px] font-bold text-foreground/60 font-mono tracking-tighter">{item.ip || 'INTERNAL'}</span>
                                             </div>
                                             <div className="flex items-center justify-end">
-                                                <span className="text-[11px] font-bold text-brand/40 uppercase tracking-tight">{item.relative}</span>
+                                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{item.relative}</span>
                                             </div>
                                         </div>
                                     ))

@@ -129,8 +129,8 @@ export default function Pricing() {
         <div className="mb-8 sm:mb-10 flex flex-col items-center text-center gap-6">
           <div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
-              Flexible <span className="text-[#b0f97d]">plans</span> for every{" "}
-              <span className="text-[#b0f97d]">server</span>
+              Flexible <span className="text-brand">plans</span> for every{" "}
+              <span className="text-brand">server</span>
             </h2>
             <p className="text-zinc-400 text-sm md:text-base max-w-xl mx-auto">
               Start small or scale to hundreds of players with transparent
@@ -144,12 +144,12 @@ export default function Pricing() {
               <div className="grid grid-cols-3 text-center">
                 <span />
                 <span className="flex justify-center">
-                  <span className="inline-flex items-center justify-center text-[9px] sm:text-[10px] font-semibold text-zinc-900 px-1.5 sm:px-2 py-0.5 rounded-full bg-[#b0f97d]">
+                  <span className="inline-flex items-center justify-center text-[9px] sm:text-[10px] font-semibold text-zinc-900 px-1.5 sm:px-2 py-0.5 rounded-full bg-brand">
                     10% off
                   </span>
                 </span>
                 <span className="flex justify-center">
-                  <span className="inline-flex items-center justify-center text-[9px] sm:text-[10px] font-semibold text-zinc-900 px-1.5 sm:px-2 py-0.5 rounded-full bg-[#b0f97d]">
+                  <span className="inline-flex items-center justify-center text-[9px] sm:text-[10px] font-semibold text-zinc-900 px-1.5 sm:px-2 py-0.5 rounded-full bg-brand">
                     20% off
                   </span>
                 </span>
@@ -221,7 +221,7 @@ export default function Pricing() {
             type="button"
             onClick={() => setShowAll((prev) => !prev)}
             aria-expanded={showAll}
-            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 hover:text-white px-4 py-2 rounded-full border border-zinc-700 hover:border-[#b0f97d] transition"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 hover:text-white px-4 py-2 rounded-full border border-zinc-700 hover:border-brand transition"
           >
             {showAll ? "View less plans" : "View more plans"}
             {showAll ? (
@@ -236,7 +236,7 @@ export default function Pricing() {
         <div className="mt-6 sm:mt-8 text-sm text-zinc-500 flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-3">
           <p className="text-xs sm:text-sm">
             Need something custom?{" "}
-            <button type="button" className="text-[#b0f97d] hover:underline">
+            <button type="button" className="text-brand hover:underline">
               Talk to us about higher tiers
             </button>
           </p>

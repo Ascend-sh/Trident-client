@@ -71,14 +71,16 @@ export default function Auth() {
                     </div>
 
                     <div className="space-y-2 mb-10">
-                        <h1 className="text-3xl font-bold tracking-tight text-brand">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             {isLogin ? "Welcome back" : "Create an account"}
                         </h1>
-                        <p className="text-brand/50 text-base">
+
+                        <p className="text-foreground/50 text-base">
                             {isLogin 
                                 ? "Enter your details to manage your servers." 
                                 : "Start your high-performance gaming journey."}
                         </p>
+
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -135,12 +137,13 @@ export default function Auth() {
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-brand/70 font-medium">{isLogin ? "Email or Username" : "Email address"}</Label>
+                                <Label htmlFor="email" className="text-foreground/70 font-medium">{isLogin ? "Email or Username" : "Email address"}</Label>
                                 <Input
                                     id="email"
                                     name="email"
                                     type={isLogin ? "text" : "email"}
                                     placeholder={isLogin ? "name@example.com or username" : "name@example.com"}
+
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
@@ -151,13 +154,14 @@ export default function Auth() {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="password" name="password" className="text-brand/70 font-medium">Password</Label>
+                                    <Label htmlFor="password" name="password" className="text-foreground/70 font-medium">Password</Label>
                                     {isLogin && (
-                                        <button type="button" className="text-xs text-brand/40 hover:text-brand transition-colors cursor-pointer">
+                                        <button type="button" className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                                             Forgot password?
                                         </button>
                                     )}
                                 </div>
+
                                 <Input
                                     id="password"
                                     name="password"
@@ -201,8 +205,9 @@ export default function Auth() {
                                 setSuccess("");
                                 setIsLogin(!isLogin);
                             }}
-                            className="inline-flex items-center gap-2 text-sm text-brand/50 hover:text-brand transition-colors group cursor-pointer"
+                            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group cursor-pointer"
                         >
+
                             {isLogin ? (
                                 <>
                                     <span>New to Torqen?</span>
@@ -218,12 +223,13 @@ export default function Auth() {
                     </div>
                 </motion.div>
 
-                <div className={`mt-auto ${isLogin ? 'pt-0' : 'pt-10'} flex items-center justify-center lg:justify-start gap-6 text-[10px] text-brand/30 uppercase tracking-widest font-bold`}>
+                <div className={`mt-auto ${isLogin ? 'pt-0' : 'pt-10'} flex items-center justify-center lg:justify-start gap-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold`}>
                     <div className="flex items-center gap-1.5">
                         v0.5.0-beta
                     </div>
                     <span>&copy; {new Date().getFullYear()} Torqen. All rights reserved.</span>
                 </div>
+
             </div>
 
             <div className="hidden lg:block relative overflow-hidden">

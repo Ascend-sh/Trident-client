@@ -15,6 +15,8 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout, useAuth } from "@/context/auth-context.jsx";
+import { useCustomization } from "@/context/customization-context.jsx";
+import { useTheme } from "@/hooks/use-theme";
 import AddCredits from "../../pages/economy/AddCredits";
 
 const API_BASE = "/api/v1/client";
@@ -29,7 +31,8 @@ const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, balance, currencyName, refresh } = useAuth();
-    const [isDark, setIsDark] = useState(false);
+    const { isDark, toggleTheme } = useTheme();
+    const customization = useCustomization();
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutProgress, setLogoutProgress] = useState(0);
@@ -108,7 +111,7 @@ const Navbar = () => {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-3">
                         <Link to="/app/home" className="flex items-center">
-                            <img src="/Logo-dark.png" alt="Torqen" className="h-7" />
+                            <img src={customization.logoUrl} alt={customization.siteName} className="h-7 dark:invert" />
                         </Link>
 
                         <span className="text-brand/20 font-light text-xl">/</span>
@@ -142,12 +145,14 @@ const Navbar = () => {
                             <Bell size={18} />
                         </button>
 
-                        <button
-                            onClick={() => setIsDark(!isDark)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-brand/40 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
-                        >
-                            {isDark ? <Moon size={16} /> : <Sun size={16} />}
-                        </button>
+                        {!customization.isDark && (
+                            <button
+                                onClick={toggleTheme}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-brand/40 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
+                            >
+                                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                            </button>
+                        )}
 
                         <div className="relative" ref={menuRef}>
                             <button
@@ -248,7 +253,7 @@ const Navbar = () => {
                             transition={{ delay: 0.1, duration: 0.3 }}
                             className="flex flex-col items-center w-full max-w-[240px] gap-8"
                         >
-                            <img src="/Logo-dark.png" alt="Torqen" className="h-8 opacity-20" />
+                            <img src={customization.logoUrl} alt={customization.siteName} className="h-8 opacity-20" />
 
                             <div className="w-full h-[2px] bg-brand/5 rounded-full overflow-hidden">
                                 <div

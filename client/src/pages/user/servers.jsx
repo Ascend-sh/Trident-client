@@ -371,7 +371,8 @@ export default function Servers() {
     return (
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-4">
-                <h1 className="text-[20px] font-bold text-brand tracking-tight">Servers</h1>
+                <h1 className="text-[20px] font-bold text-foreground tracking-tight">Servers</h1>
+
                 <Button 
                     onClick={() => setIsCreateModalOpen(true)}
                     className="h-8 px-3 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none"
@@ -383,23 +384,23 @@ export default function Servers() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-2 border border-surface-lighter rounded-lg p-5 flex flex-col justify-between min-h-fit">
-                    <h2 className="text-[16px] font-bold text-brand mb-4">Overview</h2>
+                    <h2 className="text-[16px] font-bold text-foreground mb-4">Overview</h2>
                     <div className="grid grid-cols-3 gap-8">
                         <div>
-                            <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.15em] mb-1">Slots</p>
-                            <p className="text-[20px] font-bold text-brand/80">{totalServers} <span className="text-brand/20 mx-1 font-medium">/</span> {slotsLimit}</p>
+                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Slots</p>
+                            <p className="text-[20px] font-bold text-foreground/80">{totalServers} <span className="text-foreground/20 mx-1 font-medium">/</span> {slotsLimit}</p>
                         </div>
                         <div>
-                            <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.15em] mb-1">Instances</p>
-                            <p className="text-[20px] font-bold text-brand/80">{onlineServers} Online</p>
+                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Instances</p>
+                            <p className="text-[20px] font-bold text-foreground/80">{onlineServers} Online</p>
                         </div>
                         <div>
-                            <p className="text-[12px] font-bold text-brand/30 uppercase tracking-[0.15em] mb-1">Credits</p>
+                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Credits</p>
                             <div className="flex items-baseline gap-3">
-                                <p className="text-[20px] font-bold text-brand/80">{balance} {currencyName}</p>
+                                <p className="text-[20px] font-bold text-foreground/80">{balance} {currencyName}</p>
                                 <button 
                                     onClick={() => setIsCreditsModalOpen(true)}
-                                    className="text-[10px] font-bold text-brand/30 hover:text-brand underline underline-offset-2 uppercase tracking-widest transition-colors cursor-pointer"
+                                    className="text-[10px] font-bold text-muted-foreground hover:text-foreground underline underline-offset-2 uppercase tracking-widest transition-colors cursor-pointer"
                                 >
                                     Add Funds
                                 </button>
@@ -408,8 +409,10 @@ export default function Servers() {
                     </div>
                 </div>
 
+
                 <div className="border border-surface-lighter rounded-lg p-5 pb-3 flex flex-col min-h-fit">
-                    <h2 className="text-[16px] font-bold text-brand mb-3">Recent Activity</h2>
+                    <h2 className="text-[16px] font-bold text-foreground mb-3">Recent Activity</h2>
+
                     <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
                         {recentActivityLoading ? (
                             <p className="text-[10px] font-bold text-brand/20 animate-pulse uppercase tracking-widest">Fetching logs...</p>
@@ -437,9 +440,10 @@ export default function Servers() {
                                     return (
                                         <div key={idx} className="flex items-center justify-between gap-4">
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-[11px] font-bold text-brand/60 truncate">
-                                                    {label} <span className="text-brand/30 font-medium">·</span> {title}
+                                                <p className="text-[11px] font-bold text-foreground/60 truncate">
+                                                    {label} <span className="text-foreground/30 font-medium">·</span> {title}
                                                 </p>
+
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     {(!isServerCreate && !isServerDelete && item?.ip) && (
                                                         <span className="text-[9px] font-bold text-brand/20 tracking-tighter">{item.ip}</span>
@@ -520,13 +524,14 @@ export default function Servers() {
                 <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
                     <div className="w-full">
                         <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-3">
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Name</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Address</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Location</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Usage</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-center">Status</span>
-                            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Name</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Address</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Location</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Usage</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Status</span>
+                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
                         </div>
+
                         {(() => {
                             const q = (searchQuery || '').trim().toLowerCase();
                             let filtered = servers;
@@ -555,31 +560,31 @@ export default function Servers() {
                                         {Array.from({ length: Math.max(3, servers.length) }).map((_, i) => (
                                             <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 border-b border-surface-lighter animate-pulse">
                                                 <div className="flex flex-col gap-2">
-                                                    <div className="h-3 w-28 bg-brand/5 rounded-sm" />
-                                                    <div className="h-2 w-16 bg-brand/5 rounded-sm" />
+                                                    <div className="h-3 w-28 bg-brand/5 rounded-md" />
+                                                    <div className="h-2 w-16 bg-brand/5 rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-center">
-                                                    <div className="h-3 w-32 bg-brand/5 rounded-sm" />
+                                                    <div className="h-3 w-32 bg-brand/5 rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-center pr-10">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-4 h-3 bg-brand/5 rounded-sm" />
-                                                        <div className="h-3 w-16 bg-brand/5 rounded-sm" />
+                                                        <div className="w-4 h-3 bg-brand/5 rounded-md" />
+                                                        <div className="h-3 w-16 bg-brand/5 rounded-md" />
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
                                                     <div className="flex flex-col items-center gap-1">
                                                         <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
-                                                        <div className="h-3 w-8 bg-brand/5 rounded-sm" />
+                                                        <div className="h-3 w-8 bg-brand/5 rounded-md" />
                                                     </div>
                                                     <div className="flex flex-col items-center gap-1">
                                                         <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
-                                                        <div className="h-3 w-8 bg-brand/5 rounded-sm" />
+                                                        <div className="h-3 w-8 bg-brand/5 rounded-md" />
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-brand/10" />
-                                                    <div className="h-3 w-12 bg-brand/5 rounded-sm" />
+                                                    <div className="h-3 w-12 bg-brand/5 rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-end">
                                                     <div className="w-8 h-8 rounded-md bg-brand/5" />
@@ -618,9 +623,10 @@ export default function Servers() {
                                                 className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 hover:bg-surface-light/50 transition-colors cursor-pointer group border-b border-surface-lighter"
                                             >
                                                 <div className="flex flex-col">
-                                                    <span className="text-[12px] font-bold text-brand uppercase tracking-tight">{server.name}</span>
-                                                    <span className="text-[9px] font-bold text-brand/20 uppercase tracking-tighter">{server.identifier}</span>
+                                                    <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">{server.name}</span>
+                                                    <span className="text-[9px] font-bold text-foreground/20 uppercase tracking-tighter">{server.identifier}</span>
                                                 </div>
+
                                                 <div className="flex items-center justify-center">
                                                     {server?.allocation?.ip_alias || server?.allocation?.ip ? (
                                                         <span className="text-[11px] font-bold text-brand/60 font-mono">
@@ -636,7 +642,7 @@ export default function Servers() {
                                                             <img
                                                                 src={`https://flagsapi.com/${server.location.shortCode}/flat/64.png`}
                                                                 alt={server.location.shortCode}
-                                                                className="w-4 h-3 rounded-sm object-cover opacity-80"
+                                                                className="w-4 h-3 rounded-md object-cover opacity-80"
                                                                 onError={(e) => (e.currentTarget.style.display = 'none')}
                                                             />
                                                         )}

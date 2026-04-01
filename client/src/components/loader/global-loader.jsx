@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function GlobalLoader({ onLoadingComplete }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const duration = 600;
@@ -40,7 +42,11 @@ export default function GlobalLoader({ onLoadingComplete }) {
       }}
     >
       <div className="flex flex-col items-center w-full max-w-[240px]">
-        <img src="/Logo-dark.png" alt="Torqen" className="h-8 mb-8" />
+        <img 
+          src={isDark ? "/Logo.png" : "/Logo-dark.png"} 
+          alt="Torqen" 
+          className="h-8 mb-8" 
+        />
         
         <div className="w-full h-[2px] bg-brand/5 rounded-full overflow-hidden">
           <div 
@@ -50,7 +56,7 @@ export default function GlobalLoader({ onLoadingComplete }) {
         </div>
         
         <p className="mt-4 text-[10px] font-bold text-brand/20 uppercase tracking-[0.2em]">
-          Loading System
+          Torqen v0.5.0-beta (Swell)
         </p>
       </div>
     </div>
