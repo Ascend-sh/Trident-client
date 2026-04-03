@@ -1,17 +1,20 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-    Plus,
-    HardDrive,
-    HeadphonesIcon, 
-    Sun,
-    Moon,
-    Bell,
-    Shield,
-    Settings,
-    Search,
-    LogOut,
-    CreditCard
-} from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+    Home04Icon,
+    Ticket03Icon,
+    CreditCardChangeIcon,
+    Settings01Icon,
+    Search01Icon,
+    CommandIcon,
+    Notification01Icon,
+    Sun01Icon,
+    Moon02Icon,
+    Logout01Icon,
+    PlusSignIcon,
+    MoreHorizontalIcon,
+    DashboardBrowsingIcon,
+} from "@hugeicons/core-free-icons";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout, useAuth } from "@/context/auth-context.jsx";
@@ -19,47 +22,35 @@ import { useCustomization } from "@/context/customization-context.jsx";
 import { useTheme } from "@/hooks/use-theme";
 import AddCredits from "../../pages/economy/AddCredits";
 
-const API_BASE = "/api/v1/client";
-
-async function request(path) {
-    const res = await fetch(`${API_BASE}${path}`, { credentials: "include" });
-    if (!res.ok) throw new Error("Failed");
-    return res.json();
-}
-
 const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, balance, currencyName, refresh } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const customization = useCustomization();
-    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [logoutProgress, setLogoutProgress] = useState(0);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const menuRef = useRef(null);
-    const searchRef = useRef(null);
-
-
 
     const navItems = [
-        { path: "/app/home", label: "Servers", icon: HardDrive },
-        { path: "/app/support", label: "Support", icon: HeadphonesIcon },
-        { path: "/app/billing", label: "Billing", icon: CreditCard },
-        { path: "/app/account/settings", label: "Settings", icon: Settings },
+        { path: "/app/home", label: "Home", icon: Home04Icon },
+        { path: "/app/support", label: "Support", icon: Ticket03Icon },
+        { path: "/app/billing", label: "Billing", icon: CreditCardChangeIcon },
+        { path: "/app/account/settings", label: "Settings", icon: Settings01Icon },
     ];
 
     const isActive = (path) => location.pathname === path;
 
     const handleLogout = async () => {
-        setUserMenuOpen(false);
         setIsLoggingOut(true);
         setLogoutProgress(0);
-        
+
         const duration = 800;
         const interval = 10;
         const step = 100 / (duration / interval);
-        
+
         const timer = setInterval(() => {
             setLogoutProgress(prev => {
                 if (prev >= 100) {
@@ -69,7 +60,7 @@ const Navbar = () => {
                 return Math.min(100, prev + step);
             });
         }, interval);
-        
+
         try {
             await new Promise(r => setTimeout(r, duration + 100));
             await logout();
@@ -92,151 +83,138 @@ const Navbar = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                searchRef.current?.focus();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []);
-
     const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${user?.username || 'user'}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 
     return (
-        <header className="w-full bg-surface-light border-b border-surface-lighter sticky top-0 z-50">
-            <div className="px-16">
-                <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center gap-3">
-                        <Link to="/app/home" className="flex items-center">
-                            <img src={customization.logoUrl} alt={customization.siteName} className="h-7 dark:invert" />
-                        </Link>
-
-                        <span className="text-foreground/60 font-light text-xl">/</span>
-
-                        <div className="relative group flex items-center">
-                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/60 group-focus-within:text-foreground/60 transition-colors pointer-events-none" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                placeholder="Search"
-                                className="h-8 pl-9 pr-12 w-[280px] bg-surface-highlight border border-surface-lighter rounded-md text-[11px] font-bold text-foreground/60 placeholder:text-foreground/60 focus:outline-none focus:bg-surface-highlight/80 focus:border-brand/40 hover:border-brand/20 transition-all"
-                            />
-                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-surface-lighter bg-surface-highlight text-[9px] font-bold text-foreground/60 pointer-events-none group-focus-within:opacity-0 transition-opacity">
-                                Ctrl K
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 ml-1">
-                        <div className="bg-surface-highlight pl-3 pr-0.5 py-0.5 rounded-full border border-surface-lighter flex items-center gap-2.5 text-[10px] font-bold text-foreground/60 uppercase tracking-wider">
-                            <span>{balance} {currencyName}</span>
-                            <button
-                                onClick={() => setIsCreditsModalOpen(true)}
-                                className="w-5 h-5 rounded-full bg-brand/5 text-foreground/60 flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus shadow-none"
-                            >
-                                <Plus size={10} strokeWidth={4} className="transition-transform group-hover/plus:rotate-90" />
-                            </button>
-                        </div>
-
-                        <button className="text-foreground/60 hover:text-brand transition-colors cursor-pointer">
-                            <Bell size={18} />
-                        </button>
-
-                        {!customization.isDark && (
-                            <button
-                                onClick={toggleTheme}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-foreground/60 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
-                            >
-                                {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                            </button>
-                        )}
-
-                        <div className="relative" ref={menuRef}>
-                            <button
-                                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                className="flex items-center focus:outline-none"
-                            >
-                                <img
-                                    src={avatarUrl}
-                                    alt="Avatar"
-                                    className="w-8 h-8 rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-white border border-surface-lighter"
-                                />
-                            </button>
-
-                            {userMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-none z-[100] overflow-hidden animate-in fade-in zoom-in duration-150">
-                                    <div className="p-3 border-b border-surface-lighter bg-surface-lighter/20">
-                                        <div className="flex items-center gap-2.5">
-                                            <img
-                                                src={avatarUrl}
-                                                alt="Avatar"
-                                                className="w-7 h-7 rounded-full bg-white border border-surface-lighter"
-                                            />
-                                            <div className="flex flex-col min-w-0">
-                                                <p className="text-[12px] font-bold text-foreground truncate leading-none mb-0.5">
-                                                    {user?.username || "Account"}
-                                                </p>
-                                                <p className="text-[9px] font-medium text-foreground/60 truncate leading-none uppercase tracking-wider">
-                                                    {user?.email}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-1">
-                                        {user?.isAdmin && (
-                                            <Link
-                                                to="/app/admin/overview"
-                                                onClick={() => setUserMenuOpen(false)}
-                                                className="flex items-center gap-2 px-2 py-1.5 rounded-md text-foreground/60 hover:text-brand hover:bg-surface-lighter transition-all group"
-                                            >
-                                                <Shield size={13} className="group-hover:text-brand" />
-                                                <span className="text-[11px] font-bold">Admin Dashboard</span>
-                                            </Link>
-                                        )}
-
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-foreground/60 hover:text-brand hover:bg-surface-lighter transition-all group cursor-pointer"
-                                        >
-                                            <LogOut size={13} className="group-hover:text-brand" />
-                                            <span className="text-[11px] font-bold">Sign Out</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+        <>
+            <aside className="w-64 h-screen bg-surface-light flex flex-col shrink-0 sticky top-0">
+                <div className="px-5 h-14 flex items-center mb-2">
+                    <Link to="/app/home" className="flex items-center">
+                        <img src={customization.logoUrl} alt={customization.siteName} className="h-7 dark:invert" />
+                    </Link>
                 </div>
-            </div>
 
-            <div className="h-px w-full bg-surface-lighter" />
+                <div className="px-3 pb-2 space-y-0.5">
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all cursor-pointer text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50">
+                        <HugeiconsIcon icon={Search01Icon} size={18} />
+                        <span className="text-[13px] font-bold flex-1 text-left">Search</span>
+                        <div className="flex items-center gap-1">
+                            <kbd className="w-5 h-5 flex items-center justify-center rounded bg-surface-lighter/80 text-muted-foreground">
+                                <HugeiconsIcon icon={CommandIcon} size={10} />
+                            </kbd>
+                            <kbd className="w-5 h-5 flex items-center justify-center rounded bg-surface-lighter/80 text-[10px] font-bold text-muted-foreground">
+                                K
+                            </kbd>
+                        </div>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all cursor-pointer text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50">
+                        <HugeiconsIcon icon={Notification01Icon} size={18} />
+                        <span className="text-[13px] font-bold">Notifications</span>
+                    </button>
+                </div>
 
-            <div className="px-16">
-                <div className="flex items-center gap-1 py-3">
+                <div className="mx-3 h-px bg-surface-lighter mb-2" />
+
+                <nav className="flex-1 px-3 py-0 flex flex-col gap-[3px]">
                     {navItems.map((item) => {
-                        const Icon = item.icon;
                         const active = isActive(item.path);
                         return (
                             <Link key={item.path} to={item.path}>
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all cursor-pointer group ${
-                                    active ? "bg-surface-highlight border border-surface-lighter" : "hover:bg-surface-lighter"
+                                <div className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                                    active
+                                        ? "bg-brand/[0.08] text-brand"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50"
                                 }`}>
-                                    <Icon size={14} className={active ? "text-foreground" : "text-foreground/60 group-hover:text-foreground/70"} />
-                                    <span className={`text-[12px] font-bold ${
-                                        active ? "text-foreground" : "text-foreground/60 group-hover:text-foreground/70"
-                                    }`}>
+                                    {active && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-brand rounded-full" />
+                                    )}
+                                    <HugeiconsIcon icon={item.icon} size={18} />
+                                    <span className="text-[13px] font-bold">
                                         {item.label}
                                     </span>
                                 </div>
                             </Link>
                         );
                     })}
+                </nav>
+
+                <div className="px-3 pb-4">
+                    <div className="flex items-center justify-between px-3 py-2">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                            <span>{balance} {currencyName}</span>
+                        </div>
+                        <button
+                            onClick={() => setIsCreditsModalOpen(true)}
+                            className="w-5 h-5 rounded-full bg-brand/5 text-muted-foreground flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus"
+                        >
+                            <HugeiconsIcon icon={PlusSignIcon} size={10} className="transition-transform group-hover/plus:rotate-90" />
+                        </button>
+                    </div>
+
+                    <div className="my-3" />
+
+                    {!customization.isDark && (
+                        <button
+                            onClick={toggleTheme}
+                            className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all cursor-pointer text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 mb-2"
+                        >
+                            <HugeiconsIcon icon={isDark ? Sun01Icon : Moon02Icon} size={18} />
+                            <span className="text-[13px] font-bold">{isDark ? "Light Mode" : "Dark Mode"}</span>
+                        </button>
+                    )}
+
+                    <div className="relative flex items-center justify-between px-2 mt-2" ref={menuRef}>
+                        <div className="flex items-center gap-3 min-w-0">
+                            <img
+                                src={avatarUrl}
+                                alt="Avatar"
+                                className="w-8 h-8 rounded-full bg-white border border-surface-lighter shrink-0"
+                            />
+                            <div className="min-w-0">
+                                <p className="text-[13px] font-bold text-foreground truncate leading-none mb-1">
+                                    {user?.username || "Account"}
+                                </p>
+                                <p className="text-[10px] font-bold text-muted-foreground truncate leading-none tracking-wider">
+                                    {user?.email ? user.email.split('@')[0].slice(0, 9) + '•••' : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setUserMenuOpen(!userMenuOpen)}
+                            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer shrink-0"
+                        >
+                            <HugeiconsIcon icon={MoreHorizontalIcon} size={18} />
+                        </button>
+
+                        {userMenuOpen && (
+                            <div className="absolute bottom-0 left-full ml-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-lg z-[100] overflow-hidden">
+                                <div className="p-1">
+                                    {user?.isAdmin && (
+                                        <Link
+                                            to="/app/admin/overview"
+                                            onClick={() => setUserMenuOpen(false)}
+                                            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all"
+                                        >
+                                            <HugeiconsIcon icon={DashboardBrowsingIcon} size={16} />
+                                            <span className="text-[12px] font-bold">Admin Dashboard</span>
+                                        </Link>
+                                    )}
+                                    <button
+                                        onClick={() => {
+                                            setUserMenuOpen(false);
+                                            handleLogout();
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                                    >
+                                        <HugeiconsIcon icon={Logout01Icon} size={16} />
+                                        <span className="text-[12px] font-bold">Sign Out</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </aside>
 
             <AnimatePresence>
                 {isLoggingOut && (
@@ -273,9 +251,8 @@ const Navbar = () => {
                 isOpen={isCreditsModalOpen}
                 onClose={() => setIsCreditsModalOpen(false)}
             />
-        </header>
+        </>
     );
 };
 
 export default Navbar;
-
