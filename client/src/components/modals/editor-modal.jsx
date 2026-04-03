@@ -24,14 +24,14 @@ export default function EditorModal({
       <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">Path</p>
-            <p className="text-[11px] text-brand font-mono truncate">{filePath || '-'}</p>
+            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Path</p>
+            <p className="text-[11px] text-foreground font-mono truncate">{filePath || '-'}</p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-brand/40 hover:text-brand rounded-lg border border-surface-light hover:border-surface-lighter transition-colors duration-200 cursor-pointer shadow-none"
+              className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground/60 hover:text-brand rounded-lg border border-surface-light hover:border-surface-lighter transition-colors duration-200 cursor-pointer shadow-none"
             >
               Cancel
             </button>
@@ -79,13 +79,13 @@ export default function EditorModal({
             onChange={(e) => onChange?.(e.target.value)}
             spellCheck={false}
             readOnly={loading}
-            className="w-full h-[60vh] resize-none bg-transparent text-[13px] text-brand/80 font-mono px-4 py-3 focus:outline-none leading-relaxed"
+            className="w-full h-[60vh] resize-none bg-transparent text-[13px] text-foreground/60 font-mono px-4 py-3 focus:outline-none leading-relaxed"
           />
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-brand/20">Changes are not saved until you click Save</p>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-brand/20">esc closes</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/60">Changes are not saved until you click Save</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/60">esc closes</p>
         </div>
       </div>
     </CenterModal>

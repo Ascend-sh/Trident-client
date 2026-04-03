@@ -38,7 +38,7 @@ export default function ServerNav() {
                     <Link key={item.path} to={item.path} className="relative">
                         <div className={`flex items-center gap-2 px-4 py-3 transition-all cursor-pointer group`}>
                             <span className={`text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${
-                                active ? "text-brand" : "text-brand/40 group-hover:text-brand/70"
+                                active ? "text-foreground" : "text-foreground/60 group-hover:text-foreground/70"
                             }`}>
                                 {item.label}
                             </span>

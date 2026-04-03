@@ -98,12 +98,12 @@ export default function AddCredits({ isOpen, onClose }) {
             <div className="p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Add Credits</h2>
-                        <span className="ml-3 text-[10px] font-bold text-brand/40 uppercase tracking-widest mt-0.5">({currentStep} Of 3)</span>
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Add Credits</h2>
+                        <span className="ml-3 text-[10px] font-bold text-foreground/60 uppercase tracking-widest mt-0.5">({currentStep} Of 3)</span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded-md text-brand/20 hover:text-brand hover:bg-brand/5 transition-all cursor-pointer"
+                        className="p-1 rounded-md text-foreground/60 hover:text-brand hover:bg-brand/5 transition-all cursor-pointer"
                     >
                         <X size={16} />
                     </button>
@@ -129,7 +129,7 @@ export default function AddCredits({ isOpen, onClose }) {
                             {currentStep === 1 && (
                                 <>
                                     <section className="space-y-3">
-                                        <p className="text-[12px] font-bold text-brand/60 leading-relaxed">
+                                        <p className="text-[12px] font-bold text-foreground/60 leading-relaxed">
                                             Select your credit amount and payment method to add credits.
                                         </p>
                                         <div className="grid grid-cols-5 gap-2">
@@ -141,7 +141,7 @@ export default function AddCredits({ isOpen, onClose }) {
                                                         onClick={() => setSelectedAmount(amt)}
                                                         className={`h-9 rounded-md text-[11px] font-bold transition-all cursor-pointer ${isSelected
                                                                 ? 'bg-brand text-surface shadow-none'
-                                                                : 'bg-surface-light border border-surface-lighter text-brand/40 hover:text-brand hover:border-brand/20'
+                                                                : 'bg-surface-light border border-surface-lighter text-foreground/60 hover:text-brand hover:border-brand/20'
                                                             }`}
                                                     >
                                                         €{amt}
@@ -171,7 +171,7 @@ export default function AddCredits({ isOpen, onClose }) {
                                                                 />
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest whitespace-nowrap">
+                                                                <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest whitespace-nowrap">
                                                                     {method.description}
                                                                 </span>
                                                                 <div className="w-2" />
@@ -188,19 +188,19 @@ export default function AddCredits({ isOpen, onClose }) {
                             {currentStep === 2 && (
                                 <section className="space-y-4 py-4">
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">Payment Details</span>
+                                        <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Payment Details</span>
                                     </div>
                                     <div className="space-y-3">
                                         <div className="p-4 rounded-xl bg-surface-light border border-surface-lighter space-y-3">
                                             <div className="space-y-1.5">
-                                                <label className="text-[9px] font-bold text-brand/40 uppercase tracking-widest">Account Email / ID</label>
+                                                <label className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">Account Email / ID</label>
                                                 <input
                                                     type="text"
                                                     placeholder="Enter payment account detail..."
-                                                    className="w-full h-10 bg-surface border border-surface-lighter rounded-md px-3 text-[12px] text-brand placeholder:text-brand/10 focus:outline-none focus:border-brand/20 transition-all"
+                                                    className="w-full h-10 bg-surface border border-surface-lighter rounded-md px-3 text-[12px] text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all"
                                                 />
                                             </div>
-                                            <p className="text-[9px] font-bold text-brand/20 uppercase tracking-widest leading-relaxed">
+                                            <p className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest leading-relaxed">
                                                 Ensure your information matches your {selectedMethod} account to avoid delays.
                                             </p>
                                         </div>
@@ -211,13 +211,13 @@ export default function AddCredits({ isOpen, onClose }) {
                             {currentStep === 3 && (
                                 <section className="space-y-4 py-4">
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-[10px] font-bold text-brand/40 uppercase tracking-widest">Order Summary</span>
+                                        <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Order Summary</span>
                                     </div>
                                     <div className="rounded-xl bg-surface-light border border-surface-lighter overflow-hidden">
                                         <div className="p-5 bg-surface border-b border-surface-lighter flex items-center justify-between">
                                             <div className="flex flex-col">
-                                                <span className="text-[9px] font-bold text-brand/20 uppercase tracking-widest">Package Value</span>
-                                                <span className="text-[14px] font-bold text-brand mt-0.5">€{selectedAmount}.00 EUR</span>
+                                                <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">Package Value</span>
+                                                <span className="text-[14px] font-bold text-foreground mt-0.5">€{selectedAmount}.00 EUR</span>
                                             </div>
                                             <img
                                                 src={PAYMENT_METHODS.find(m => m.id === selectedMethod)?.image}
@@ -227,12 +227,12 @@ export default function AddCredits({ isOpen, onClose }) {
                                         </div>
                                         <div className="p-5 space-y-3">
                                             <div className="flex items-center justify-between text-[11px] font-bold">
-                                                <span className="text-brand/40 uppercase tracking-tight">Transaction Fee</span>
-                                                <span className="text-brand">€0.00</span>
+                                                <span className="text-foreground/60 uppercase tracking-tight">Transaction Fee</span>
+                                                <span className="text-foreground">€0.00</span>
                                             </div>
                                             <div className="flex items-center justify-between text-[11px] font-bold pt-3 border-t border-brand/5">
-                                                <span className="text-brand/40 uppercase tracking-tight">Credits to add</span>
-                                                <span className="text-brand">+{selectedAmount * 10} {currencyName}</span>
+                                                <span className="text-foreground/60 uppercase tracking-tight">Credits to add</span>
+                                                <span className="text-foreground">+{selectedAmount * 10} {currencyName}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -244,8 +244,8 @@ export default function AddCredits({ isOpen, onClose }) {
 
                 <div className="pt-6 border-t border-surface-lighter flex items-center justify-between mt-auto">
                     <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-brand/60 uppercase tracking-widest">total amount payable</span>
-                        <span className="text-[20px] font-bold text-brand tracking-tighter leading-none mt-0.5">
+                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">total amount payable</span>
+                        <span className="text-[20px] font-bold text-foreground tracking-tighter leading-none mt-0.5">
                             {selectedAmount ? `€${selectedAmount}.00` : '—'}
                         </span>
                     </div>
@@ -253,7 +253,7 @@ export default function AddCredits({ isOpen, onClose }) {
                         {currentStep > 1 && (
                             <button
                                 onClick={handleBack}
-                                className="h-8 px-3 text-brand/40 hover:text-brand text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
+                                className="h-8 px-3 text-foreground/60 hover:text-brand text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
                             >
                                 Back
                             </button>

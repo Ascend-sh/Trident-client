@@ -55,7 +55,7 @@ export default function GlobalLoader({ onLoadingComplete }) {
           />
         </div>
         
-        <p className="mt-4 text-[10px] font-bold text-brand/20 uppercase tracking-[0.2em]">
+        <p className="mt-4 text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">
           Torqen v0.5.0-beta (Swell)
         </p>
       </div>

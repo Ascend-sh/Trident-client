@@ -129,8 +129,8 @@ export default function Pricing() {
         <div className="mb-8 sm:mb-10 flex flex-col items-center text-center gap-6">
           <div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
-              Flexible <span className="text-brand">plans</span> for every{" "}
-              <span className="text-brand">server</span>
+              Flexible <span className="text-foreground">plans</span> for every{" "}
+              <span className="text-foreground">server</span>
             </h2>
             <p className="text-zinc-400 text-sm md:text-base max-w-xl mx-auto">
               Start small or scale to hundreds of players with transparent
@@ -236,7 +236,7 @@ export default function Pricing() {
         <div className="mt-6 sm:mt-8 text-sm text-zinc-500 flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-3">
           <p className="text-xs sm:text-sm">
             Need something custom?{" "}
-            <button type="button" className="text-brand hover:underline">
+            <button type="button" className="text-foreground hover:underline">
               Talk to us about higher tiers
             </button>
           </p>

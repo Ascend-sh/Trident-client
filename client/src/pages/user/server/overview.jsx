@@ -1,10 +1,11 @@
-import { 
-    Play, 
-    Square, 
-    RefreshCw, 
-    Zap, 
+import {
+    Play,
+    Square,
+    RefreshCw,
+    Zap,
     Copy,
-    Check
+    Check,
+    Loader2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
@@ -68,6 +69,7 @@ export default function ServerOverview() {
     const [command, setCommand] = useState("");
     const [isConnecting, setIsConnecting] = useState(true);
     const [powerLoading, setPowerLoading] = useState(null);
+    const [isInitializing, setIsInitializing] = useState(false);
     const [eulaModalOpen, setEulaModalOpen] = useState(false);
     const [acceptingEula, setAcceptingEula] = useState(false);
     const eulaTriggeredRef = useRef(false);
@@ -87,7 +89,7 @@ export default function ServerOverview() {
             fontSize: 14,
             fontFamily: "Consolas, 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Monaco, monospace",
             theme: {
-                background: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || "#121212",
+                background: getComputedStyle(document.documentElement).getPropertyValue('--surface-light').trim() || "#18181b",
                 foreground: "rgba(255, 255, 255, 0.8)",
                 selectionBackground: "rgba(255, 255, 255, 0.1)",
             },
@@ -206,17 +208,23 @@ export default function ServerOverview() {
 
         request('/servers')
             .then((res) => {
-                const found = (res?.servers || []).find((s) => 
+                const found = (res?.servers || []).find((s) =>
                     String(s.identifier || '').toLowerCase() === String(identifier || '').toLowerCase()
                 );
                 if (found) {
                     setServerInfo(found);
-                    
+
                     request(`/servers/${found.id}/network/allocations`)
                         .then((res) => {
                             setPrimaryAllocation(res?.primary || null);
+                            setIsInitializing(false);
                         })
-                        .catch(() => setPrimaryAllocation(null));
+                        .catch((err) => {
+                            if (err?.status === 409) {
+                                setIsInitializing(true);
+                            }
+                            setPrimaryAllocation(null);
+                        });
                 }
             })
             .catch((err) => {
@@ -224,6 +232,20 @@ export default function ServerOverview() {
                 setServerInfo(null);
             });
     }, [identifier]);
+
+    useEffect(() => {
+        if (!isInitializing || !serverInfo?.id) return;
+        const interval = setInterval(async () => {
+            try {
+                const res = await request(`/servers/${serverInfo.id}/network/allocations`);
+                setPrimaryAllocation(res?.primary || null);
+                setIsInitializing(false);
+            } catch (err) {
+                if (err?.status !== 409) setIsInitializing(false);
+            }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [isInitializing, serverInfo?.id]);
 
     useEffect(() => {
         if (!serverInfo?.id) return;
@@ -336,6 +358,10 @@ export default function ServerOverview() {
                     if (!cancelled) setIsConnecting(true);
                 };
             } catch (err) {
+                if (err?.status === 409) {
+                    setIsInitializing(true);
+                    return;
+                }
                 console.error("Websocket connection failed:", err);
             }
         };
@@ -366,14 +392,35 @@ export default function ServerOverview() {
     const canRestart = isOnline && !isStarting && !isStopping && !isInstalling;
     const canStop = (isOnline || isStarting) && !isStopping && !isInstalling;
 
+    if (isInitializing) {
+        return (
+            <div className="bg-surface min-h-screen flex flex-col items-center justify-center px-16">
+                <div className="flex flex-col items-center">
+                    <div className="w-14 h-14 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden mb-8">
+                        <img
+                            src="/defaulticon.webp"
+                            alt="Server"
+                            className="w-full h-full object-cover opacity-80"
+                        />
+                    </div>
+                    <Loader2 size={28} className="text-brand animate-spin mb-6" />
+                    <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest mb-2">Server Initializing</h2>
+                    <p className="text-[11px] font-medium text-muted-foreground max-w-sm text-center leading-relaxed">
+                        Your server is currently being installed. This may take a few minutes depending on the software. This page will update automatically once the process is complete.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-surface px-16 py-10">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
-                        <img 
-                            src="/defaulticon.webp" 
-                            alt="Minecraft" 
+                        <img
+                            src="/defaulticon.webp"
+                            alt="Minecraft"
                             className="w-full h-full object-cover opacity-80"
                         />
                     </div>
@@ -382,8 +429,8 @@ export default function ServerOverview() {
                             <h1 className="text-[20px] font-bold text-foreground tracking-tight">{serverInfo?.name || 'Loading Instance...'}</h1>
 
                             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${
-                                status === 'running' || status === 'online' 
-                                    ? 'bg-green-500/5 border-green-500/10 text-green-600' 
+                                status === 'running' || status === 'online'
+                                    ? 'bg-green-500/5 border-green-500/10 text-green-600'
                                     : status === 'starting'
                                     ? 'bg-yellow-500/5 border-yellow-500/10 text-yellow-600'
                                     : 'bg-red-500/5 border-red-500/10 text-red-600'
@@ -417,12 +464,12 @@ export default function ServerOverview() {
 
                             <div className="flex items-center gap-1.5">
                                 <span className="text-foreground/60">
-                                    {primaryAllocation 
+                                    {primaryAllocation
                                         ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
                                         : 'Assigning IP...'}
                                 </span>
                                 {primaryAllocation && (
-                                    <button 
+                                    <button
                                         onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
                                         className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                         title="Copy IP"
@@ -436,11 +483,11 @@ export default function ServerOverview() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => handlePower('start')}
                         disabled={powerLoading || !canStart || isStarting}
-                        className={`h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-brand/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed ${
+                        className={`h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed ${
                             (powerLoading === 'start' || isStarting) ? 'border-amber-600/60 text-amber-700 opacity-100!' : ''
                         }`}
                     >
@@ -456,11 +503,11 @@ export default function ServerOverview() {
                             </>
                         )}
                     </Button>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => handlePower('restart')}
                         disabled={powerLoading || !canRestart || isStopping}
-                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-brand/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
+                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
                     >
                         {powerLoading === 'restart' ? (
                             <>
@@ -474,11 +521,11 @@ export default function ServerOverview() {
                             </>
                         )}
                     </Button>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => handlePower('stop')}
                         disabled={powerLoading || !canStop || isStopping}
-                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-brand/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
+                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
                     >
                         {powerLoading === 'stop' || isStopping ? (
                             <>
@@ -497,19 +544,19 @@ export default function ServerOverview() {
 
             <ServerNav />
 
-            <div className="bg-brand rounded-sm overflow-hidden border border-brand/10 shadow-lg flex flex-col">
-                <div 
+            <div className="bg-surface-light rounded-sm overflow-hidden border border-surface-lighter shadow-lg flex flex-col">
+                <div
                     ref={terminalRef}
-                    className="h-[450px] p-4 bg-brand overflow-hidden xterm"
+                    className="h-[450px] p-4 bg-surface-light overflow-hidden xterm"
                 />
-                <div className="p-4 bg-brand/95 border-t border-white/5">
-                    <input 
-                        type="text" 
+                <div className="p-4 bg-surface-light border-t border-surface-lighter">
+                    <input
+                        type="text"
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
                         onKeyDown={handleSendCommand}
                         placeholder="TYPE COMMAND HERE..."
-                        className="w-full bg-transparent border-none text-[11px] font-bold text-white placeholder:text-white/20 focus:outline-none uppercase tracking-widest"
+                        className="w-full bg-transparent border-none text-[11px] font-bold text-foreground placeholder:text-foreground/20 focus:outline-none uppercase tracking-widest"
                     />
                 </div>
             </div>

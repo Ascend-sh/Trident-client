@@ -121,7 +121,7 @@ export default function Auth() {
                                     animate={{ opacity: 1, x: 0 }}
                                     className="space-y-2"
                                 >
-                                    <Label htmlFor="username" className="text-brand/70 font-medium">Username</Label>
+                                    <Label htmlFor="username" className="text-foreground/60 font-medium">Username</Label>
                                     <Input
                                         id="username"
                                         name="username"
@@ -211,7 +211,7 @@ export default function Auth() {
                             {isLogin ? (
                                 <>
                                     <span>New to Torqen?</span>
-                                    <span className="font-semibold text-brand underline underline-offset-4 decoration-brand/20 group-hover:decoration-brand/100 transition-all">Create an account</span>
+                                    <span className="font-semibold text-foreground underline underline-offset-4 decoration-brand/20 group-hover:decoration-brand/100 transition-all">Create an account</span>
                                 </>
                             ) : (
                                 <>

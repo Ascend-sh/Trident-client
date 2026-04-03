@@ -293,7 +293,7 @@ export default function Backups() {
                         <button
                             onClick={() => setCreateModalOpen(false)}
                             disabled={creating}
-                            className="px-3 py-1.5 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
@@ -311,9 +311,9 @@ export default function Backups() {
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Delete Backup</h2>
-                        <p className="text-[12px] font-bold text-brand/40 mt-1">
-                            Are you sure you want to delete <span className="text-brand">"{deleteTarget?.name || "this backup"}"</span>? This action cannot be undone.
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Delete Backup</h2>
+                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
+                            Are you sure you want to delete <span className="text-foreground">"{deleteTarget?.name || "this backup"}"</span>? This action cannot be undone.
                         </p>
                     </div>
                     {actionError && (
@@ -325,7 +325,7 @@ export default function Backups() {
                         <button
                             onClick={() => setDeleteTarget(null)}
                             disabled={deleting}
-                            className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
@@ -343,9 +343,9 @@ export default function Backups() {
             <CenterModal isOpen={!!restoreTarget} onClose={() => !restoring && setRestoreTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Restore Backup</h2>
-                        <p className="text-[12px] font-bold text-brand/40 mt-1">
-                            Restoring <span className="text-brand">"{restoreTarget?.name || "this backup"}"</span> will overwrite all current server files. The server will be stopped during the restore process.
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Restore Backup</h2>
+                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
+                            Restoring <span className="text-foreground">"{restoreTarget?.name || "this backup"}"</span> will overwrite all current server files. The server will be stopped during the restore process.
                         </p>
                     </div>
                     {actionError && (
@@ -357,7 +357,7 @@ export default function Backups() {
                         <button
                             onClick={() => setRestoreTarget(null)}
                             disabled={restoring}
-                            className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>

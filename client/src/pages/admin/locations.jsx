@@ -168,10 +168,10 @@ export default function AdminLocations() {
   };
 
   return (
-    <div className="bg-surface px-16 py-10">
+    <div className="bg-surface px-10 py-10">
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[20px] font-bold text-brand tracking-tight">Locations</h1>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight">Locations</h1>
         </div>
         <Button 
           onClick={() => setSetupModalOpen(true)}
@@ -191,10 +191,10 @@ export default function AdminLocations() {
       <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
         <div className="w-full">
           <div className="grid grid-cols-[1fr_2fr_1fr_1fr] px-6 py-3">
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Short Code</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Description</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em]">Nodes</span>
-            <span className="text-[10px] font-bold text-brand/60 uppercase tracking-[0.2em] text-right">Actions</span>
+            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Short Code</span>
+            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Description</span>
+            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Nodes</span>
+            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
           </div>
           <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
             {!dataLoaded ? (
@@ -203,7 +203,7 @@ export default function AdminLocations() {
               ))
             ) : importedLocations.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center flex-1">
-                <span className="text-[12px] font-bold text-brand/40 italic">No locations configured yet</span>
+                <span className="text-[12px] font-bold text-foreground/60 italic">No locations configured yet</span>
               </div>
             ) : (
               importedLocations.map((location) => (
@@ -213,18 +213,18 @@ export default function AdminLocations() {
                 >
                   <div className="flex items-center gap-3">
                     <CountryFlag code={location.shortCode} size={20} className="brightness-110" />
-                    <span className="text-[12px] font-bold text-brand uppercase tracking-tight">{location.shortCode}</span>
+                    <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">{location.shortCode}</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-[11px] font-bold text-brand/60">{location.description || "Geographic region details"}</span>
+                    <span className="text-[11px] font-bold text-foreground/60">{location.description || "Geographic region details"}</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-[11px] font-bold text-brand/40 uppercase tracking-widest">{location.nodes?.length || 0} Nodes Linked</span>
+                    <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest">{location.nodes?.length || 0} Nodes Linked</span>
                   </div>
                   <div className="flex items-center justify-end gap-3">
                     <button
                       onClick={() => handleViewDetails(location)}
-                      className="text-[10px] font-bold text-brand/30 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer"
+                      className="text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer"
                     >
                       View Nodes
                     </button>
@@ -250,21 +250,21 @@ export default function AdminLocations() {
       >
         <div className="p-4">
           <div className="mb-4">
-            <h2 className="text-[15px] font-bold text-brand">Setup Locations</h2>
-            <p className="text-[10px] font-bold text-brand/40 mt-0.5 uppercase tracking-widest">Select regions to import from your panel</p>
+            <h2 className="text-[15px] font-bold text-foreground">Setup Locations</h2>
+            <p className="text-[10px] font-bold text-foreground/60 mt-0.5 uppercase tracking-widest">Select regions to import from your panel</p>
           </div>
 
           <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
             <div className="w-full">
               <div className="grid grid-cols-[1.5fr_1fr_1fr] px-5 py-2">
-                <span className="text-[9px] font-bold text-brand/50 uppercase tracking-[0.2em]">Region Details</span>
-                <span className="text-[9px] font-bold text-brand/50 uppercase tracking-[0.2em]">Statistics</span>
-                <span className="text-[9px] font-bold text-brand/50 uppercase tracking-[0.2em] text-right">Actions</span>
+                <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Region Details</span>
+                <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Statistics</span>
+                <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
               </div>
               <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col max-h-[260px] overflow-y-auto custom-scrollbar divide-y divide-surface-lighter">
                 {panelLocations.length === 0 ? (
                   <div className="py-10 text-center">
-                    <span className="text-[11px] font-bold text-brand/40 italic">No available locations found</span>
+                    <span className="text-[11px] font-bold text-foreground/60 italic">No available locations found</span>
                   </div>
                 ) : (
                   panelLocations.map((location) => (
@@ -275,13 +275,13 @@ export default function AdminLocations() {
                       <div className="flex items-center gap-4">
                         <CountryFlag code={location.shortCode} size={18} />
                         <div className="flex flex-col">
-                          <span className="text-[12px] font-bold text-brand uppercase tracking-tight truncate max-w-[140px]">{location.description || 'Untitled'}</span>
-                          <span className="text-[9px] font-bold text-brand/20 uppercase tracking-widest">{location.shortCode}</span>
+                          <span className="text-[12px] font-bold text-foreground uppercase tracking-tight truncate max-w-[140px]">{location.description || 'Untitled'}</span>
+                          <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">{location.shortCode}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center">
-                        <span className="text-[11px] font-bold text-brand/30 uppercase tracking-widest">{location.nodes?.length || 0} Nodes</span>
+                        <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest">{location.nodes?.length || 0} Nodes</span>
                       </div>
 
                       <div className="flex items-center justify-end">
@@ -312,7 +312,7 @@ export default function AdminLocations() {
           <div className="flex items-center justify-end mt-3">
             <button
               onClick={() => setSetupModalOpen(false)}
-              className="px-3 py-1.5 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+              className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
             >
               Close View
             </button>
@@ -328,27 +328,27 @@ export default function AdminLocations() {
         {viewDetailsLocation && (
           <div className="p-4">
             <div className="mb-4">
-              <h2 className="text-[15px] font-bold text-brand">{viewDetailsLocation.shortCode} · Nodes</h2>
-              <p className="text-[10px] font-bold text-brand/40 mt-0.5 uppercase tracking-widest">{viewDetailsLocation.description || "Infrastructure network details"}</p>
+              <h2 className="text-[15px] font-bold text-foreground">{viewDetailsLocation.shortCode} · Nodes</h2>
+              <p className="text-[10px] font-bold text-foreground/60 mt-0.5 uppercase tracking-widest">{viewDetailsLocation.description || "Infrastructure network details"}</p>
             </div>
 
             <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
               <div className="w-full">
                 <div className="grid grid-cols-[1.2fr_2fr] px-5 py-2">
-                  <span className="text-[9px] font-bold text-brand/50 uppercase tracking-[0.2em]">Node Name</span>
-                  <span className="text-[9px] font-bold text-brand/50 uppercase tracking-[0.2em]">FQDN / Address</span>
+                  <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Node Name</span>
+                  <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">FQDN / Address</span>
                 </div>
                 <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col max-h-[260px] overflow-y-auto custom-scrollbar divide-y divide-surface-lighter">
                   {viewDetailsLocation.nodes && viewDetailsLocation.nodes.length > 0 ? (
                     viewDetailsLocation.nodes.map((node) => (
                       <div key={node.id} className="grid grid-cols-[1.2fr_2fr] px-5 py-2.5 hover:bg-surface-light/30 transition-colors">
-                        <span className="text-[11px] font-bold text-brand uppercase tracking-tight">{node.name}</span>
-                        <span className="text-[10px] font-bold text-brand/20 font-mono truncate">{node.fqdn}</span>
+                        <span className="text-[11px] font-bold text-foreground uppercase tracking-tight">{node.name}</span>
+                        <span className="text-[10px] font-bold text-foreground/60 font-mono truncate">{node.fqdn}</span>
                       </div>
                     ))
                   ) : (
                     <div className="py-10 text-center">
-                      <span className="text-[11px] font-bold text-brand/40 italic">No nodes found for this location</span>
+                      <span className="text-[11px] font-bold text-foreground/60 italic">No nodes found for this location</span>
                     </div>
                   )}
                 </div>
@@ -358,7 +358,7 @@ export default function AdminLocations() {
             <div className="flex items-center justify-end mt-3">
               <button
                 onClick={() => setDetailsModalOpen(false)}
-                className="px-3 py-1.5 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
               >
                 Close View
               </button>

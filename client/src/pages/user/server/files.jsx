@@ -751,9 +751,9 @@ export default function ServerFiles() {
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
                     {item?.is_file ? (
-                      <File size={16} className="text-brand/30 shrink-0" />
+                      <File size={16} className="text-foreground/60 shrink-0" />
                     ) : (
-                      <Folder size={16} className="text-brand/50 shrink-0" />
+                      <Folder size={16} className="text-foreground/60 shrink-0" />
                     )}
                     <span className="text-[12px] font-bold text-foreground truncate tracking-tight">{item?.name || '-'}</span>
                   </div>
@@ -786,7 +786,7 @@ export default function ServerFiles() {
                             right: window.innerWidth - rect.right
                           });
                         }}
-                        className="p-1.5 rounded-md hover:bg-surface-lighter text-brand/20 hover:text-brand/60 transition-all cursor-pointer"
+                        className="p-1.5 rounded-md hover:bg-surface-lighter text-foreground/60 hover:text-foreground/60 transition-all cursor-pointer"
                       >
                         <Ellipsis size={14} />
                       </button>
@@ -807,13 +807,13 @@ export default function ServerFiles() {
 
                             <button
                               onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
                             >
                               Move
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
+                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
                             >
                               Permissions
                             </button>

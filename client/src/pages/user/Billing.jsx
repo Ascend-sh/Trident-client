@@ -144,17 +144,17 @@ const Billing = () => {
                                     <div className="flex-1 h-1.5 rounded-full bg-brand/5 overflow-hidden">
                                         <div className="h-full rounded-full bg-brand" style={{ width: '85%' }} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-brand/40">85%</span>
+                                    <span className="text-[10px] font-bold text-foreground/60">85%</span>
                                 </div>
-                                <p className="text-[10px] font-bold text-brand/50 uppercase tracking-widest">RAM Usage</p>
+                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">RAM Usage</p>
                             </div>
                             <div>
-                                <p className="text-[18px] font-bold text-brand mb-2">2 GB / 5 GB</p>
+                                <p className="text-[18px] font-bold text-foreground mb-2">2 GB / 5 GB</p>
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="flex-1 h-1.5 rounded-full bg-brand/5 overflow-hidden">
                                         <div className="h-full rounded-full bg-brand" style={{ width: '40%' }} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-brand/40">40%</span>
+                                    <span className="text-[10px] font-bold text-foreground/60">40%</span>
                                 </div>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Disk Usage</p>
                             </div>
@@ -183,14 +183,14 @@ const Billing = () => {
                             {loading ? (
                                 <div className="py-20 flex flex-col items-center justify-center animate-pulse gap-3">
                                     <div className="w-8 h-8 rounded-full border-2 border-brand/10 border-t-brand/40 animate-spin" />
-                                    <span className="text-[10px] font-bold text-brand/20 uppercase tracking-[0.2em]">Accessing Financial Records...</span>
+                                    <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Accessing Financial Records...</span>
                                 </div>
                             ) : payments.length === 0 ? (
                                 <div className="py-24 flex flex-col items-center justify-center text-center px-4">
                                     <div className="w-12 h-12 rounded-full bg-brand/[0.03] flex items-center justify-center mb-4">
-                                        <History size={20} className="text-brand/10" />
+                                        <History size={20} className="text-foreground/60" />
                                     </div>
-                                    <span className="text-[12px] font-bold text-brand/40 italic">Transaction history is currently empty.</span>
+                                    <span className="text-[12px] font-bold text-foreground/60 italic">Transaction history is currently empty.</span>
                                 </div>
                             ) : (
                                 payments.map((payment) => (
@@ -226,7 +226,7 @@ const Billing = () => {
                                             <button 
                                                 onClick={() => handleDownloadInvoice(payment.id)}
                                                 disabled={payment.status !== 'completed'}
-                                                className="p-2 rounded-md hover:bg-brand/5 text-brand/20 hover:text-brand transition-all disabled:opacity-0 cursor-pointer group/dl"
+                                                className="p-2 rounded-md hover:bg-brand/5 text-foreground/60 hover:text-brand transition-all disabled:opacity-0 cursor-pointer group/dl"
                                             >
                                                 <Download size={14} className="group-hover/dl:scale-110 transition-transform" />
                                             </button>
@@ -241,7 +241,7 @@ const Billing = () => {
 
             <div className="space-y-4 mt-8">
                 <div className="flex items-center justify-between px-2">
-                    <span className="text-[11px] font-bold text-brand/60 uppercase tracking-widest">Payment Methods</span>
+                    <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest">Payment Methods</span>
                     <button className="h-7 px-3 rounded-md bg-brand text-surface hover:bg-brand/90 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer">
                         + Add Method
                     </button>
@@ -249,7 +249,7 @@ const Billing = () => {
 
                 <div className="border border-surface-lighter rounded-lg overflow-hidden">
                     <div className="py-16 flex flex-col items-center justify-center text-center px-4">
-                        <span className="text-[12px] font-bold text-brand/40 italic">No payment methods saved.</span>
+                        <span className="text-[12px] font-bold text-foreground/60 italic">No payment methods saved.</span>
                     </div>
                 </div>
             </div>

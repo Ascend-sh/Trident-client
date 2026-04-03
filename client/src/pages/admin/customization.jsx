@@ -96,6 +96,16 @@ export default function AdminCustomization() {
     }, []);
 
     const updateConfig = (key, value) => {
+        if (key === 'brandColor') {
+            setConfig(prev => ({
+                ...prev,
+                brandColor: value,
+                brandColorDark: value,
+                brandHover: value,
+                brandHoverDark: value
+            }));
+            return;
+        }
         setConfig(prev => ({ ...prev, [key]: value }));
     };
 
@@ -235,17 +245,17 @@ export default function AdminCustomization() {
 
     if (isLoading) {
         return (
-            <div className="bg-surface px-16 py-10 min-h-screen flex items-center justify-center">
+            <div className="bg-surface px-10 py-10 min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 rounded-full border-2 border-brand/10 border-t-brand animate-spin" />
-                    <span className="text-[10px] font-bold text-brand/20 uppercase tracking-widest">Loading Configuration</span>
+                    <span className="text-[10px] font-bold text-foreground/20 uppercase tracking-widest">Loading Configuration</span>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-surface px-16 py-10 min-h-screen">
+        <div className="bg-surface px-10 py-10 min-h-screen">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Customization</h1>

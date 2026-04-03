@@ -15,12 +15,12 @@ export default function ImageModal({ isOpen, onClose, url, filename }) {
     <CenterModal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[16px] font-bold text-brand tracking-tight truncate pr-4">
+          <h2 className="text-[16px] font-bold text-foreground tracking-tight truncate pr-4">
             {filename || 'Image Viewer'}
           </h2>
           <button
             onClick={onClose}
-            className="text-[12px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer"
+            className="text-[12px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -29,7 +29,7 @@ export default function ImageModal({ isOpen, onClose, url, filename }) {
         <div className="relative min-h-[300px] max-h-[70vh] w-full bg-surface-dark/50 rounded-lg overflow-hidden flex items-center justify-center border border-surface-lighter">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-brand/30 animate-spin" />
+              <Loader2 className="w-8 h-8 text-foreground/60 animate-spin" />
             </div>
           )}
           

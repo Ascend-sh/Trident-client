@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PanelRightCloseIcon } from "@hugeicons/core-free-icons";
 import Auth from "./pages/auth";
 import Home from "./pages/landing/pages/Home";
 import Servers from "./pages/user/servers";
@@ -68,10 +70,32 @@ const AppLayout = () => {
   const isServerRoute = location.pathname.startsWith('/app/server');
   const isAdminRoute = location.pathname.startsWith('/app/admin');
 
+  if (isAdminRoute) {
+    return (
+      <div className="flex h-screen w-full bg-surface-light text-foreground">
+        {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
+        <AdminNav />
+        <div className="flex-1 py-2 pr-2">
+          <main className="h-full overflow-auto bg-surface rounded-xl shadow-sm flex flex-col">
+            <div className="px-4 h-14 flex items-center shrink-0">
+              <button className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer">
+                <HugeiconsIcon icon={PanelRightCloseIcon} size={20} />
+              </button>
+            </div>
+            <div className="h-px bg-surface-lighter w-full" />
+            <div className="flex-1 overflow-auto">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-screen w-full bg-surface text-brand">
+    <div className="flex flex-col h-screen w-full bg-surface text-foreground">
       {showLoader && <GlobalLoader onLoadingComplete={() => setShowLoader(false)} />}
-      {isAdminRoute ? <AdminNav /> : <Navbar />}
+      <Navbar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto">
           <Outlet />

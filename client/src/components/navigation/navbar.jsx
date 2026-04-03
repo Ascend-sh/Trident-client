@@ -114,41 +114,41 @@ const Navbar = () => {
                             <img src={customization.logoUrl} alt={customization.siteName} className="h-7 dark:invert" />
                         </Link>
 
-                        <span className="text-brand/20 font-light text-xl">/</span>
+                        <span className="text-foreground/60 font-light text-xl">/</span>
 
                         <div className="relative group flex items-center">
-                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand/40 group-focus-within:text-brand/70 transition-colors pointer-events-none" />
+                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/60 group-focus-within:text-foreground/60 transition-colors pointer-events-none" />
                             <input
                                 ref={searchRef}
                                 type="text"
                                 placeholder="Search"
-                                className="h-8 pl-9 pr-12 w-[280px] bg-surface-highlight border border-surface-lighter rounded-md text-[11px] font-bold text-brand/80 placeholder:text-brand/40 focus:outline-none focus:bg-surface-highlight/80 focus:border-brand/40 hover:border-brand/20 transition-all"
+                                className="h-8 pl-9 pr-12 w-[280px] bg-surface-highlight border border-surface-lighter rounded-md text-[11px] font-bold text-foreground/60 placeholder:text-foreground/60 focus:outline-none focus:bg-surface-highlight/80 focus:border-brand/40 hover:border-brand/20 transition-all"
                             />
-                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-surface-lighter bg-surface-highlight text-[9px] font-bold text-brand/40 pointer-events-none group-focus-within:opacity-0 transition-opacity">
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-surface-lighter bg-surface-highlight text-[9px] font-bold text-foreground/60 pointer-events-none group-focus-within:opacity-0 transition-opacity">
                                 Ctrl K
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 ml-1">
-                        <div className="bg-surface-highlight pl-3 pr-0.5 py-0.5 rounded-full border border-surface-lighter flex items-center gap-2.5 text-[10px] font-bold text-brand/70 uppercase tracking-wider">
+                        <div className="bg-surface-highlight pl-3 pr-0.5 py-0.5 rounded-full border border-surface-lighter flex items-center gap-2.5 text-[10px] font-bold text-foreground/60 uppercase tracking-wider">
                             <span>{balance} {currencyName}</span>
                             <button
                                 onClick={() => setIsCreditsModalOpen(true)}
-                                className="w-5 h-5 rounded-full bg-brand/5 text-brand/40 flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus shadow-none"
+                                className="w-5 h-5 rounded-full bg-brand/5 text-foreground/60 flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus shadow-none"
                             >
                                 <Plus size={10} strokeWidth={4} className="transition-transform group-hover/plus:rotate-90" />
                             </button>
                         </div>
 
-                        <button className="text-brand/40 hover:text-brand transition-colors cursor-pointer">
+                        <button className="text-foreground/60 hover:text-brand transition-colors cursor-pointer">
                             <Bell size={18} />
                         </button>
 
                         {!customization.isDark && (
                             <button
                                 onClick={toggleTheme}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-brand/40 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-highlight transition-colors text-foreground/60 hover:text-brand cursor-pointer border border-transparent hover:border-surface-lighter"
                             >
                                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
                             </button>
@@ -176,10 +176,10 @@ const Navbar = () => {
                                                 className="w-7 h-7 rounded-full bg-white border border-surface-lighter"
                                             />
                                             <div className="flex flex-col min-w-0">
-                                                <p className="text-[12px] font-bold text-brand truncate leading-none mb-0.5">
+                                                <p className="text-[12px] font-bold text-foreground truncate leading-none mb-0.5">
                                                     {user?.username || "Account"}
                                                 </p>
-                                                <p className="text-[9px] font-medium text-brand/40 truncate leading-none uppercase tracking-wider">
+                                                <p className="text-[9px] font-medium text-foreground/60 truncate leading-none uppercase tracking-wider">
                                                     {user?.email}
                                                 </p>
                                             </div>
@@ -191,7 +191,7 @@ const Navbar = () => {
                                             <Link
                                                 to="/app/admin/overview"
                                                 onClick={() => setUserMenuOpen(false)}
-                                                className="flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group"
+                                                className="flex items-center gap-2 px-2 py-1.5 rounded-md text-foreground/60 hover:text-brand hover:bg-surface-lighter transition-all group"
                                             >
                                                 <Shield size={13} className="group-hover:text-brand" />
                                                 <span className="text-[11px] font-bold">Admin Dashboard</span>
@@ -200,7 +200,7 @@ const Navbar = () => {
 
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-brand/60 hover:text-brand hover:bg-surface-lighter transition-all group cursor-pointer"
+                                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-foreground/60 hover:text-brand hover:bg-surface-lighter transition-all group cursor-pointer"
                                         >
                                             <LogOut size={13} className="group-hover:text-brand" />
                                             <span className="text-[11px] font-bold">Sign Out</span>
@@ -225,9 +225,9 @@ const Navbar = () => {
                                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all cursor-pointer group ${
                                     active ? "bg-surface-highlight border border-surface-lighter" : "hover:bg-surface-lighter"
                                 }`}>
-                                    <Icon size={14} className={active ? "text-brand" : "text-brand/40 group-hover:text-brand/70"} />
+                                    <Icon size={14} className={active ? "text-foreground" : "text-foreground/60 group-hover:text-foreground/70"} />
                                     <span className={`text-[12px] font-bold ${
-                                        active ? "text-brand" : "text-brand/50 group-hover:text-brand/70"
+                                        active ? "text-foreground" : "text-foreground/60 group-hover:text-foreground/70"
                                     }`}>
                                         {item.label}
                                     </span>
@@ -262,7 +262,7 @@ const Navbar = () => {
                                 />
                             </div>
 
-                            <p className="text-[10px] font-bold text-brand/20 uppercase tracking-[0.2em]">
+                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">
                                 Logging out ...
                             </p>
                         </motion.div>

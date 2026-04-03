@@ -19,6 +19,7 @@ import CenterModal from "../../components/modals/center-modal";
 import { useAuth } from "../../context/auth-context.jsx";
 import { Button } from "@/components/ui/button";
 import AddCredits from "../economy/AddCredits";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = "/api/v1/client";
 
@@ -415,7 +416,7 @@ export default function Servers() {
 
                     <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
                         {recentActivityLoading ? (
-                            <p className="text-[10px] font-bold text-brand/20 animate-pulse uppercase tracking-widest">Fetching logs...</p>
+                            <p className="text-[10px] font-bold text-foreground/20 animate-pulse uppercase tracking-widest">Fetching logs...</p>
                         ) : recentActivity.length > 0 ? (
                             <div className="space-y-3">
                                 {recentActivity.slice(0, 2).map((item, idx) => {
@@ -446,11 +447,11 @@ export default function Servers() {
 
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     {(!isServerCreate && !isServerDelete && item?.ip) && (
-                                                        <span className="text-[9px] font-bold text-brand/20 tracking-tighter">{item.ip}</span>
+                                                        <span className="text-[9px] font-bold text-foreground/20 tracking-tighter">{item.ip}</span>
                                                     )}
                                                 </div>
                                             </div>
-                                            <span className="text-[9px] font-bold text-brand/30 whitespace-nowrap uppercase tracking-tighter">
+                                            <span className="text-[9px] font-bold text-foreground/60 whitespace-nowrap uppercase tracking-tighter">
                                                 {item?.relative || 'Just now'}
                                             </span>
                                         </div>
@@ -458,12 +459,12 @@ export default function Servers() {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-[11px] font-bold text-brand/40 italic">No recent logs</p>
+                            <p className="text-[11px] font-bold text-foreground/60 italic">No recent logs</p>
                         )}
                     </div>
                     {recentActivity.length > 2 && (
                         <div className="mt-3 flex justify-center">
-                            <button className="flex items-center gap-1.5 text-[10px] font-bold text-brand/30 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer">
+                            <button className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer">
                                 View More
                                 <ChevronDown size={10} strokeWidth={3} />
                             </button>
@@ -479,8 +480,8 @@ export default function Servers() {
                             onClick={() => setActiveFilter('all')}
                             className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
                                 activeFilter === 'all' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-brand' 
-                                    : 'text-brand/30 hover:text-brand/60 hover:bg-surface-lighter'
+                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
+                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
                             }`}
                         >
                             All Servers
@@ -489,8 +490,8 @@ export default function Servers() {
                             onClick={() => setActiveFilter('online')}
                             className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
                                 activeFilter === 'online' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-brand' 
-                                    : 'text-brand/30 hover:text-brand/60 hover:bg-surface-lighter'
+                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
+                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
                             }`}
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
@@ -500,8 +501,8 @@ export default function Servers() {
                             onClick={() => setActiveFilter('offline')}
                             className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
                                 activeFilter === 'offline' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-brand' 
-                                    : 'text-brand/30 hover:text-brand/60 hover:bg-surface-lighter'
+                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
+                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
                             }`}
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -510,13 +511,13 @@ export default function Servers() {
                     </div>
 
                     <div className="relative group">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand/30" />
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/60" />
                         <input
                             type="text"
                             placeholder="SEARCH INSTANCES..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 pl-9 pr-4 bg-surface-light border border-surface-lighter rounded-md text-[10px] font-bold text-brand/60 placeholder:text-brand/60 focus:outline-none focus:border-brand/20 transition-all uppercase tracking-widest w-[200px]"
+                            className="h-8 pl-9 pr-4 bg-surface-light border border-surface-lighter rounded-md text-[10px] font-bold text-foreground/60 placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all uppercase tracking-widest w-[200px]"
                         />
                     </div>
                 </div>
@@ -560,34 +561,34 @@ export default function Servers() {
                                         {Array.from({ length: Math.max(3, servers.length) }).map((_, i) => (
                                             <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 border-b border-surface-lighter animate-pulse">
                                                 <div className="flex flex-col gap-2">
-                                                    <div className="h-3 w-28 bg-brand/5 rounded-md" />
-                                                    <div className="h-2 w-16 bg-brand/5 rounded-md" />
+                                                    <div className="h-3 w-28 bg-surface-lighter rounded-md" />
+                                                    <div className="h-2 w-16 bg-surface-lighter rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-center">
-                                                    <div className="h-3 w-32 bg-brand/5 rounded-md" />
+                                                    <div className="h-3 w-32 bg-surface-lighter rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-center pr-10">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-4 h-3 bg-brand/5 rounded-md" />
-                                                        <div className="h-3 w-16 bg-brand/5 rounded-md" />
+                                                        <div className="w-4 h-3 bg-surface-lighter rounded-md" />
+                                                        <div className="h-3 w-16 bg-surface-lighter rounded-md" />
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
                                                     <div className="flex flex-col items-center gap-1">
-                                                        <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
-                                                        <div className="h-3 w-8 bg-brand/5 rounded-md" />
+                                                        <div className="h-1.5 w-6 bg-surface-lighter rounded-full" />
+                                                        <div className="h-3 w-8 bg-surface-lighter rounded-md" />
                                                     </div>
                                                     <div className="flex flex-col items-center gap-1">
-                                                        <div className="h-1.5 w-6 bg-brand/5 rounded-full" />
-                                                        <div className="h-3 w-8 bg-brand/5 rounded-md" />
+                                                        <div className="h-1.5 w-6 bg-surface-lighter rounded-full" />
+                                                        <div className="h-3 w-8 bg-surface-lighter rounded-md" />
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-brand/10" />
-                                                    <div className="h-3 w-12 bg-brand/5 rounded-md" />
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-surface-lighter" />
+                                                    <div className="h-3 w-12 bg-surface-lighter rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-end">
-                                                    <div className="w-8 h-8 rounded-md bg-brand/5" />
+                                                    <div className="w-8 h-8 rounded-md bg-surface-lighter" />
                                                 </div>
                                             </div>
                                         ))}
@@ -598,7 +599,7 @@ export default function Servers() {
                             if (filtered.length === 0) {
                                 return (
                                     <div className="bg-surface border border-surface-lighter rounded-lg py-12 flex flex-col items-center justify-center min-h-[210px]">
-                                        <span className="text-[12px] font-bold text-brand/40 text-center px-6 italic">
+                                        <span className="text-[12px] font-bold text-foreground/60 text-center px-6 italic">
                                              It looks a bit empty here. Let's get started by creating your first instance.
                                          </span>
                                     </div>
@@ -629,11 +630,11 @@ export default function Servers() {
 
                                                 <div className="flex items-center justify-center">
                                                     {server?.allocation?.ip_alias || server?.allocation?.ip ? (
-                                                        <span className="text-[11px] font-bold text-brand/60 font-mono">
+                                                        <span className="text-[11px] font-bold text-foreground/60 font-mono">
                                                             {server?.allocation?.ip_alias || server?.allocation?.ip}:{server?.allocation?.port}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-[11px] font-bold text-brand/20 italic">Assigning...</span>
+                                                        <span className="text-[11px] font-bold text-foreground/60 italic">Assigning...</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center justify-center">
@@ -646,19 +647,19 @@ export default function Servers() {
                                                                 onError={(e) => (e.currentTarget.style.display = 'none')}
                                                             />
                                                         )}
-                                                        <span className="text-[11px] font-bold text-brand/60 truncate max-w-[100px]">
+                                                        <span className="text-[11px] font-bold text-foreground/60 truncate max-w-[100px]">
                                                             {server.location?.description || server.location?.shortCode || '-'}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
                                                     <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-                                                        <span className="text-[9px] font-bold text-brand/30 uppercase tracking-widest">CPU</span>
-                                                        <span className="text-[11px] font-bold text-brand/60">{Math.round(cpu)}%</span>
+                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">CPU</span>
+                                                        <span className="text-[11px] font-bold text-foreground/60">{Math.round(cpu)}%</span>
                                                     </div>
                                                     <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-                                                        <span className="text-[9px] font-bold text-brand/30 uppercase tracking-widest">RAM</span>
-                                                        <span className="text-[11px] font-bold text-brand/60">{Math.round(mem)}%</span>
+                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">RAM</span>
+                                                        <span className="text-[11px] font-bold text-foreground/60">{Math.round(mem)}%</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-2">
@@ -678,7 +679,7 @@ export default function Servers() {
                                                                 e.stopPropagation();
                                                                 setOpenActionMenuId(openActionMenuId === server.id ? null : server.id);
                                                             }}
-                                                            className="p-2 rounded-md hover:bg-surface-lighter text-brand/30 hover:text-brand transition-all cursor-pointer"
+                                                            className="p-2 rounded-md hover:bg-surface-lighter text-foreground/60 hover:text-brand transition-all cursor-pointer"
                                                         >
                                                             <Ellipsis size={14} />
                                                         </button>
@@ -693,7 +694,7 @@ export default function Servers() {
                                                                         setOpenActionMenuId(null);
                                                                         handleOpenEditModal(server);
                                                                     }}
-                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-brand/60 hover:text-brand hover:bg-surface-light transition-all uppercase tracking-widest"
+                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all uppercase tracking-widest"
                                                                 >
                                                                     Rename
                                                                 </button>
@@ -703,7 +704,7 @@ export default function Servers() {
                                                                         setServerToDelete(server);
                                                                         setDeleteModalOpen(true);
                                                                     }}
-                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest"
+                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-surface-light transition-all uppercase tracking-widest"
                                                                 >
                                                                     Delete
                                                                 </button>
@@ -725,262 +726,255 @@ export default function Servers() {
                 onClose={handleCloseModal}
                 maxWidth="max-w-2xl"
             >
-                <div className="p-6">
-                    <h2 className="text-[16px] font-bold text-brand mb-6">Create Server</h2>
-                    
-                    <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-3">
-                            {[1, 2, 3, 4].map((step) => (
-                                <div key={step} className="flex items-center flex-1">
-                                    <div className={`flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold transition-all duration-200 ${
-                                        step < createStep 
-                                            ? 'bg-brand text-surface' 
-                                            : step === createStep 
-                                            ? 'bg-brand text-surface' 
-                                            : 'bg-surface-light border border-surface-lighter text-brand/30'
-                                    }`}>
-                                        {step < createStep ? <Check size={12} strokeWidth={3} /> : step}
-                                    </div>
-                                    {step < 4 && (
-                                        <div className={`flex-1 h-[1px] mx-2 ${
-                                            step < createStep ? 'bg-brand' : 'bg-surface-lighter'
-                                        }`} />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">
-                            Step {createStep} of 4 · {
-                                createStep === 1 ? 'Server Details' :
-                                createStep === 2 ? 'Location' :
-                                createStep === 3 ? 'Software' :
-                                'Confirm'
-                            }
+                <div className="relative overflow-hidden">
+                    <div className="h-[3px] bg-surface-lighter">
+                        <div
+                            className="h-full bg-brand transition-all duration-500 ease-out"
+                            style={{ width: `${(createStep / 4) * 100}%` }}
+                        />
+                    </div>
+
+                    <div className="px-6 pt-5 pb-0">
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Create Server</h2>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                            {createStep === 1 ? 'Server Details' :
+                             createStep === 2 ? 'Select Location' :
+                             createStep === 3 ? 'Select Software' :
+                             'Review & Deploy'}
                         </p>
                     </div>
 
-                    {createStep === 1 && (
-                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
-                            <div>
-                                <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Server Name</label>
-                                <input
-                                    type="text"
-                                    value={serverData.name}
-                                    onChange={(e) => setServerData({ ...serverData, name: e.target.value })}
-                                    placeholder="e.g. My Vanilla Survival"
-                                    className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Description</label>
-                                <textarea
-                                    value={serverData.description}
-                                    onChange={(e) => setServerData({ ...serverData, description: e.target.value })}
-                                    placeholder="Optional description..."
-                                    rows={3}
-                                    className="w-full px-4 py-3 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all resize-none"
-                                />
-                            </div>
-                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
-                                <button
-                                    onClick={handleCloseModal}
-                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                    <div className="px-6 pt-6 pb-2 min-h-[280px]">
+                        <AnimatePresence mode="wait">
+                            {createStep === 1 && (
+                                <motion.div
+                                    key="step-1"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="space-y-5"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleNext}
-                                    disabled={!serverData.name}
-                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {createStep === 2 && (
-                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
-                            {loadingLocations ? (
-                                <div className="py-12 text-center">
-                                    <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
-                                    <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">Loading locations...</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-3">
-                                    {locations.map((loc) => (
-                                        <button
-                                            key={loc.id}
-                                            onClick={() => setServerData({ ...serverData, location: loc })}
-                                            className={`p-4 rounded-md border text-left transition-all cursor-pointer ${
-                                                serverData.location?.id === loc.id
-                                                    ? 'bg-surface-highlight border-brand text-brand shadow-none'
-                                                    : 'bg-surface-light border-surface-lighter text-brand/60 hover:border-brand/20'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <img 
-                                                    src={`https://flagsapi.com/${loc.shortCode}/flat/64.png`} 
-                                                    alt={loc.shortCode} 
-                                                    className="w-6 h-4 rounded-sm object-cover" 
-                                                />
-                                                <span className="text-[12px] font-bold uppercase tracking-tight">{loc.description || loc.shortCode}</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
-                                <button
-                                    onClick={handleBack}
-                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
-                                >
-                                    Back
-                                </button>
-                                <button
-                                    onClick={handleNext}
-                                    disabled={!serverData.location}
-                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {createStep === 3 && (
-                        <div className="space-y-5 animate-[fadeIn_0.2s_ease-out]">
-                            {loadingNests ? (
-                                <div className="py-12 text-center">
-                                    <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
-                                    <p className="text-[10px] font-bold text-brand/60 uppercase tracking-widest">Loading software...</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-3">
-                                    {availableEggs.map((egg) => (
-                                        <button
-                                            key={egg.id}
-                                            onClick={() => setServerData({ ...serverData, software: egg })}
-                                            className={`p-4 rounded-md border text-left transition-all cursor-pointer ${
-                                                serverData.software?.id === egg.id
-                                                    ? 'bg-surface-highlight border-brand text-brand shadow-none'
-                                                    : 'bg-surface-light border-surface-lighter text-brand/60 hover:border-brand/20'
-                                            }`}
-                                        >
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[12px] font-bold uppercase tracking-tight">{egg.name}</span>
-                                                <span className="text-[9px] font-bold text-brand/60 uppercase tracking-widest">{egg.nestName}</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
-                                <button
-                                    onClick={handleBack}
-                                    className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
-                                >
-                                    Back
-                                </button>
-                                <button
-                                    onClick={handleNext}
-                                    disabled={!serverData.software}
-                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {createStep === 4 && (
-                        <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-                            <div className="bg-surface-light border border-surface-lighter rounded-xl overflow-hidden">
-                                <div className="px-5 py-3 border-b border-surface-lighter bg-brand/[0.01]">
-                                    <p className="text-[10px] font-bold text-brand/40 uppercase tracking-[0.2em]">Deployment Manifest</p>
-                                </div>
-                                <div className="divide-y divide-surface-lighter">
-                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
-                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Instance Identity</p>
-                                        <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.name}</p>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-foreground/60 uppercase tracking-widest mb-2">Server Name</label>
+                                        <input
+                                            type="text"
+                                            value={serverData.name}
+                                            onChange={(e) => setServerData({ ...serverData, name: e.target.value })}
+                                            placeholder="e.g. My Vanilla Survival"
+                                            className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all"
+                                        />
                                     </div>
-                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
-                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Software</p>
-                                        <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.software?.name}</p>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-foreground/60 uppercase tracking-widest mb-2">Description</label>
+                                        <textarea
+                                            value={serverData.description}
+                                            onChange={(e) => setServerData({ ...serverData, description: e.target.value })}
+                                            placeholder="Optional description..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all resize-none"
+                                        />
                                     </div>
-                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
-                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Region</p>
-                                        <div className="flex items-center gap-2">
-                                            <img 
-                                                src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`} 
-                                                alt={serverData.location?.shortCode} 
-                                                className="w-4 h-3 rounded-sm object-cover opacity-80" 
-                                            />
-                                            <p className="text-[13px] font-bold text-brand tracking-tight">{serverData.location?.description}</p>
+                                </motion.div>
+                            )}
+
+                            {createStep === 2 && (
+                                <motion.div
+                                    key="step-2"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {loadingLocations ? (
+                                        <div className="py-12 text-center">
+                                            <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
+                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Loading locations...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {locations.map((loc) => (
+                                                <button
+                                                    key={loc.id}
+                                                    onClick={() => setServerData({ ...serverData, location: loc })}
+                                                    className={`relative p-4 rounded-md border text-left transition-all cursor-pointer ${
+                                                        serverData.location?.id === loc.id
+                                                            ? 'bg-brand/5 border-brand text-foreground'
+                                                            : 'bg-surface-light border-surface-lighter text-foreground/60 hover:border-brand/20'
+                                                    }`}
+                                                >
+                                                    {serverData.location?.id === loc.id && (
+                                                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
+                                                            <Check size={10} strokeWidth={3} className="text-surface" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={`https://flagsapi.com/${loc.shortCode}/flat/64.png`}
+                                                            alt={loc.shortCode}
+                                                            className="w-6 h-4 rounded-sm object-cover"
+                                                        />
+                                                        <span className="text-[12px] font-bold uppercase tracking-tight">{loc.description || loc.shortCode}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {createStep === 3 && (
+                                <motion.div
+                                    key="step-3"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {loadingNests ? (
+                                        <div className="py-12 text-center">
+                                            <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
+                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Loading software...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {availableEggs.map((egg) => (
+                                                <button
+                                                    key={egg.id}
+                                                    onClick={() => setServerData({ ...serverData, software: egg })}
+                                                    className={`relative p-4 rounded-md border text-left transition-all cursor-pointer ${
+                                                        serverData.software?.id === egg.id
+                                                            ? 'bg-brand/5 border-brand text-foreground'
+                                                            : 'bg-surface-light border-surface-lighter text-foreground/60 hover:border-brand/20'
+                                                    }`}
+                                                >
+                                                    {serverData.software?.id === egg.id && (
+                                                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
+                                                            <Check size={10} strokeWidth={3} className="text-surface" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[12px] font-bold uppercase tracking-tight">{egg.name}</span>
+                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">{egg.nestName}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {createStep === 4 && (
+                                <motion.div
+                                    key="step-4"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="bg-surface-light border border-surface-lighter rounded-xl overflow-hidden">
+                                        <div className="px-5 py-3 border-b border-surface-lighter">
+                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Deployment Manifest</p>
+                                        </div>
+                                        <div className="divide-y divide-surface-lighter">
+                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
+                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Instance Identity</p>
+                                                <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.name}</p>
+                                            </div>
+                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
+                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Software</p>
+                                                <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.software?.name}</p>
+                                            </div>
+                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
+                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Region</p>
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`}
+                                                        alt={serverData.location?.shortCode}
+                                                        className="w-4 h-3 rounded-sm object-cover opacity-80"
+                                                    />
+                                                    <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.location?.description}</p>
+                                                </div>
+                                            </div>
+                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
+                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Architecture</p>
+                                                <p className="text-[13px] font-bold text-foreground tracking-tight uppercase tracking-tighter">{serverData.software?.nestName}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="px-5 py-4 flex items-center justify-between group hover:bg-brand/[0.01] transition-colors">
-                                        <p className="text-[10px] font-bold text-brand/30 uppercase tracking-widest">Architecture</p>
-                                        <p className="text-[13px] font-bold text-brand tracking-tight uppercase tracking-tighter">{serverData.software?.nestName}</p>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {createServerError && (
-                                <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
-                                    <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{createServerError}</p>
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
-                                <button
-                                    onClick={handleBack}
-                                    className="px-4 py-2 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
-                                >
-                                    Back
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        setCreateServerError("");
-                                        setCreatingServer(true);
-                                        try {
-                                            await request('/create-server', {
-                                                method: 'POST',
-                                                body: {
-                                                    name: serverData.name,
-                                                    description: serverData.description || '',
-                                                    locationId: serverData.location?.id,
-                                                    eggId: serverData.software?.id,
-                                                    dockerImage: serverData.software?.dockerImage,
-                                                    startup: serverData.software?.startup,
-                                                    nestId: serverData.software?.nestId,
-                                                    plan: serverData.plan
-                                                }
-                                            });
-                                            await fetchServers();
-                                            await fetchRecentActivity({ retry: true });
-                                            handleCloseModal();
-                                        } catch (err) {
-                                            setCreateServerError(err?.message || 'Failed to create server');
-                                        } finally {
-                                            setCreatingServer(false);
-                                        }
-                                    }}
-                                    disabled={creatingServer}
-                                    className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shadow-none"
-                                >
-                                    {creatingServer ? (
-                                        <>
-                                            <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
-                                            Initializing...
-                                        </>
-                                    ) : (
-                                        'Deploy Instance'
+                                    {createServerError && (
+                                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
+                                            <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{createServerError}</p>
+                                        </div>
                                     )}
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="px-6 py-4 border-t border-surface-lighter flex items-center justify-between">
+                        <button
+                            onClick={createStep === 1 ? handleCloseModal : handleBack}
+                            className="px-4 py-2 text-[10px] font-bold text-foreground/60 hover:text-foreground uppercase tracking-widest transition-all cursor-pointer"
+                        >
+                            {createStep === 1 ? 'Cancel' : 'Back'}
+                        </button>
+                        {createStep < 4 ? (
+                            <button
+                                onClick={handleNext}
+                                disabled={
+                                    (createStep === 1 && !serverData.name) ||
+                                    (createStep === 2 && !serverData.location) ||
+                                    (createStep === 3 && !serverData.software)
+                                }
+                                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                            >
+                                Continue
+                            </button>
+                        ) : (
+                            <button
+                                onClick={async () => {
+                                    setCreateServerError("");
+                                    setCreatingServer(true);
+                                    try {
+                                        await request('/create-server', {
+                                            method: 'POST',
+                                            body: {
+                                                name: serverData.name,
+                                                description: serverData.description || '',
+                                                locationId: serverData.location?.id,
+                                                eggId: serverData.software?.id,
+                                                dockerImage: serverData.software?.dockerImage,
+                                                startup: serverData.software?.startup,
+                                                nestId: serverData.software?.nestId,
+                                                plan: serverData.plan
+                                            }
+                                        });
+                                        await fetchServers();
+                                        await fetchRecentActivity({ retry: true });
+                                        handleCloseModal();
+                                    } catch (err) {
+                                        setCreateServerError(err?.message || 'Failed to create server');
+                                    } finally {
+                                        setCreatingServer(false);
+                                    }
+                                }}
+                                disabled={creatingServer}
+                                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shadow-none"
+                            >
+                                {creatingServer ? (
+                                    <>
+                                        <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                                        Initializing...
+                                    </>
+                                ) : (
+                                    'Deploy Instance'
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </CenterModal>
 
@@ -990,22 +984,22 @@ export default function Servers() {
                 maxWidth="max-w-xl"
             >
                 <div className="p-6">
-                    <h2 className="text-[16px] font-bold text-brand mb-6">Rename Instance</h2>
+                    <h2 className="text-[16px] font-bold text-foreground mb-6">Rename Instance</h2>
                     <div className="space-y-5">
                         <div>
-                            <label className="block text-[10px] font-bold text-brand/60 uppercase tracking-widest mb-2">Instance Name</label>
+                            <label className="block text-[10px] font-bold text-foreground/60 uppercase tracking-widest mb-2">Instance Name</label>
                             <input
                                 type="text"
                                 value={editData.name}
                                 onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                                 placeholder="Enter new name"
-                                className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-brand placeholder:text-brand/20 focus:outline-none focus:border-brand/20 transition-all"
+                                className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all"
                             />
                         </div>
                         <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-surface-lighter">
                             <button
                                 onClick={handleCloseEditModal}
-                                className="px-4 py-2 text-[10px] font-bold text-brand/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                                className="px-4 py-2 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -1039,9 +1033,9 @@ export default function Servers() {
             >
                 <div className="p-6">
                     <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Delete Instance</h2>
-                        <p className="text-[12px] font-bold text-brand/40 mt-1">
-                            Are you sure you want to delete <span className="text-brand">"{serverToDelete?.name}"</span>? This action cannot be undone.
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Delete Instance</h2>
+                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
+                            Are you sure you want to delete <span className="text-foreground">"{serverToDelete?.name}"</span>? This action cannot be undone.
                         </p>
                     </div>
                     {deleteError && (
@@ -1053,7 +1047,7 @@ export default function Servers() {
                         <button
                             onClick={() => setDeleteModalOpen(false)}
                             disabled={deletingServer}
-                            className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
@@ -1076,7 +1070,12 @@ export default function Servers() {
                             disabled={deletingServer}
                             className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
                         >
-                            {deletingServer ? 'Deleting...' : 'Confirm Delete'}
+                            {deletingServer ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : 'Confirm Delete'}
                         </Button>
                     </div>
                 </div>

@@ -285,7 +285,7 @@ export default function Access() {
                         <button
                             onClick={() => setInviteOpen(false)}
                             disabled={inviting}
-                            className="px-3 py-1.5 text-[10px] font-bold text-brand/40 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
@@ -303,9 +303,9 @@ export default function Access() {
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-brand tracking-tight">Remove User</h2>
-                        <p className="text-[12px] font-bold text-brand/40 mt-1">
-                            Remove <span className="text-brand">{deleteTarget?.email}</span> from this instance? They will lose all access immediately.
+                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Remove User</h2>
+                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
+                            Remove <span className="text-foreground">{deleteTarget?.email}</span> from this instance? They will lose all access immediately.
                         </p>
                     </div>
                     {actionError && (
@@ -317,7 +317,7 @@ export default function Access() {
                         <button
                             onClick={() => setDeleteTarget(null)}
                             disabled={deleting}
-                            className="px-4 py-2 text-[10px] font-bold text-brand hover:text-brand/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>

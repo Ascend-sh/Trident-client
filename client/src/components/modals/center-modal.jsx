@@ -30,7 +30,7 @@ const CenterModal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }
                         >
                             {title && (
                                 <div className="flex items-center px-4 py-3 border-b border-surface-light bg-surface-light/30">
-                                    <h2 className="text-[10px] font-bold text-brand uppercase tracking-wider">{title}</h2>
+                                    <h2 className="text-[10px] font-bold text-foreground uppercase tracking-wider">{title}</h2>
                                 </div>
                             )}
 

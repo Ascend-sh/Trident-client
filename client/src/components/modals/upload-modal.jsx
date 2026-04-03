@@ -62,15 +62,15 @@ export default function UploadModal({ isOpen, onClose, onUpload, uploading }) {
       <div className="p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="text-[16px] font-bold text-brand tracking-tight">Upload Files</h2>
-            <p className="text-[11px] font-bold text-brand/30 uppercase tracking-widest mt-0.5">
+            <h2 className="text-[16px] font-bold text-foreground tracking-tight">Upload Files</h2>
+            <p className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest mt-0.5">
               Drop files below or click to browse
             </p>
           </div>
           <button
             onClick={handleClose}
             disabled={uploading}
-            className="p-1.5 rounded-md text-brand/20 hover:text-brand hover:bg-surface-lighter transition-all cursor-pointer disabled:opacity-30 mt-0.5"
+            className="p-1.5 rounded-md text-foreground/60 hover:text-brand hover:bg-surface-lighter transition-all cursor-pointer disabled:opacity-30 mt-0.5"
           >
             <X size={14} />
           </button>
@@ -97,13 +97,13 @@ export default function UploadModal({ isOpen, onClose, onUpload, uploading }) {
             onChange={handleInputChange}
           />
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-brand/10' : 'bg-surface-light'}`}>
-            <Upload size={18} className={`transition-colors ${dragging ? 'text-brand/70' : 'text-brand/30'}`} />
+            <Upload size={18} className={`transition-colors ${dragging ? 'text-foreground/60' : 'text-foreground/60'}`} />
           </div>
           <div className="text-center">
-            <p className="text-[13px] font-bold text-brand/60">
+            <p className="text-[13px] font-bold text-foreground/60">
               {dragging ? 'Release to add files' : 'Drag & drop your files here'}
             </p>
-            <p className="text-[10px] font-bold text-brand/25 uppercase tracking-widest mt-0.5">
+            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest mt-0.5">
               or click to select
             </p>
           </div>
@@ -117,15 +117,15 @@ export default function UploadModal({ isOpen, onClose, onUpload, uploading }) {
                 className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-light border border-surface-lighter group"
               >
                 <div className="flex items-center gap-2.5 overflow-hidden flex-1">
-                  <File size={13} className="text-brand/20 shrink-0" />
-                  <span className="text-[12px] font-bold text-brand truncate">{file.name}</span>
+                  <File size={13} className="text-foreground/60 shrink-0" />
+                  <span className="text-[12px] font-bold text-foreground truncate">{file.name}</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-[10px] font-bold text-brand/25 uppercase tracking-widest">{formatBytes(file.size)}</span>
+                  <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">{formatBytes(file.size)}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
                     disabled={uploading}
-                    className="p-1 rounded text-brand/20 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-30 opacity-0 group-hover:opacity-100"
+                    className="p-1 rounded text-foreground/60 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-30 opacity-0 group-hover:opacity-100"
                   >
                     <X size={11} />
                   </button>

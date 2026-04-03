@@ -217,7 +217,7 @@ const AdminTransactions = () => {
             case 'completed': return "text-green-500 bg-green-500/5 border-green-500/10";
             case 'pending': return "text-amber-500 bg-amber-500/5 border-amber-500/10";
             case 'failed': return "text-red-500 bg-red-500/5 border-red-500/10";
-            default: return "text-brand/40 bg-brand/5 border-brand/10";
+            default: return "text-foreground/60 bg-brand/5 border-brand/10";
         }
     };
 
@@ -238,7 +238,7 @@ const AdminTransactions = () => {
     }, [payments, searchQuery, activeFilter]);
 
     return (
-        <div className="bg-surface px-16 py-10 min-h-screen">
+        <div className="bg-surface px-10 py-10 min-h-screen">
             {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
@@ -319,7 +319,7 @@ const AdminTransactions = () => {
                             placeholder="SEARCH REFERENCE / ID..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-9 px-4 bg-surface-light border border-surface-lighter rounded-md text-[10px] font-bold text-brand/60 placeholder:text-brand/30 focus:outline-none focus:border-brand/20 transition-all uppercase tracking-widest w-[260px]"
+                            className="h-9 px-4 bg-surface-light border border-surface-lighter rounded-md text-[10px] font-bold text-foreground/60 placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all uppercase tracking-widest w-[260px]"
                         />
                     </div>
                 </div>
