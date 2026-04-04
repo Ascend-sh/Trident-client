@@ -10,7 +10,7 @@ import {
     MapingIcon,
     ThirdBracketIcon,
     PaintBrush03Icon,
-    Sun01Icon,
+    Sun03Icon,
     Moon02Icon,
 } from "@hugeicons/core-free-icons";
 import { useState } from "react";
@@ -119,16 +119,6 @@ const AdminNav = () => {
                 </nav>
 
                 <div className="px-3 pb-4">
-                    {!customization.isDark && (
-                        <button
-                            onClick={toggleTheme}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all cursor-pointer group border border-transparent text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 mb-2"
-                        >
-                            <HugeiconsIcon icon={isDark ? Sun01Icon : Moon02Icon} size={18} />
-                            <span className="text-[13px] font-bold">{isDark ? "Light Mode" : "Dark Mode"}</span>
-                        </button>
-                    )}
-
                     <div className="flex items-center justify-between px-2">
                         <div className="flex items-center gap-3 min-w-0">
                             <img
@@ -145,12 +135,30 @@ const AdminNav = () => {
                                 </p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer shrink-0"
-                        >
-                            <HugeiconsIcon icon={Logout01Icon} size={18} />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                            {!customization.isDark && (
+                                <div className="flex items-center bg-surface-lighter/40 rounded-full p-[3px]">
+                                    <button
+                                        onClick={() => isDark && toggleTheme()}
+                                        className={`w-6 h-5 flex items-center justify-center rounded-full transition-all cursor-pointer ${!isDark ? 'bg-surface shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <HugeiconsIcon icon={Sun03Icon} size={11} />
+                                    </button>
+                                    <button
+                                        onClick={() => !isDark && toggleTheme()}
+                                        className={`w-6 h-5 flex items-center justify-center rounded-full transition-all cursor-pointer ${isDark ? 'bg-surface shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <HugeiconsIcon icon={Moon02Icon} size={11} />
+                                    </button>
+                                </div>
+                            )}
+                            <button
+                                onClick={handleLogout}
+                                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                            >
+                                <HugeiconsIcon icon={Logout01Icon} size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </aside>

@@ -4,11 +4,11 @@ import {
     Home04Icon,
     Ticket03Icon,
     CreditCardChangeIcon,
-    Settings01Icon,
+    Settings03Icon,
     Search01Icon,
     CommandIcon,
     Notification01Icon,
-    Sun01Icon,
+    Sun03Icon,
     Moon02Icon,
     Logout01Icon,
     PlusSignIcon,
@@ -38,7 +38,7 @@ const Navbar = () => {
         { path: "/app/home", label: "Home", icon: Home04Icon },
         { path: "/app/support", label: "Support", icon: Ticket03Icon },
         { path: "/app/billing", label: "Billing", icon: CreditCardChangeIcon },
-        { path: "/app/account/settings", label: "Settings", icon: Settings01Icon },
+        { path: "/app/account/settings", label: "Settings", icon: Settings03Icon },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -87,7 +87,7 @@ const Navbar = () => {
 
     return (
         <>
-            <aside className="w-64 h-screen bg-surface-light flex flex-col shrink-0 sticky top-0">
+            <aside className="w-64 h-screen bg-surface-light flex flex-col shrink-0 sticky top-0 relative z-10">
                 <div className="px-5 h-14 flex items-center mb-2">
                     <Link to="/app/home" className="flex items-center">
                         <img src={customization.logoUrl} alt={customization.siteName} className="h-7 dark:invert" />
@@ -139,31 +139,22 @@ const Navbar = () => {
                 </nav>
 
                 <div className="px-3 pb-4">
-                    <div className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-                            <span>{balance} {currencyName}</span>
+                    <button
+                        onClick={() => setIsCreditsModalOpen(true)}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-lighter/30 transition-all cursor-pointer group/credits"
+                    >
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[13px] font-bold text-foreground leading-none">{balance}</span>
+                            <span className="text-[10px] font-bold text-muted-foreground leading-none">Credits</span>
                         </div>
-                        <button
-                            onClick={() => setIsCreditsModalOpen(true)}
-                            className="w-5 h-5 rounded-full bg-brand/5 text-muted-foreground flex items-center justify-center hover:bg-brand hover:text-surface transition-all cursor-pointer group/plus"
-                        >
-                            <HugeiconsIcon icon={PlusSignIcon} size={10} className="transition-transform group-hover/plus:rotate-90" />
-                        </button>
-                    </div>
+                        <div className="w-5 h-5 rounded-full bg-surface-lighter/50 text-muted-foreground flex items-center justify-center group-hover/credits:bg-brand group-hover/credits:text-surface transition-all">
+                            <HugeiconsIcon icon={PlusSignIcon} size={10} className="transition-transform group-hover/credits:rotate-90" />
+                        </div>
+                    </button>
 
-                    <div className="my-3" />
+                    <div className="my-2" />
 
-                    {!customization.isDark && (
-                        <button
-                            onClick={toggleTheme}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all cursor-pointer text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 mb-2"
-                        >
-                            <HugeiconsIcon icon={isDark ? Sun01Icon : Moon02Icon} size={18} />
-                            <span className="text-[13px] font-bold">{isDark ? "Light Mode" : "Dark Mode"}</span>
-                        </button>
-                    )}
-
-                    <div className="relative flex items-center justify-between px-2 mt-2" ref={menuRef}>
+                    <div className="relative flex items-center justify-between px-2" ref={menuRef}>
                         <div className="flex items-center gap-3 min-w-0">
                             <img
                                 src={avatarUrl}
@@ -179,15 +170,48 @@ const Navbar = () => {
                                 </p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setUserMenuOpen(!userMenuOpen)}
-                            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer shrink-0"
-                        >
-                            <HugeiconsIcon icon={MoreHorizontalIcon} size={18} />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                            {!customization.isDark && (
+                                <div className="flex items-center bg-surface-lighter/40 rounded-full p-[3px]">
+                                    <button
+                                        onClick={() => isDark && toggleTheme()}
+                                        className={`w-6 h-5 flex items-center justify-center rounded-full transition-all cursor-pointer ${!isDark ? 'bg-surface shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <HugeiconsIcon icon={Sun03Icon} size={11} />
+                                    </button>
+                                    <button
+                                        onClick={() => !isDark && toggleTheme()}
+                                        className={`w-6 h-5 flex items-center justify-center rounded-full transition-all cursor-pointer ${isDark ? 'bg-surface shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <HugeiconsIcon icon={Moon02Icon} size={11} />
+                                    </button>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                            >
+                                <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                            </button>
+                        </div>
 
                         {userMenuOpen && (
-                            <div className="absolute bottom-0 left-full ml-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-lg z-[100] overflow-hidden">
+                            <div className="absolute bottom-0 left-full ml-2 w-52 border border-surface-lighter rounded-lg shadow-lg z-[100] overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
+                                <div className="px-3 py-2.5 border-b border-surface-lighter flex items-center gap-2.5">
+                                    <img
+                                        src={avatarUrl}
+                                        alt="Avatar"
+                                        className="w-7 h-7 rounded-full bg-white border border-surface-lighter shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-bold text-foreground truncate leading-none mb-1">
+                                            {user?.username || "Account"}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground truncate leading-none">
+                                            {user?.email || ''}
+                                        </p>
+                                    </div>
+                                </div>
                                 <div className="p-1">
                                     {user?.isAdmin && (
                                         <Link

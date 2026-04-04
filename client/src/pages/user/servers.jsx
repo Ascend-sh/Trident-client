@@ -1,18 +1,11 @@
-import { 
-    Plus, 
-    HardDrive, 
-    ChevronDown, 
-    Trash2, 
-    RefreshCw, 
-    Layers2, 
+import {
+    Plus,
     Ellipsis,
-    Undo2,
-    Shield,
-    Activity,
     Search,
     Check,
-    Earth
 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, CpuIcon } from "@hugeicons/core-free-icons";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CenterModal from "../../components/modals/center-modal";
@@ -370,173 +363,95 @@ export default function Servers() {
     const onlineServers = servers.filter(s => metricsByServerId[s.id]?.state === 'running').length;
 
     return (
-        <div className="bg-surface px-16 py-10">
-            <div className="flex items-center justify-between gap-4 mb-4">
-                <h1 className="text-[20px] font-bold text-foreground tracking-tight">Servers</h1>
-
-                <Button 
+        <div className="bg-surface px-10 py-10">
+            <div className="flex items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Servers</h1>
+                    <p className="text-[13px] font-bold text-muted-foreground mt-2">Manage and monitor your game server instances</p>
+                </div>
+                <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="h-8 px-3 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none"
+                    className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer"
                 >
                     <Plus size={12} />
-                    Create Server
-                </Button>
+                    New Instance
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div className="lg:col-span-2 border border-surface-lighter rounded-lg p-5 flex flex-col justify-between min-h-fit">
-                    <h2 className="text-[16px] font-bold text-foreground mb-4">Overview</h2>
-                    <div className="grid grid-cols-3 gap-8">
-                        <div>
-                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Slots</p>
-                            <p className="text-[20px] font-bold text-foreground/80">{totalServers} <span className="text-foreground/20 mx-1 font-medium">/</span> {slotsLimit}</p>
-                        </div>
-                        <div>
-                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Instances</p>
-                            <p className="text-[20px] font-bold text-foreground/80">{onlineServers} Online</p>
-                        </div>
-                        <div>
-                            <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">Credits</p>
-                            <div className="flex items-baseline gap-3">
-                                <p className="text-[20px] font-bold text-foreground/80">{balance} {currencyName}</p>
-                                <button 
-                                    onClick={() => setIsCreditsModalOpen(true)}
-                                    className="text-[10px] font-bold text-muted-foreground hover:text-foreground underline underline-offset-2 uppercase tracking-widest transition-colors cursor-pointer"
+            <div className="grid grid-cols-4 border border-surface-lighter rounded-lg overflow-hidden mb-10">
+                {[
+                    { label: "Slots", value: <>{totalServers} <span className="text-foreground/20 mx-0.5 font-medium">/</span> {slotsLimit}</> },
+                    { label: "Online", value: onlineServers },
+                    { label: "Credits", value: `${balance} ${currencyName}`, action: () => setIsCreditsModalOpen(true), actionLabel: "Add Funds" },
+                    { label: "Tickets", value: "0" },
+                ].map((stat, i) => (
+                    <div key={i} className={`px-6 py-5 ${i > 0 ? 'border-l border-surface-lighter' : ''}`}>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">{stat.label}</p>
+                        <div className="flex items-baseline gap-3">
+                            <p className="text-[24px] font-bold text-foreground tracking-tighter leading-none">{stat.value}</p>
+                            {stat.action && (
+                                <button
+                                    onClick={stat.action}
+                                    className="text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-colors cursor-pointer"
                                 >
-                                    Add Funds
+                                    {stat.actionLabel}
                                 </button>
-                            </div>
+                            )}
                         </div>
                     </div>
-                </div>
-
-
-                <div className="border border-surface-lighter rounded-lg p-5 pb-3 flex flex-col min-h-fit">
-                    <h2 className="text-[16px] font-bold text-foreground mb-3">Recent Activity</h2>
-
-                    <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                        {recentActivityLoading ? (
-                            <p className="text-[10px] font-bold text-foreground/20 animate-pulse uppercase tracking-widest">Fetching logs...</p>
-                        ) : recentActivity.length > 0 ? (
-                            <div className="space-y-3">
-                                {recentActivity.slice(0, 2).map((item, idx) => {
-                                    const e = item?.event;
-                                    const isLogin = e === 'login';
-                                    const isLogout = e === 'logout';
-                                    const isServerCreate = e === 'server_created';
-                                    const isServerDelete = e === 'server_deleted';
-                                    const title = isLogin
-                                        ? 'Logged in'
-                                        : isLogout
-                                        ? 'Logged out'
-                                        : isServerCreate
-                                        ? 'Server created'
-                                        : isServerDelete
-                                        ? 'Server deleted'
-                                        : 'Activity';
-                                    const label = isServerCreate || isServerDelete
-                                        ? (item?.serverName || 'Server')
-                                        : (item?.email || user?.username || 'User');
-                                    
-                                    return (
-                                        <div key={idx} className="flex items-center justify-between gap-4">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[11px] font-bold text-foreground/60 truncate">
-                                                    {label} <span className="text-foreground/30 font-medium">·</span> {title}
-                                                </p>
-
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    {(!isServerCreate && !isServerDelete && item?.ip) && (
-                                                        <span className="text-[9px] font-bold text-foreground/20 tracking-tighter">{item.ip}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <span className="text-[9px] font-bold text-foreground/60 whitespace-nowrap uppercase tracking-tighter">
-                                                {item?.relative || 'Just now'}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <p className="text-[11px] font-bold text-foreground/60 italic">No recent logs</p>
-                        )}
-                    </div>
-                    {recentActivity.length > 2 && (
-                        <div className="mt-3 flex justify-center">
-                            <button className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer">
-                                View More
-                                <ChevronDown size={10} strokeWidth={3} />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                ))}
             </div>
 
-            <div className="mt-8">
+            <div>
                 <div className="flex items-center justify-between gap-6 mb-6">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setActiveFilter('all')}
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                                activeFilter === 'all' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
-                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
-                            }`}
-                        >
-                            All Servers
-                        </button>
-                        <button
-                            onClick={() => setActiveFilter('online')}
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
-                                activeFilter === 'online' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
-                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
-                            }`}
-                        >
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                            Running
-                        </button>
-                        <button
-                            onClick={() => setActiveFilter('offline')}
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
-                                activeFilter === 'offline' 
-                                    ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
-                                    : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
-                            }`}
-                        >
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            Stopped
-                        </button>
+                    <div className="flex items-center gap-1 bg-surface-light rounded-md p-0.5 border border-surface-lighter">
+                        {[
+                            { label: "All", value: "all" },
+                            { label: "Running", value: "online", dot: "bg-green-500" },
+                            { label: "Stopped", value: "offline", dot: "bg-red-500" },
+                        ].map((opt) => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setActiveFilter(opt.value)}
+                                className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    activeFilter === opt.value
+                                        ? 'bg-surface text-foreground shadow-sm border border-surface-lighter'
+                                        : 'text-muted-foreground hover:text-foreground border border-transparent'
+                                }`}
+                            >
+                                {opt.dot && <div className={`w-1.5 h-1.5 rounded-full ${opt.dot}`} />}
+                                {opt.label}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="relative group">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/60" />
+                    <div className="relative">
+                        <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="text"
-                            placeholder="SEARCH INSTANCES..."
+                            placeholder="Search instances..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 pl-9 pr-4 bg-surface-light border border-surface-lighter rounded-md text-[10px] font-bold text-foreground/60 placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all uppercase tracking-widest w-[200px]"
+                            className="h-8 pl-8 pr-4 bg-surface-light border border-surface-lighter rounded-lg text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all w-[200px]"
                         />
                     </div>
                 </div>
 
-                <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
+                <div className="border border-surface-lighter rounded-lg">
                     <div className="w-full">
-                        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-3">
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Name</span>
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Address</span>
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Location</span>
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Usage</span>
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-center">Status</span>
-                            <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
+                        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-3 border-b border-surface-lighter">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Address</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Location</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Usage</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Status</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</span>
                         </div>
 
                         {(() => {
                             const q = (searchQuery || '').trim().toLowerCase();
                             let filtered = servers;
-                            
+
                             if (q) {
                                 filtered = filtered.filter((s) => {
                                     const name = (s?.name || '').toLowerCase();
@@ -544,7 +459,7 @@ export default function Servers() {
                                     return name.includes(q) || id.includes(q);
                                 });
                             }
-                            
+
                             if (activeFilter !== 'all') {
                                 filtered = filtered.filter((s) => {
                                     const m = metricsByServerId[s.id];
@@ -557,9 +472,9 @@ export default function Servers() {
 
                             if (loading || (servers.length > 0 && !metricsLoaded)) {
                                 return (
-                                    <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
+                                    <div className="flex flex-col">
                                         {Array.from({ length: Math.max(3, servers.length) }).map((_, i) => (
-                                            <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 border-b border-surface-lighter animate-pulse">
+                                            <div key={i} className={`grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 animate-pulse ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
                                                 <div className="flex flex-col gap-2">
                                                     <div className="h-3 w-28 bg-surface-lighter rounded-md" />
                                                     <div className="h-2 w-16 bg-surface-lighter rounded-md" />
@@ -567,28 +482,22 @@ export default function Servers() {
                                                 <div className="flex items-center justify-center">
                                                     <div className="h-3 w-32 bg-surface-lighter rounded-md" />
                                                 </div>
-                                                <div className="flex items-center justify-center pr-10">
+                                                <div className="flex items-center justify-center">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-4 h-3 bg-surface-lighter rounded-md" />
                                                         <div className="h-3 w-16 bg-surface-lighter rounded-md" />
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        <div className="h-1.5 w-6 bg-surface-lighter rounded-full" />
-                                                        <div className="h-3 w-8 bg-surface-lighter rounded-md" />
-                                                    </div>
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        <div className="h-1.5 w-6 bg-surface-lighter rounded-full" />
-                                                        <div className="h-3 w-8 bg-surface-lighter rounded-md" />
-                                                    </div>
+                                                    <div className="h-3 w-8 bg-surface-lighter rounded-md" />
+                                                    <div className="h-3 w-8 bg-surface-lighter rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-surface-lighter" />
                                                     <div className="h-3 w-12 bg-surface-lighter rounded-md" />
                                                 </div>
                                                 <div className="flex items-center justify-end">
-                                                    <div className="w-8 h-8 rounded-md bg-surface-lighter" />
+                                                    <div className="w-7 h-7 rounded-md bg-surface-lighter" />
                                                 </div>
                                             </div>
                                         ))}
@@ -598,43 +507,42 @@ export default function Servers() {
 
                             if (filtered.length === 0) {
                                 return (
-                                    <div className="bg-surface border border-surface-lighter rounded-lg py-12 flex flex-col items-center justify-center min-h-[210px]">
-                                        <span className="text-[12px] font-bold text-foreground/60 text-center px-6 italic">
-                                             It looks a bit empty here. Let's get started by creating your first instance.
-                                         </span>
+                                    <div className="py-16 flex flex-col items-center justify-center gap-3">
+                                        <HugeiconsIcon icon={CpuIcon} size={40} className="text-muted-foreground/20" />
+                                        <p className="text-[12px] font-bold text-muted-foreground/40">You don't have any servers yet. Create one to get started.</p>
                                     </div>
                                 );
                             }
 
                             return (
-                                <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
-                                    {filtered.map((server) => {
+                                <div className="flex flex-col">
+                                    {filtered.map((server, idx) => {
                                         const m = metricsByServerId[server.id];
                                         const stateLower = String(m?.state || 'offline').toLowerCase();
                                         const isOnline = stateLower === 'running' || stateLower === 'online';
                                         const isStarting = stateLower === 'starting' || stateLower === 'installing';
-                                        
+
                                         const cpu = Number(m?.cpuPercent || 0);
                                         const mem = Number(m?.memoryPercent || 0);
 
                                         return (
-                                            <div 
-                                                key={server.id} 
+                                            <div
+                                                key={server.id}
                                                 onClick={() => navigate(`/app/server/${server.identifier}/overview`)}
-                                                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 hover:bg-surface-light/50 transition-colors cursor-pointer group border-b border-surface-lighter"
+                                                className={`grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_0.5fr] px-6 py-4 hover:bg-surface-light/50 transition-colors cursor-pointer group ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
                                             >
                                                 <div className="flex flex-col">
-                                                    <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">{server.name}</span>
-                                                    <span className="text-[9px] font-bold text-foreground/20 uppercase tracking-tighter">{server.identifier}</span>
+                                                    <span className="text-[13px] font-bold text-foreground tracking-tight">{server.name}</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground/50 tracking-tight mt-0.5">{server.identifier}</span>
                                                 </div>
 
                                                 <div className="flex items-center justify-center">
                                                     {server?.allocation?.ip_alias || server?.allocation?.ip ? (
-                                                        <span className="text-[11px] font-bold text-foreground/60 font-mono">
+                                                        <span className="text-[11px] font-bold text-muted-foreground font-mono">
                                                             {server?.allocation?.ip_alias || server?.allocation?.ip}:{server?.allocation?.port}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-[11px] font-bold text-foreground/60 italic">Assigning...</span>
+                                                        <span className="text-[11px] font-bold text-muted-foreground/50">Assigning...</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center justify-center">
@@ -643,23 +551,23 @@ export default function Servers() {
                                                             <img
                                                                 src={`https://flagsapi.com/${server.location.shortCode}/flat/64.png`}
                                                                 alt={server.location.shortCode}
-                                                                className="w-4 h-3 rounded-md object-cover opacity-80"
+                                                                className="w-4 h-3 rounded-sm object-cover opacity-80"
                                                                 onError={(e) => (e.currentTarget.style.display = 'none')}
                                                             />
                                                         )}
-                                                        <span className="text-[11px] font-bold text-foreground/60 truncate max-w-[100px]">
+                                                        <span className="text-[11px] font-bold text-muted-foreground truncate max-w-[100px]">
                                                             {server.location?.description || server.location?.shortCode || '-'}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-4">
-                                                    <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">CPU</span>
-                                                        <span className="text-[11px] font-bold text-foreground/60">{Math.round(cpu)}%</span>
+                                                    <div className="flex items-center gap-1.5 min-w-[50px]">
+                                                        <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">CPU</span>
+                                                        <span className="text-[11px] font-bold text-muted-foreground">{Math.round(cpu)}%</span>
                                                     </div>
-                                                    <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">RAM</span>
-                                                        <span className="text-[11px] font-bold text-foreground/60">{Math.round(mem)}%</span>
+                                                    <div className="flex items-center gap-1.5 min-w-[50px]">
+                                                        <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">RAM</span>
+                                                        <span className="text-[11px] font-bold text-muted-foreground">{Math.round(mem)}%</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-2">
@@ -667,7 +575,7 @@ export default function Servers() {
                                                         isOnline ? 'bg-green-500' : isStarting ? 'bg-yellow-500' : 'bg-red-500'
                                                     }`} />
                                                     <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                                                        isOnline ? 'text-green-600' : isStarting ? 'text-yellow-600' : 'text-red-600'
+                                                        isOnline ? 'text-green-500' : isStarting ? 'text-yellow-500' : 'text-red-500'
                                                     }`}>
                                                         {stateLower}
                                                     </span>
@@ -685,29 +593,31 @@ export default function Servers() {
                                                         </button>
                                                         
                                                         {openActionMenuId === server.id && (
-                                                            <div 
-                                                                className="absolute right-0 mt-2 w-32 bg-surface border border-surface-lighter rounded-md z-50 shadow-none py-1"
+                                                            <div
+                                                                className="absolute right-0 mt-2 w-36 bg-surface-light border border-surface-lighter rounded-lg shadow-lg z-50 overflow-hidden"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setOpenActionMenuId(null);
-                                                                        handleOpenEditModal(server);
-                                                                    }}
-                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all uppercase tracking-widest"
-                                                                >
-                                                                    Rename
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setOpenActionMenuId(null);
-                                                                        setServerToDelete(server);
-                                                                        setDeleteModalOpen(true);
-                                                                    }}
-                                                                    className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-surface-light transition-all uppercase tracking-widest"
-                                                                >
-                                                                    Delete
-                                                                </button>
+                                                                <div className="p-1">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setOpenActionMenuId(null);
+                                                                            handleOpenEditModal(server);
+                                                                        }}
+                                                                        className="w-full px-3 py-2 text-left text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 rounded-md transition-all"
+                                                                    >
+                                                                        Rename
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setOpenActionMenuId(null);
+                                                                            setServerToDelete(server);
+                                                                            setDeleteModalOpen(true);
+                                                                        }}
+                                                                        className="w-full px-3 py-2 text-left text-[12px] font-bold text-red-500 hover:bg-surface-lighter/50 rounded-md transition-all"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -721,6 +631,77 @@ export default function Servers() {
                     </div>
                 </div>
             </div>
+
+            <div className="mt-10 px-2">
+                <h2 className="text-[16px] font-bold text-foreground/70 tracking-tight mb-6">Recent Activity</h2>
+                {recentActivityLoading ? (
+                    <div className="relative pl-5">
+                        <div className="absolute left-[6px] top-0 bottom-0 w-px bg-surface-lighter" />
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="relative flex items-start gap-4 pb-6 animate-pulse">
+                                <div className="absolute left-[-17px] top-1 w-[7px] h-[7px] rounded-full bg-surface-lighter" />
+                                <div className="flex-1 flex items-center justify-between">
+                                    <div className="h-3 w-40 bg-surface-lighter rounded-md" />
+                                    <div className="h-3 w-16 bg-surface-lighter rounded-md" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : recentActivity.length > 0 ? (
+                    <>
+                        <div className="relative pl-5">
+                            <div className="absolute left-[6px] top-1 bottom-0 w-px bg-surface-lighter" />
+                            {recentActivity.slice(0, 5).map((item, idx) => {
+                                const e = item?.event;
+                                const isLogin = e === 'login';
+                                const isLogout = e === 'logout';
+                                const isServerCreate = e === 'server_created';
+                                const isServerDelete = e === 'server_deleted';
+                                const isLast = idx === Math.min(recentActivity.length, 5) - 1;
+                                const title = isLogin
+                                    ? 'Logged in'
+                                    : isLogout
+                                    ? 'Logged out'
+                                    : isServerCreate
+                                    ? 'Server created'
+                                    : isServerDelete
+                                    ? 'Server deleted'
+                                    : 'Activity';
+                                const label = isServerCreate || isServerDelete
+                                    ? (item?.serverName || 'Server')
+                                    : (item?.email || user?.username || 'User');
+                                const dotColor = isLogin ? 'bg-green-500' : isLogout ? 'bg-muted-foreground' : isServerCreate ? 'bg-brand' : isServerDelete ? 'bg-red-500' : 'bg-muted-foreground';
+
+                                return (
+                                    <div key={idx} className={`relative flex items-start gap-4 ${isLast ? '' : 'pb-6'}`}>
+                                        <div className={`absolute left-[-17px] top-[5px] w-[7px] h-[7px] rounded-full ${dotColor} ring-2 ring-surface`} />
+                                        <div className="flex-1 flex items-baseline justify-between min-w-0">
+                                            <div className="flex items-baseline gap-2 min-w-0">
+                                                <span className="text-[13px] font-bold text-foreground">{title}</span>
+                                                <span className="text-[12px] font-bold text-muted-foreground truncate">{label}</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-muted-foreground/60 whitespace-nowrap ml-4">
+                                                {item?.relative || 'Just now'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {recentActivity.length > 5 && (
+                            <div className="flex justify-center mt-5">
+                                <button className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-colors cursor-pointer">
+                                    View More
+                                    <HugeiconsIcon icon={ArrowDown01Icon} size={14} />
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <p className="text-[13px] font-bold text-muted-foreground">No recent activity</p>
+                )}
+            </div>
+
             <CenterModal
                 isOpen={isCreateModalOpen}
                 onClose={handleCloseModal}
