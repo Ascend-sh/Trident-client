@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import CenterModal from './center-modal';
-import { Button } from '@/components/ui/button';
 
 export default function PromptModal({
   isOpen,
@@ -41,12 +40,10 @@ export default function PromptModal({
   return (
     <CenterModal isOpen={isOpen} onClose={onClose} maxWidth="max-w-sm">
       <div className="p-6">
-        <div className="mb-5">
-          <h2 className="text-[16px] font-bold text-foreground tracking-tight">{title}</h2>
-          {description && (
-            <p className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest mt-0.5">{description}</p>
-          )}
-        </div>
+        <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">{title}</h2>
+        {description && (
+          <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-5">{description}</p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <input
@@ -56,25 +53,32 @@ export default function PromptModal({
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}
             disabled={isSubmitting}
-            className="w-full h-9 bg-surface-light border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/30 transition-colors disabled:opacity-50"
+            className="w-full h-9 bg-surface-light/50 border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all disabled:opacity-40"
           />
 
-          <div className="flex items-center justify-end gap-3 mt-5">
+          <div className="flex items-center justify-end gap-2 mt-5">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+              className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
             >
               Cancel
             </button>
-            <Button
+            <button
               type="submit"
               disabled={isSubmitting || !value.trim()}
-              className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+              className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isSubmitting ? 'Working...' : submitLabel}
-            </Button>
+              {isSubmitting ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                  Working
+                </>
+              ) : (
+                submitLabel
+              )}
+            </button>
           </div>
         </form>
       </div>

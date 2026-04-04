@@ -196,7 +196,7 @@ export default function AdminOverview() {
               ))}
             </div>
           </div>
-          <div className="h-[220px]">
+          <div className="h-[220px] min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trafficData} margin={{ top: 0, right: 5, left: 5, bottom: 0 }}>
                 <defs>
@@ -327,7 +327,7 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      <div>
+      <div className="mb-10">
         <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">User Blacklist</h2>
         <div className="border border-surface-lighter rounded-lg overflow-hidden">
           <div className="p-5">

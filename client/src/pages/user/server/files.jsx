@@ -1,4 +1,4 @@
-import { Folder, File, Ellipsis, Plus, Upload, ChevronRight, Search, FileCode, Trash2, MoreVertical } from "lucide-react";
+import { Folder, File, Ellipsis, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
@@ -7,7 +7,6 @@ import PromptModal from "../../../components/modals/prompt-modal.jsx";
 import ImageModal from "../../../components/modals/image-modal.jsx";
 import CenterModal from "../../../components/modals/center-modal";
 import UploadModal from "../../../components/modals/upload-modal.jsx";
-import { Button } from "@/components/ui/button";
 import ServerNav from "../../../components/navigation/server-nav";
 
 const API_BASE = "/api/v1/client";
@@ -68,19 +67,19 @@ function formatRelativeTime(value) {
   if (sec < 60) return "just now";
 
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
+  if (min < 60) return `${min}m ago`;
 
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
+  if (hr < 24) return `${hr}h ago`;
 
   const day = Math.round(hr / 24);
-  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`;
+  if (day < 30) return `${day}d ago`;
 
   const mo = Math.round(day / 30);
-  if (mo < 12) return `${mo} month${mo === 1 ? '' : 's'} ago`;
+  if (mo < 12) return `${mo}mo ago`;
 
   const yr = Math.round(mo / 12);
-  return `${yr} year${yr === 1 ? '' : 's'} ago`;
+  return `${yr}y ago`;
 }
 
 function normalizeDirectory(dir) {
@@ -264,12 +263,9 @@ export default function ServerFiles() {
   const triggerDelete = ({ rowIndex } = {}) => {
     const selectedNames = selectedRows.map(i => items?.[i]?.name).filter(Boolean);
     const rowName = typeof rowIndex === 'number' ? items?.[rowIndex]?.name : null;
-    
+
     let filesToDelete = [];
     if (typeof rowIndex === 'number' && rowName) {
-      // If mass selected but clicked specific row delete, typical behavior is mass delete if that row is among selection, 
-      // but simpler to just delete the clicked row if from context menu unless we want to clear.
-      // Let's stick to mass delete if selected, else row
       filesToDelete = selectedNames.length ? selectedNames : [rowName];
     } else {
       filesToDelete = selectedNames;
@@ -303,43 +299,29 @@ export default function ServerFiles() {
   };
 
   const openNewFilePrompt = () => {
-    setPromptState({ 
-      open: true, 
-      type: 'new_file', 
-      title: 'Create New File', 
-      desc: 'Enter a name for the new file.', 
-      initial: '', 
-      placeholder: 'e.g., config.yml', 
-      submitLabel: 'Create', 
-      context: null 
+    setPromptState({
+      open: true, type: 'new_file', title: 'New File',
+      desc: 'Enter a name for the new file.', initial: '',
+      placeholder: 'e.g., config.yml', submitLabel: 'Create', context: null
     });
   };
 
   const openNewFolderPrompt = () => {
-    setPromptState({ 
-      open: true, 
-      type: 'new_folder', 
-      title: 'Create New Folder', 
-      desc: 'Enter a name for the new folder.', 
-      initial: '', 
-      placeholder: 'e.g., plugins', 
-      submitLabel: 'Create', 
-      context: null 
+    setPromptState({
+      open: true, type: 'new_folder', title: 'New Folder',
+      desc: 'Enter a name for the new folder.', initial: '',
+      placeholder: 'e.g., plugins', submitLabel: 'Create', context: null
     });
   };
 
   const openRenamePrompt = (idx) => {
     const item = items[idx];
     if (!item) return;
-    setPromptState({ 
-      open: true, 
-      type: 'rename', 
-      title: 'Rename Item', 
-      desc: 'Enter a new name for this item.', 
-      initial: item.name, 
-      placeholder: 'New name...', 
-      submitLabel: 'Rename', 
-      context: { oldName: item.name } 
+    setPromptState({
+      open: true, type: 'rename', title: 'Rename',
+      desc: 'Enter a new name for this item.', initial: item.name,
+      placeholder: 'New name...', submitLabel: 'Rename',
+      context: { oldName: item.name }
     });
     setOpenMenuIndex(null);
     setMenuPos(null);
@@ -348,7 +330,7 @@ export default function ServerFiles() {
   const handlePromptSubmit = async (val) => {
     if (!serverInfo?.id) return;
     setError('');
-    
+
     if (promptState.type === 'new_file') {
       const apiDir = uiToApiDirectory(directory);
       const filePath = joinPath(apiDir, val);
@@ -408,22 +390,9 @@ export default function ServerFiles() {
   const isTextEditable = (fileName) => {
     const n = String(fileName || '').toLowerCase();
     const allowed = [
-      'txt',
-      'log',
-      'json',
-      'yml',
-      'yaml',
-      'properties',
-      'toml',
-      'conf',
-      'cfg',
-      'ini',
-      'md',
-      'sh',
-      'env',
-      'xml'
+      'txt', 'log', 'json', 'yml', 'yaml', 'properties', 'toml',
+      'conf', 'cfg', 'ini', 'md', 'sh', 'env', 'xml'
     ];
-
     const base = n.split('/').pop() || '';
     const idx = base.lastIndexOf('.');
     const ext = idx >= 0 ? base.slice(idx + 1) : '';
@@ -442,13 +411,7 @@ export default function ServerFiles() {
   };
 
   const openEditor = async ({ name }) => {
-    if (!name) return;
-
-    if (!isTextEditable(name)) {
-      return;
-    }
-
-    if (!serverInfo?.id) return;
+    if (!name || !isTextEditable(name) || !serverInfo?.id) return;
 
     const apiDir = uiToApiDirectory(directory);
     const apiFile = joinPath(apiDir, name);
@@ -486,8 +449,7 @@ export default function ServerFiles() {
   };
 
   const saveEditor = async () => {
-    if (!serverInfo?.id) return;
-    if (!editorApiFile) return;
+    if (!serverInfo?.id || !editorApiFile) return;
 
     setEditorSaving(true);
     setEditorError('');
@@ -506,8 +468,7 @@ export default function ServerFiles() {
         try {
           const j = JSON.parse(text);
           msg = j?.error || j?.message || msg;
-        } catch {
-        }
+        } catch {}
         throw new Error(msg || 'failed_to_save_file');
       }
 
@@ -545,7 +506,7 @@ export default function ServerFiles() {
 
   const openImageViewer = async ({ name }) => {
     if (!serverInfo?.id || !name) return;
-    
+
     setError('');
     setImageName(name);
     setImageUrl('');
@@ -555,7 +516,7 @@ export default function ServerFiles() {
       const apiDir = uiToApiDirectory(directory);
       const apiFile = joinPath(apiDir, name);
       const urlRes = await request(`/servers/${serverInfo.id}/files/download?file=${encodeURIComponent(apiFile)}`);
-      
+
       if (urlRes?.url) {
         setImageUrl(urlRes.url);
       } else {
@@ -568,7 +529,7 @@ export default function ServerFiles() {
   };
 
   return (
-    <div className="bg-surface px-16 py-10 min-h-screen">
+    <div className="bg-surface px-10 py-10">
       <EditorModal
         isOpen={editorOpen}
         onClose={() => {
@@ -603,7 +564,7 @@ export default function ServerFiles() {
         isOpen={imageModalOpen}
         onClose={() => {
           setImageModalOpen(false);
-          setTimeout(() => setImageUrl(''), 300); // clear after animation
+          setTimeout(() => setImageUrl(''), 300);
         }}
         url={imageUrl}
         filename={imageName}
@@ -622,222 +583,212 @@ export default function ServerFiles() {
         maxWidth="max-w-md"
       >
         <div className="p-6">
-          <div className="mb-6">
-            <h2 className="text-[16px] font-bold text-foreground tracking-tight">Delete Items</h2>
-            <p className="text-[12px] font-bold text-muted-foreground mt-1">
-              Are you sure you want to delete {deleteModalState.items.length === 1 ? 'this item' : `these ${deleteModalState.items.length} items`}? This action cannot be undone.
-            </p>
-          </div>
-
-          
-          <div className="flex items-center justify-end gap-3 mt-8">
+          <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Delete Items</h2>
+          <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+            Are you sure you want to delete {deleteModalState.items.length === 1 ? 'this item' : `these ${deleteModalState.items.length} items`}? This action cannot be undone.
+          </p>
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => setDeleteModalState({ open: false, items: [] })}
-              className="px-4 py-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-colors cursor-pointer"
+              className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
             >
               Cancel
             </button>
-
-            <Button
+            <button
               onClick={confirmDelete}
-              className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none relative"
+              className="h-8 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer"
             >
-              {loading ? 'Deleting...' : 'Confirm Delete'}
-            </Button>
+              {loading ? 'Deleting...' : 'Delete'}
+            </button>
           </div>
         </div>
       </CenterModal>
 
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-[20px] font-bold text-foreground tracking-tight">File Manager</h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={openNewFilePrompt}
-              className="h-8 px-3 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
-            >
-              New File
-            </button>
-            <button 
-              onClick={openNewFolderPrompt}
-              className="h-8 px-3 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest rounded-md border border-surface-lighter hover:bg-surface-lighter transition-all duration-200 cursor-pointer"
-            >
-              New Folder
-            </button>
-
-            <button
-              onClick={() => setUploadModalOpen(true)}
-              className="h-8 px-4 text-[10px] font-bold bg-brand text-surface hover:bg-brand/90 transition-all rounded-md uppercase tracking-widest cursor-pointer shadow-none"
-            >
-              Upload
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 mb-5">
+        <div>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">File Manager</h1>
+          <p className="text-[13px] font-bold text-muted-foreground mt-2">Browse and manage your server files</p>
         </div>
-
-        <ServerNav />
-
-        <div className="flex items-center gap-1.5 mb-6 overflow-x-auto no-scrollbar">
-          {breadcrumb.map((c, idx) => {
-            const isLast = idx === breadcrumb.length - 1;
-            return (
-              <div key={`${c.path}-${idx}`} className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setDirectory(apiToUiDirectory(c.path))}
-                  className={`text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                    isLast 
-                      ? 'text-foreground cursor-default' 
-                      : 'text-muted-foreground hover:text-foreground/60 cursor-pointer'
-                  }`}
-                  disabled={isLast}
-                >
-                  {c.label}
-                </button>
-                {!isLast && <span className="text-[10px] font-bold text-muted-foreground">/</span>}
-
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={openNewFilePrompt}
+            className="h-8 px-3.5 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+          >
+            New File
+          </button>
+          <button
+            onClick={openNewFolderPrompt}
+            className="h-8 px-3.5 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+          >
+            New Folder
+          </button>
+          <button
+            onClick={() => setUploadModalOpen(true)}
+            className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer"
+          >
+            Upload
+          </button>
         </div>
       </div>
 
+      <ServerNav />
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto no-scrollbar">
+        {breadcrumb.map((c, idx) => {
+          const isLast = idx === breadcrumb.length - 1;
+          return (
+            <div key={`${c.path}-${idx}`} className="flex items-center gap-1">
+              <button
+                onClick={() => setDirectory(apiToUiDirectory(c.path))}
+                className={`text-[11px] font-bold transition-colors ${
+                  isLast
+                    ? 'text-foreground cursor-default'
+                    : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                }`}
+                disabled={isLast}
+              >
+                {c.label}
+              </button>
+              {!isLast && <span className="text-[11px] text-muted-foreground/30">/</span>}
+            </div>
+          );
+        })}
+      </div>
+
       {error && (
-        <div className="mb-6 px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
-          <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{error}</p>
+        <div className="mb-6 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+          <p className="text-[11px] font-bold text-red-500">{error}</p>
         </div>
       )}
 
-      <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-        <div className="w-full">
-          <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Name</span>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Size</span>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Modified</span>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</span>
-          </div>
-
-          <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col divide-y divide-surface-lighter">
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-14 border-b border-surface-lighter animate-pulse bg-brand/[0.01] grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-4 w-4 bg-brand/5 rounded" />
-                    <div className="h-3 w-32 bg-brand/5 rounded" />
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="h-3 w-16 bg-brand/5 rounded" />
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="h-3 w-24 bg-brand/5 rounded" />
-                  </div>
-                  <div className="flex items-center justify-end">
-                    <div className="h-6 w-6 bg-brand/5 rounded" />
-                  </div>
-                </div>
-              ))
-            ) : items.length === 0 ? (
-              <div className="py-12 text-center">
-                <span className="text-[12px] font-bold text-muted-foreground italic">This folder is empty</span>
-              </div>
-
-            ) : (
-              items.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => handleRowClick(item)}
-                  className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 hover:bg-surface-light/30 transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    {item?.is_file ? (
-                      <File size={16} className="text-foreground/60 shrink-0" />
-                    ) : (
-                      <Folder size={16} className="text-foreground/60 shrink-0" />
-                    )}
-                    <span className="text-[12px] font-bold text-foreground truncate tracking-tight">{item?.name || '-'}</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{formatRelativeTime(item?.modified_at)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-end">
-                    <div className="relative">
-                      <button
-                        ref={(el) => {
-                          if (el) menuAnchorRefs.current[idx] = el;
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const next = openMenuIndex === idx ? null : idx;
-                          setOpenMenuIndex(next);
-                          if (next === null) {
-                            setMenuPos(null);
-                            return;
-                          }
-                          const el = menuAnchorRefs.current[idx];
-                          if (!el) return;
-                          const rect = el.getBoundingClientRect();
-                          setMenuPos({
-                            top: rect.bottom + 6,
-                            right: window.innerWidth - rect.right
-                          });
-                        }}
-                        className="p-1.5 rounded-md hover:bg-surface-lighter text-foreground/60 hover:text-foreground/60 transition-all cursor-pointer"
-                      >
-                        <Ellipsis size={14} />
-                      </button>
-
-                      {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
-                        <div
-                          className="fixed w-36 rounded-md border border-surface-lighter shadow-xl z-[99999] overflow-hidden bg-white"
-                          style={{ top: menuPos.top, right: menuPos.right }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="py-1 px-1">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); openRenamePrompt(idx); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
-                            >
-                              Rename
-                            </button>
-
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
-                            >
-                              Move
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-foreground/60 hover:text-brand hover:bg-surface-light transition-all rounded-md uppercase tracking-tight"
-                            >
-                              Permissions
-                            </button>
-                            <div className="h-px bg-surface-lighter my-1"></div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                triggerDelete({ rowIndex: idx });
-                              }}
-                              className="w-full px-2.5 py-1.5 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-50 transition-all rounded-md uppercase tracking-tight"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>,
-                        document.body
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* File Table */}
+      <div className="border border-surface-lighter rounded-lg">
+        <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3 border-b border-surface-lighter">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Size</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Modified</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</span>
         </div>
+
+        {loading ? (
+          <div className="flex flex-col">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={`grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 animate-pulse ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-surface-lighter rounded" />
+                  <div className="h-3 w-32 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="h-3 w-14 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="h-3 w-16 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="w-6 h-6 bg-surface-lighter rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="py-16 flex items-center justify-center">
+            <span className="text-[12px] font-bold text-muted-foreground/40">This folder is empty</span>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {items.map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => handleRowClick(item)}
+                className={`grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 hover:bg-surface-light/50 transition-colors cursor-pointer group ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  {item?.is_file ? (
+                    <File size={15} className="text-muted-foreground/40 shrink-0" />
+                  ) : (
+                    <Folder size={15} className="text-muted-foreground/40 shrink-0" />
+                  )}
+                  <span className="text-[12px] font-bold text-foreground truncate tracking-tight">{item?.name || '-'}</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-muted-foreground">{item?.is_file ? formatBytes(item?.size) : '—'}</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-muted-foreground">{formatRelativeTime(item?.modified_at)}</span>
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="relative">
+                    <button
+                      ref={(el) => {
+                        if (el) menuAnchorRefs.current[idx] = el;
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const next = openMenuIndex === idx ? null : idx;
+                        setOpenMenuIndex(next);
+                        if (next === null) {
+                          setMenuPos(null);
+                          return;
+                        }
+                        const el = menuAnchorRefs.current[idx];
+                        if (!el) return;
+                        const rect = el.getBoundingClientRect();
+                        setMenuPos({
+                          top: rect.bottom + 6,
+                          right: window.innerWidth - rect.right
+                        });
+                      }}
+                      className="p-1.5 rounded-md text-muted-foreground/30 hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                    >
+                      <Ellipsis size={14} />
+                    </button>
+
+                    {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
+                      <div
+                        className="fixed w-40 rounded-lg border border-surface-lighter shadow-xl z-[99999] overflow-hidden"
+                        style={{ top: menuPos.top, right: menuPos.right, backgroundColor: 'var(--surface)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openRenamePrompt(idx); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
+                          >
+                            Move
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
+                          >
+                            Permissions
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              triggerDelete({ rowIndex: idx });
+                            }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all rounded-md"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

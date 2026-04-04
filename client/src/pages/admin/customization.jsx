@@ -35,6 +35,7 @@ export default function AdminCustomization() {
     const [isSaving, setIsSaving] = useState(false);
     const [isPresetMenuOpen, setIsPresetMenuOpen] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [showCustomColor, setShowCustomColor] = useState(false);
     const presetMenuRef = useRef(null);
 
     useEffect(() => {
@@ -135,7 +136,7 @@ export default function AdminCustomization() {
             description: "Default platform aesthetic",
             config: {
                 brandColor: "#18181b", brandColorDark: "#ffffff", brandHover: "#27272a", brandHoverDark: "#f4f4f5",
-                surface: "#ffffff", surfaceDark: "#121212", surfaceLight: "#f4f4f5", surfaceLightDark: "#18181b",
+                surface: "#ffffff", surfaceDark: "#0A0A0A", surfaceLight: "#f4f4f5", surfaceLightDark: "#171717",
                 surfaceHighlight: "#e5e5e5", surfaceHighlightDark: "#27272a", surfaceLighter: "#e4e4e7", surfaceLighterDark: "#3f3f46",
                 mutedForeground: "#71717a", mutedForegroundDark: "#a1a1aa", foreground: "#18181b", foregroundDark: "#ffffff",
                 borderColor: "#e4e4e7", borderColorDark: "#3f3f46", borderRadius: "0.625rem", fontFamily: "'Satoshi', sans-serif",
@@ -171,24 +172,27 @@ export default function AdminCustomization() {
         setIsPresetMenuOpen(false);
     };
 
-    const advancedColors = [
+    const advancedColorsLight = [
         { label: "Brand Color", key: "brandColor" },
-        { label: "Brand Color Dark", key: "brandColorDark" },
         { label: "Brand Hover", key: "brandHover" },
-        { label: "Brand Hover Dark", key: "brandHoverDark" },
         { label: "Surface", key: "surface" },
-        { label: "Surface Dark", key: "surfaceDark" },
         { label: "Surface Light", key: "surfaceLight" },
-        { label: "Surface Light Dark", key: "surfaceLightDark" },
         { label: "Surface Highlight", key: "surfaceHighlight" },
-        { label: "Surface Highlight Dark", key: "surfaceHighlightDark" },
         { label: "Surface Lighter", key: "surfaceLighter" },
-        { label: "Surface Lighter Dark", key: "surfaceLighterDark" },
         { label: "Muted Foreground", key: "mutedForeground" },
-        { label: "Muted Foreground Dark", key: "mutedForegroundDark" },
         { label: "Document Text", key: "foreground" },
-        { label: "Document Text Dark", key: "foregroundDark" },
         { label: "Border Color", key: "borderColor" },
+    ];
+
+    const advancedColorsDark = [
+        { label: "Brand Color Dark", key: "brandColorDark" },
+        { label: "Brand Hover Dark", key: "brandHoverDark" },
+        { label: "Surface Dark", key: "surfaceDark" },
+        { label: "Surface Light Dark", key: "surfaceLightDark" },
+        { label: "Surface Highlight Dark", key: "surfaceHighlightDark" },
+        { label: "Surface Lighter Dark", key: "surfaceLighterDark" },
+        { label: "Muted Foreground Dark", key: "mutedForegroundDark" },
+        { label: "Document Text Dark", key: "foregroundDark" },
         { label: "Border Color Dark", key: "borderColorDark" },
     ];
 
@@ -231,194 +235,243 @@ export default function AdminCustomization() {
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-8 mb-8">
-                    {/* Identity */}
-                    <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-0.5">Identity</p>
-                        <div className="border border-surface-lighter rounded-lg divide-y divide-surface-lighter">
-                            <div className="px-5 py-4 flex items-center justify-between gap-6">
-                                <div className="shrink-0">
-                                    <p className="text-[12px] font-bold text-foreground mb-0.5">Site Name</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground">Displayed across the platform</p>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={config.siteName}
-                                    onChange={(e) => updateConfig('siteName', e.target.value)}
-                                    className="h-8 px-3 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground focus:outline-none focus:border-brand/20 transition-all w-[220px] text-right"
-                                />
-                            </div>
-                            <div className="px-5 py-4 flex items-center justify-between gap-6">
-                                <div className="shrink-0">
-                                    <p className="text-[12px] font-bold text-foreground mb-0.5">Logo Path</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground">Resource URL for the logo asset</p>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={config.logoUrl}
-                                    onChange={(e) => updateConfig('logoUrl', e.target.value)}
-                                    className="h-8 px-3 bg-surface-light border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono focus:outline-none focus:border-brand/20 transition-all w-[220px] text-right"
-                                />
-                            </div>
+            {/* Branding */}
+            <div className="mb-10">
+                <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">Branding</h2>
+                <div className="border border-surface-lighter rounded-lg p-6">
+                    <div className="grid grid-cols-2 gap-5 mb-6">
+                        <div>
+                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Site Name</label>
+                            <input
+                                type="text"
+                                value={config.siteName}
+                                onChange={(e) => updateConfig('siteName', e.target.value)}
+                                className="w-full h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[12px] font-bold text-foreground focus:outline-none focus:border-brand/20 transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Logo Path</label>
+                            <input
+                                type="text"
+                                value={config.logoUrl}
+                                onChange={(e) => updateConfig('logoUrl', e.target.value)}
+                                className="w-full h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono focus:outline-none focus:border-brand/20 transition-all"
+                            />
                         </div>
                     </div>
-
-                    {/* Theme Preset */}
-                    <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-0.5">Theme</p>
-                        <div className="border border-surface-lighter rounded-lg divide-y divide-surface-lighter">
-                            <div className="px-5 py-4 relative" ref={presetMenuRef}>
-                                <div className="flex items-center justify-between gap-6">
-                                    <div className="shrink-0">
-                                        <p className="text-[12px] font-bold text-foreground mb-0.5">Preset</p>
-                                        <p className="text-[10px] font-bold text-muted-foreground">Quick theme templates</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setIsPresetMenuOpen(!isPresetMenuOpen)}
-                                        className="h-8 flex items-center gap-2 px-3 bg-surface-light border border-surface-lighter rounded-md text-[11px] font-bold text-foreground hover:bg-surface-lighter/30 transition-all cursor-pointer"
-                                    >
-                                        <span className="font-mono uppercase tracking-widest">
-                                            {currentTemplate?.name || "Custom"}
-                                        </span>
-                                        <HugeiconsIcon icon={ArrowDown01Icon} size={14} className={`text-muted-foreground transition-transform ${isPresetMenuOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                </div>
-
-                                {isPresetMenuOpen && (
-                                    <div className="absolute right-5 top-full mt-1 w-56 border border-surface-lighter rounded-lg shadow-lg z-50 overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
-                                        <div className="p-1 max-h-64 overflow-y-auto custom-scrollbar-prominent">
-                                            {themeTemplates.map((template) => (
-                                                <button
-                                                    key={template.name}
-                                                    onClick={() => applyTemplate(template)}
-                                                    className="w-full px-3 py-2 text-left rounded-md hover:bg-surface-lighter/30 transition-all flex items-center justify-between"
-                                                >
-                                                    <div>
-                                                        <span className="text-[11px] font-bold text-foreground block leading-tight">{template.name}</span>
-                                                        <span className="text-[9px] font-bold text-muted-foreground tracking-wide">{template.description}</span>
-                                                    </div>
-                                                    {currentTemplate?.name === template.name && (
-                                                        <HugeiconsIcon icon={Tick01Icon} size={14} className="text-brand shrink-0" />
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Brand Color */}
-                            <div className="px-5 py-4">
-                                <div className="flex items-center justify-between gap-6 mb-4">
-                                    <div className="shrink-0">
-                                        <p className="text-[12px] font-bold text-foreground mb-0.5">Brand Color</p>
-                                        <p className="text-[10px] font-bold text-muted-foreground">Primary accent color</p>
-                                    </div>
-                                    <label className="flex items-center gap-2 cursor-pointer group/color">
-                                        <div
-                                            className="w-7 h-7 rounded-md border border-surface-lighter transition-all group-hover/color:scale-105 relative overflow-hidden"
-                                            style={{ backgroundColor: config.brandColor }}
-                                        >
-                                            <input
-                                                type="color"
-                                                value={config.brandColor}
-                                                onChange={(e) => updateConfig('brandColor', e.target.value)}
-                                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
-                                            />
-                                        </div>
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] font-mono">{config.brandColor}</span>
-                                    </label>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {colorPresets.map((color) => (
-                                        <button
-                                            key={color.value}
-                                            onClick={() => updateConfig('brandColor', color.value)}
-                                            className={`w-7 h-7 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                                                config.brandColor === color.value ? 'border-brand ring-1 ring-brand ring-offset-1 ring-offset-surface' : 'border-surface-lighter'
-                                            }`}
-                                            style={{ backgroundColor: color.value }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Toggles */}
-                            <div className="px-5 py-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[12px] font-bold text-foreground mb-0.5">Compact Mode</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground">Optimize layout density</p>
-                                </div>
+                    <div className="pt-1">
+                        <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Accent Color</label>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {colorPresets.map((color) => (
                                 <button
-                                    onClick={() => handleToggle('isCompact', !config.isCompact)}
-                                    className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isCompact ? 'bg-brand' : 'bg-surface-lighter'}`}
-                                >
-                                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isCompact ? 'left-[18px]' : 'left-0.5'}`} />
-                                </button>
-                            </div>
-                            <div className="px-5 py-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[12px] font-bold text-foreground mb-0.5">Force Dark Mode</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground">Disable user theme switching</p>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        const val = !config.isDark;
-                                        const newConfig = { ...config, isDark: val };
-                                        if (config.brandColor === '#000000' && val) newConfig.brandColor = '#ffffff';
-                                        else if (config.brandColor === '#ffffff' && !val) newConfig.brandColor = '#000000';
-                                        setConfig(newConfig);
-                                        fetch('/api/v1/client/admin/customization', {
-                                            method: 'PATCH',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify(newConfig)
-                                        }).then(res => res.json()).then(data => {
-                                            if (data.ok) setOriginalConfig(newConfig);
-                                        });
-                                    }}
-                                    className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isDark ? 'bg-brand' : 'bg-surface-lighter'}`}
-                                >
-                                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isDark ? 'left-[18px]' : 'left-0.5'}`} />
-                                </button>
-                            </div>
+                                    key={color.value}
+                                    onClick={() => updateConfig('brandColor', color.value)}
+                                    className={`w-7 h-7 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                                        config.brandColor === color.value ? 'border-brand ring-1 ring-brand ring-offset-1 ring-offset-surface' : 'border-surface-lighter'
+                                    }`}
+                                    style={{ backgroundColor: color.value }}
+                                />
+                            ))}
                         </div>
-                    </div>
-                </div>
-
-                    {/* Advanced Colors */}
-                    <div>
                         <button
-                            onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-0.5 mb-4 hover:text-foreground transition-all cursor-pointer"
+                            onClick={() => setShowCustomColor(!showCustomColor)}
+                            className="flex items-center gap-1.5 mt-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-all cursor-pointer"
                         >
-                            Advanced Palette
-                            <HugeiconsIcon icon={ArrowDown01Icon} size={12} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                            Custom Color
+                            <HugeiconsIcon icon={ArrowDown01Icon} size={10} className={`transition-transform ${showCustomColor ? 'rotate-180' : ''}`} />
                         </button>
-
-                        {showAdvanced && (
-                            <div className="border border-surface-lighter rounded-lg divide-y divide-surface-lighter">
-                                {advancedColors.map((item) => (
-                                    <div key={item.key} className="px-5 py-3 flex items-center justify-between hover:bg-surface-light/30 transition-all">
-                                        <span className="text-[11px] font-bold text-muted-foreground">{item.label}</span>
-                                        <label className="flex items-center gap-2 cursor-pointer group/color">
-                                            <span className="text-[10px] font-bold text-muted-foreground/60 font-mono uppercase tracking-[0.1em]">{config[item.key]}</span>
-                                            <div
-                                                className="w-6 h-6 rounded-md border border-surface-lighter transition-all group-hover/color:scale-105 relative overflow-hidden"
-                                                style={{ backgroundColor: config[item.key] }}
-                                            >
-                                                <input
-                                                    type="color"
-                                                    value={config[item.key]}
-                                                    onChange={(e) => updateConfig(item.key, e.target.value)}
-                                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
-                                                />
-                                            </div>
-                                        </label>
-                                    </div>
-                                ))}
+                        {showCustomColor && (
+                            <div className="mt-3 flex items-center gap-2">
+                                <div
+                                    className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                    style={{ backgroundColor: config.brandColor }}
+                                />
+                                <input
+                                    type="text"
+                                    value={config.brandColor}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                            setConfig(prev => ({ ...prev, brandColor: val }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        if (/^#[0-9A-Fa-f]{6}$/.test(config.brandColor)) {
+                                            updateConfig('brandColor', config.brandColor);
+                                        }
+                                    }}
+                                    maxLength={7}
+                                    className="w-[100px] h-7 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
+                                    placeholder="#000000"
+                                />
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            {/* Theme */}
+            <div className="mb-10">
+                <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">Theme</h2>
+                <div className="border border-surface-lighter rounded-lg p-6">
+                    <div className="flex items-center justify-between relative" ref={presetMenuRef}>
+                        <div>
+                            <p className="text-[13px] font-bold text-foreground tracking-tight">Preset Template</p>
+                            <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Apply a preconfigured color scheme</p>
+                        </div>
+                        <button
+                            onClick={() => setIsPresetMenuOpen(!isPresetMenuOpen)}
+                            className="h-8 flex items-center gap-2 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground hover:bg-surface-lighter/30 transition-all cursor-pointer"
+                        >
+                            <span className="font-mono tracking-wide">{currentTemplate?.name || "Custom"}</span>
+                            <HugeiconsIcon icon={ArrowDown01Icon} size={14} className={`text-muted-foreground transition-transform ${isPresetMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isPresetMenuOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-56 border border-surface-lighter rounded-lg shadow-lg z-50 overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
+                                <div className="p-1 max-h-64 overflow-y-auto custom-scrollbar-prominent">
+                                    {themeTemplates.map((template) => (
+                                        <button
+                                            key={template.name}
+                                            onClick={() => applyTemplate(template)}
+                                            className="w-full px-3 py-2 text-left rounded-md hover:bg-surface-lighter/30 transition-all flex items-center justify-between"
+                                        >
+                                            <div>
+                                                <span className="text-[11px] font-bold text-foreground block leading-tight">{template.name}</span>
+                                                <span className="text-[9px] font-bold text-muted-foreground tracking-wide">{template.description}</span>
+                                            </div>
+                                            {currentTemplate?.name === template.name && (
+                                                <HugeiconsIcon icon={Tick01Icon} size={14} className="text-brand shrink-0" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-3 space-y-0">
+                        <div className="flex items-center justify-between py-3">
+                            <div>
+                                <p className="text-[13px] font-bold text-foreground tracking-tight">Compact Mode</p>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Optimize layout density</p>
+                            </div>
+                            <button
+                                onClick={() => handleToggle('isCompact', !config.isCompact)}
+                                className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isCompact ? 'bg-brand' : 'bg-surface-lighter'}`}
+                            >
+                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isCompact ? 'left-[18px]' : 'left-0.5'}`} />
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-between py-3">
+                            <div>
+                                <p className="text-[13px] font-bold text-foreground tracking-tight">Force Dark Mode</p>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Disable user theme switching</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const val = !config.isDark;
+                                    const newConfig = { ...config, isDark: val };
+                                    if (config.brandColor === '#000000' && val) newConfig.brandColor = '#ffffff';
+                                    else if (config.brandColor === '#ffffff' && !val) newConfig.brandColor = '#000000';
+                                    setConfig(newConfig);
+                                    fetch('/api/v1/client/admin/customization', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(newConfig)
+                                    }).then(res => res.json()).then(data => {
+                                        if (data.ok) setOriginalConfig(newConfig);
+                                    });
+                                }}
+                                className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isDark ? 'bg-brand' : 'bg-surface-lighter'}`}
+                            >
+                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isDark ? 'left-[18px]' : 'left-0.5'}`} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Advanced Palette */}
+            <div className="mb-10">
+                <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4 hover:text-foreground transition-all cursor-pointer"
+                >
+                    Advanced Palette
+                    <HugeiconsIcon icon={ArrowDown01Icon} size={12} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showAdvanced && (
+                    <div className="border border-surface-lighter rounded-lg p-6">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Light Mode</p>
+                        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                            {advancedColorsLight.map((item) => (
+                                <div key={item.key} className="flex items-center justify-between">
+                                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</label>
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                            style={{ backgroundColor: config[item.key] }}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config[item.key]}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                                    setConfig(prev => ({ ...prev, [item.key]: val }));
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
+                                                    updateConfig(item.key, config[item.key]);
+                                                }
+                                            }}
+                                            maxLength={7}
+                                            className="w-[85px] h-6 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground/60 font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="my-5 border-t border-surface-lighter" />
+
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Dark Mode</p>
+                        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                            {advancedColorsDark.map((item) => (
+                                <div key={item.key} className="flex items-center justify-between">
+                                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</label>
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                            style={{ backgroundColor: config[item.key] }}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config[item.key]}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                                    setConfig(prev => ({ ...prev, [item.key]: val }));
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
+                                                    updateConfig(item.key, config[item.key]);
+                                                }
+                                            }}
+                                            maxLength={7}
+                                            className="w-[85px] h-6 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground/60 font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

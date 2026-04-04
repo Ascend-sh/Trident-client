@@ -2,19 +2,20 @@ import {
     Play,
     Square,
     RefreshCw,
-    Zap,
     Copy,
     Check,
     Loader2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import ServerNav from "../../../components/navigation/server-nav";
 import CenterModal from "../../../components/modals/center-modal";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+
+const MAX_HISTORY = 30;
 
 const API_BASE = "/api/v1/client";
 
@@ -63,8 +64,11 @@ export default function ServerOverview() {
         memoryLimit: 1024,
         disk: 0,
         diskLimit: 2048,
-        uptime: 0
+        uptime: 0,
+        networkRx: 0,
+        networkTx: 0
     });
+    const [statsHistory, setStatsHistory] = useState([]);
     const [copied, setCopied] = useState(false);
     const [command, setCommand] = useState("");
     const [isConnecting, setIsConnecting] = useState(true);
@@ -98,7 +102,7 @@ export default function ServerOverview() {
         const fitAddon = new FitAddon();
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
-        
+
         setTimeout(() => {
             try {
                 fitAddon.fit();
@@ -179,6 +183,18 @@ export default function ServerOverview() {
         const s = String(seconds).padStart(2, '0');
         if (days > 0) return `${days}d ${hours}h ${minutes}m ${s}s`;
         return `${hours}h ${minutes}m ${s}s`;
+    };
+
+    const formatMB = (mb) => {
+        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+        return `${Math.round(mb)} MB`;
+    };
+
+    const formatBytes = (bytes) => {
+        if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(2)} GB`;
+        if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+        if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${bytes} B`;
     };
 
     const handleSendCommand = (e) => {
@@ -283,7 +299,7 @@ export default function ServerOverview() {
                         setIsConnecting(false);
                         eulaTriggeredRef.current = false;
                         eulaCheckInFlightRef.current = false;
-                        
+
                         const safeSend = (event) => {
                             if (ws.readyState === WebSocket.OPEN) {
                                 ws.send(JSON.stringify({ event, args: [] }));
@@ -292,13 +308,12 @@ export default function ServerOverview() {
 
                         safeSend("send logs");
                         safeSend("send stats");
-                        
-                        // Retry stats just in case the first one was too early
+
                         setTimeout(() => safeSend("send stats"), 750);
                         setTimeout(() => safeSend("send stats"), 2000);
 
                         checkEulaFile();
-                        
+
                         if (xtermRef.current) {
                             xtermRef.current.writeln('\x1b[33m[Torqen]\x1b[0m Connection established successfully.');
                         }
@@ -343,14 +358,34 @@ export default function ServerOverview() {
 
                         if (statsData?.state) setStatus(statsData.state.toLowerCase());
 
+                        const cpuVal = Number(statsData?.cpu_absolute || 0);
+                        const memVal = Number(statsData?.memory_bytes || 0) / (1024 * 1024);
+                        const memLimitVal = Number(statsData?.memory_limit_bytes || 0) / (1024 * 1024);
+                        const diskVal = Number(statsData?.disk_bytes || 0) / (1024 * 1024);
+                        const rxVal = Number(statsData?.network?.rx_bytes || 0);
+                        const txVal = Number(statsData?.network?.tx_bytes || 0);
+
                         setStats(prev => ({
                             ...prev,
-                            cpu: Number(statsData?.cpu_absolute || 0),
-                            memory: Number(statsData?.memory_bytes || 0) / (1024 * 1024),
-                            memoryLimit: Number(statsData?.memory_limit_bytes || 0) / (1024 * 1024),
-                            disk: Number(statsData?.disk_bytes || 0) / (1024 * 1024),
-                            uptime: Number(statsData?.uptime || 0)
+                            cpu: cpuVal,
+                            memory: memVal,
+                            memoryLimit: memLimitVal,
+                            disk: diskVal,
+                            uptime: Number(statsData?.uptime || 0),
+                            networkRx: rxVal,
+                            networkTx: txVal
                         }));
+
+                        setStatsHistory(prev => {
+                            const next = [...prev, {
+                                cpu: cpuVal,
+                                mem: memLimitVal > 0 ? (memVal / memLimitVal) * 100 : 0,
+                                disk: diskVal,
+                                netRx: rxVal,
+                                netTx: txVal
+                            }];
+                            return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
+                        });
                     }
                 };
 
@@ -392,21 +427,24 @@ export default function ServerOverview() {
     const canRestart = isOnline && !isStarting && !isStopping && !isInstalling;
     const canStop = (isOnline || isStarting) && !isStopping && !isInstalling;
 
+    const statusColor = isOnline ? 'green' : isStarting ? 'yellow' : 'red';
+    const memPercent = stats.memoryLimit > 0 ? Math.min(100, (stats.memory / stats.memoryLimit) * 100) : 0;
+
     if (isInitializing) {
         return (
             <div className="bg-surface min-h-screen flex flex-col items-center justify-center px-16">
-                <div className="flex flex-col items-center">
-                    <div className="w-14 h-14 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden mb-8">
+                <div className="flex flex-col items-center max-w-[280px]">
+                    <div className="w-12 h-12 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden mb-6">
                         <img
                             src="/defaulticon.webp"
                             alt="Server"
                             className="w-full h-full object-cover opacity-80"
                         />
                     </div>
-                    <Loader2 size={28} className="text-brand animate-spin mb-6" />
-                    <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest mb-2">Server Initializing</h2>
-                    <p className="text-[11px] font-medium text-muted-foreground max-w-sm text-center leading-relaxed">
-                        Your server is currently being installed. This may take a few minutes depending on the software. This page will update automatically once the process is complete.
+                    <div className="w-5 h-5 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin mb-5" />
+                    <p className="text-[13px] font-bold text-foreground tracking-tight mb-1.5">Initializing Server</p>
+                    <p className="text-[11px] font-bold text-muted-foreground text-center leading-relaxed">
+                        Your server is being installed. This may take a few minutes. This page will update automatically.
                     </p>
                 </div>
             </div>
@@ -414,38 +452,26 @@ export default function ServerOverview() {
     }
 
     return (
-        <div className="bg-surface px-16 py-10">
-            <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="bg-surface px-10 py-10">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
                         <img
                             src="/defaulticon.webp"
-                            alt="Minecraft"
+                            alt="Server"
                             className="w-full h-full object-cover opacity-80"
                         />
                     </div>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-[20px] font-bold text-foreground tracking-tight">{serverInfo?.name || 'Loading Instance...'}</h1>
-
-                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${
-                                status === 'running' || status === 'online'
-                                    ? 'bg-green-500/5 border-green-500/10 text-green-600'
-                                    : status === 'starting'
-                                    ? 'bg-yellow-500/5 border-yellow-500/10 text-yellow-600'
-                                    : 'bg-red-500/5 border-red-500/10 text-red-600'
-                            }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${
-                                    status === 'running' || status === 'online' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500' : 'bg-red-500'
-                                }`} />
-                                <span className="text-[9px] font-bold uppercase tracking-[0.1em]">{status}</span>
+                            <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">{serverInfo?.name || 'Loading...'}</h1>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-${statusColor}-500`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-widest text-${statusColor}-500`}>{status}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-[12px] font-bold uppercase tracking-widest">
-                            <span className={`${status === 'running' || status === 'online' ? 'text-green-500' : 'text-foreground/30'}`}>
-                                {status === 'running' || status === 'online' ? formatUptime(stats.uptime) : 'Uptime'}
-                            </span>
-                            <span className="text-foreground/10">•</span>
+                        <div className="flex items-center gap-2.5 mt-1.5">
                             {serverInfo?.location && (
                                 <>
                                     <div className="flex items-center gap-1.5">
@@ -456,154 +482,217 @@ export default function ServerOverview() {
                                                 className="w-4 h-3 rounded-sm object-cover opacity-80"
                                             />
                                         )}
-                                        <span className="text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
+                                        <span className="text-[13px] font-bold text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
                                     </div>
-                                    <span className="text-foreground/10">•</span>
+                                    <span className="text-muted-foreground/20">·</span>
                                 </>
                             )}
-
                             <div className="flex items-center gap-1.5">
-                                <span className="text-foreground/60">
+                                <span className="text-[13px] font-bold text-muted-foreground font-mono">
                                     {primaryAllocation
                                         ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
-                                        : 'Assigning IP...'}
+                                        : 'Assigning...'}
                                 </span>
                                 {primaryAllocation && (
                                     <button
                                         onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
-                                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                                        title="Copy IP"
+                                        className="text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer"
                                     >
                                         {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                                     </button>
                                 )}
                             </div>
-
+                            {isOnline && (
+                                <>
+                                    <span className="text-muted-foreground/20">·</span>
+                                    <span className="text-[13px] font-bold text-muted-foreground">{formatUptime(stats.uptime)}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
+                <div className="flex items-center gap-1.5">
+                    <button
                         onClick={() => handlePower('start')}
                         disabled={powerLoading || !canStart || isStarting}
-                        className={`h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed ${
-                            (powerLoading === 'start' || isStarting) ? 'border-amber-600/60 text-amber-700 opacity-100!' : ''
+                        className={`h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed ${
+                            powerLoading === 'start' || isStarting
+                                ? 'border-yellow-500/20 text-yellow-500'
+                                : 'text-muted-foreground hover:text-foreground hover:border-foreground/20'
                         }`}
                     >
                         {powerLoading === 'start' || isStarting ? (
                             <>
-                                <div className="w-3 h-3 border-2 border-amber-600/20 border-t-amber-600 rounded-full animate-spin" />
-                                Starting...
+                                <div className="w-3 h-3 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
+                                Starting
                             </>
                         ) : (
                             <>
-                                <Play size={12} className="fill-current" />
+                                <Play size={11} className="fill-current" />
                                 Start
                             </>
                         )}
-                    </Button>
-                    <Button
-                        variant="outline"
+                    </button>
+                    <button
                         onClick={() => handlePower('restart')}
                         disabled={powerLoading || !canRestart || isStopping}
-                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
+                        className="h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                     >
                         {powerLoading === 'restart' ? (
                             <>
-                                <div className="w-3 h-3 border-2 border-brand/20 border-t-brand/60 rounded-full animate-spin" />
-                                Restarting...
+                                <div className="w-3 h-3 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin" />
+                                Restarting
                             </>
                         ) : (
                             <>
-                                <RefreshCw size={12} />
+                                <RefreshCw size={11} />
                                 Restart
                             </>
                         )}
-                    </Button>
-                    <Button
-                        variant="outline"
+                    </button>
+                    <button
                         onClick={() => handlePower('stop')}
                         disabled={powerLoading || !canStop || isStopping}
-                        className="h-8 px-3 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none text-foreground/60 hover:text-brand disabled:opacity-20 disabled:cursor-not-allowed"
+                        className={`h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed ${
+                            powerLoading === 'stop' || isStopping
+                                ? 'border-red-500/20 text-red-500'
+                                : 'text-muted-foreground hover:text-foreground hover:border-foreground/20'
+                        }`}
                     >
                         {powerLoading === 'stop' || isStopping ? (
                             <>
-                                <div className="w-3 h-3 border-2 border-brand/20 border-t-brand/60 rounded-full animate-spin" />
-                                Stopping...
+                                <div className="w-3 h-3 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+                                Stopping
                             </>
                         ) : (
                             <>
-                                <Square size={12} className="fill-current" />
+                                <Square size={11} className="fill-current" />
                                 Stop
                             </>
                         )}
-                    </Button>
+                    </button>
                 </div>
             </div>
 
             <ServerNav />
 
-            <div className="bg-surface-light rounded-sm overflow-hidden border border-surface-lighter shadow-lg flex flex-col">
+            {/* Console */}
+            <div className="border border-surface-lighter rounded-lg overflow-hidden">
                 <div
                     ref={terminalRef}
-                    className="h-[450px] p-4 bg-surface-light overflow-hidden xterm"
+                    className="h-[420px] p-4 bg-surface-light overflow-hidden xterm"
                 />
-                <div className="p-4 bg-surface-light border-t border-surface-lighter">
+                <div className="px-4 py-3 bg-surface-light border-t border-surface-lighter">
                     <input
                         type="text"
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
                         onKeyDown={handleSendCommand}
-                        placeholder="TYPE COMMAND HERE..."
-                        className="w-full bg-transparent border-none text-[11px] font-bold text-foreground placeholder:text-foreground/20 focus:outline-none uppercase tracking-widest"
+                        placeholder="Type a command..."
+                        className="w-full bg-transparent border-none text-[12px] font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none font-mono"
                     />
                 </div>
             </div>
 
+            {/* Stats */}
+            <div className="grid grid-cols-4 border border-surface-lighter rounded-lg overflow-hidden mt-6">
+                {[
+                    { label: "CPU", value: `${Math.round(stats.cpu)}%`, dataKey: "cpu" },
+                    { label: "Memory", value: formatMB(stats.memory), sub: `/ ${formatMB(stats.memoryLimit)}`, dataKey: "mem" },
+                    { label: "Disk", value: formatMB(stats.disk), dataKey: "disk" },
+                    { label: "Network", value: `${formatBytes(stats.networkRx)} ↓`, sub: `${formatBytes(stats.networkTx)} ↑`, dataKey: "network" },
+                ].map((stat, i) => (
+                    <div key={i} className={`relative px-5 pt-4 pb-0 ${i > 0 ? 'border-l border-surface-lighter' : ''} overflow-hidden`}>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
+                        <div className="flex items-baseline gap-1.5 mb-4">
+                            <p className="text-[18px] font-bold text-foreground tracking-tighter leading-none">{stat.value}</p>
+                            {stat.sub && <span className="text-[11px] font-bold text-muted-foreground/40">{stat.sub}</span>}
+                        </div>
+                        <div className="h-[48px] -mx-5 -mb-px min-w-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={statsHistory} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id={`grad-${stat.dataKey}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                                        </linearGradient>
+                                        {stat.dataKey === "network" && (
+                                            <linearGradient id="grad-netTx" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.06} />
+                                                <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                                            </linearGradient>
+                                        )}
+                                    </defs>
+                                    {stat.dataKey === "network" ? (
+                                        <>
+                                            <Area
+                                                type="monotone"
+                                                dataKey="netRx"
+                                                stroke="var(--color-brand)"
+                                                strokeWidth={1.5}
+                                                fill={`url(#grad-${stat.dataKey})`}
+                                                isAnimationActive={false}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="netTx"
+                                                stroke="var(--color-brand)"
+                                                strokeWidth={1}
+                                                strokeOpacity={0.4}
+                                                fill="url(#grad-netTx)"
+                                                isAnimationActive={false}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Area
+                                            type="monotone"
+                                            dataKey={stat.dataKey}
+                                            stroke="var(--color-brand)"
+                                            strokeWidth={1.5}
+                                            fill={`url(#grad-${stat.dataKey})`}
+                                            isAnimationActive={false}
+                                        />
+                                    )}
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* EULA Modal */}
             <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
-                <div className="flex flex-col p-8">
-                    <h2 className="text-[12px] font-bold text-foreground uppercase tracking-wider mb-4">
-                        EULA Acceptance
-                    </h2>
-                    
-                    <p className="text-[11px] font-medium text-muted-foreground leading-relaxed mb-8">
-                        Your server has detected that the Minecraft EULA has not been accepted. 
-                        By clicking "Accept", you agree to the Mojang End User License Agreement.
+                <div className="p-6">
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">EULA Required</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-4">
+                        This server requires you to accept the Minecraft End User License Agreement before starting.
                     </p>
 
+                    <a
+                        href="https://account.mojang.com/documents/minecraft_eula"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-brand hover:text-brand/80 uppercase tracking-widest transition-colors mb-5"
+                    >
+                        View Full Agreement &#8599;
+                    </a>
 
-                    <div className="flex items-center justify-between gap-4 mb-8">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Document</span>
-                        <a 
-                            href="https://account.mojang.com/documents/minecraft_eula" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[9px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
-                        >
-                            Open License
-                        </a>
-                    </div>
-
-
-                    <div className="flex items-center gap-2 justify-end">
-                        <Button
-                            variant="outline"
+                    <div className="flex items-center justify-end gap-2">
+                        <button
                             onClick={() => {
                                 setEulaModalOpen(false);
                                 eulaTriggeredRef.current = false;
                                 eulaCheckInFlightRef.current = false;
                             }}
                             disabled={acceptingEula}
-                            className="h-8 px-4 border-surface-lighter hover:bg-surface-lighter transition-all rounded-md font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground cursor-pointer shadow-none"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
-
                             Decline
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             onClick={acceptEula}
                             disabled={acceptingEula}
-                            className="h-8 px-5 bg-brand text-surface hover:opacity-90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-none"
+                            className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer disabled:opacity-40"
                         >
                             {acceptingEula ? (
                                 <>
@@ -611,9 +700,9 @@ export default function ServerOverview() {
                                     Accepting...
                                 </>
                             ) : (
-                                'Accept EULA'
+                                'Accept'
                             )}
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </CenterModal>

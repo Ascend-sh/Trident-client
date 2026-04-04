@@ -1,31 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Trash2, Ellipsis, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import ServerNav from "../../../components/navigation/server-nav";
 import CenterModal from "../../../components/modals/center-modal";
-import { Button } from "@/components/ui/button";
 
 const API_BASE = "/api/v1/client";
 
 const MOCK_MEMBERS = [];
 
-const AVATAR_SEEDS = ["alex", "blake", "casey", "drew"];
-
-function AvatarGroup() {
-    return (
-        <div className="flex -space-x-4 mb-5">
-            {AVATAR_SEEDS.map((seed, i) => (
-                <img
-                    key={seed}
-                    src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
-                    alt={seed}
-                    className="w-12 h-12 rounded-lg border-2 border-surface bg-surface-light object-cover"
-                    style={{ zIndex: AVATAR_SEEDS.length - i }}
-                />
-            ))}
-        </div>
-    );
-}
 
 export default function Access() {
     const { identifier } = useParams();
@@ -34,8 +16,6 @@ export default function Access() {
     const [status, setStatus] = useState("offline");
     const [copied, setCopied] = useState(false);
     const [members, setMembers] = useState(MOCK_MEMBERS);
-    const [openMenuId, setOpenMenuId] = useState(null);
-
     const [inviteOpen, setInviteOpen] = useState(false);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviting, setInviting] = useState(false);
@@ -109,30 +89,25 @@ export default function Access() {
     const normalizedState = (status || "").toLowerCase();
     const isOnline = normalizedState === "running" || normalizedState === "online";
     const isStarting = normalizedState === "starting";
+    const statusColor = isOnline ? "green" : isStarting ? "yellow" : "red";
 
     return (
-        <div className="bg-surface px-16 py-10">
-            <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="bg-surface px-10 py-10">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
-                        <img src="/defaulticon.webp" alt="Minecraft" className="w-full h-full object-cover opacity-80" />
+                    <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                        <img src="/defaulticon.webp" alt="Server" className="w-full h-full object-cover opacity-80" />
                     </div>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-[20px] font-bold text-foreground tracking-tight">{serverInfo?.name || "Loading Instance..."}</h1>
-
-                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${
-                                isOnline
-                                    ? "bg-green-500/5 border-green-500/10 text-green-600"
-                                    : isStarting
-                                    ? "bg-yellow-500/5 border-yellow-500/10 text-yellow-600"
-                                    : "bg-red-500/5 border-red-500/10 text-red-600"
-                            }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-green-500" : isStarting ? "bg-yellow-500" : "bg-red-500"}`} />
-                                <span className="text-[9px] font-bold uppercase tracking-[0.1em]">{normalizedState || "offline"}</span>
+                            <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">{serverInfo?.name || "Loading..."}</h1>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-${statusColor}-500`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-widest text-${statusColor}-500`}>{normalizedState || "offline"}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-[12px] font-bold uppercase tracking-widest">
+                        <div className="flex items-center gap-2.5 mt-1.5">
                             {serverInfo?.location && (
                                 <>
                                     <div className="flex items-center gap-1.5">
@@ -143,128 +118,132 @@ export default function Access() {
                                                 className="w-4 h-3 rounded-sm object-cover opacity-80"
                                             />
                                         )}
-                                        <span className="text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
+                                        <span className="text-[13px] font-bold text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
                                     </div>
-                                    <span className="text-muted-foreground/10">•</span>
-
+                                    <span className="text-muted-foreground/20">·</span>
                                 </>
                             )}
-                             <div className="flex items-center gap-1.5">
-                                <span className="text-muted-foreground/80">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[13px] font-bold text-muted-foreground font-mono">
                                     {primaryAllocation
                                         ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
-                                        : "Assigning IP..."}
+                                        : "Assigning..."}
                                 </span>
                                 {primaryAllocation && (
                                     <button
                                         onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
-                                        className="text-muted-foreground/30 hover:text-foreground transition-colors cursor-pointer"
+                                        className="text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer"
                                     >
                                         {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                                     </button>
                                 )}
                             </div>
-
                         </div>
                     </div>
                 </div>
+                {members.length > 0 && (
+                    <button
+                        onClick={() => { setInviteEmail(""); setInviteError(""); setInviteOpen(true); }}
+                        className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+                    >
+                        Invite
+                    </button>
+                )}
             </div>
 
             <ServerNav />
 
             {members.length === 0 ? (
-                <div className="bg-surface-light border border-surface-lighter rounded-xl flex flex-col items-center justify-center py-20 px-6">
-                    <AvatarGroup />
-                    <h2 className="text-[15px] font-bold text-foreground tracking-tight mb-1.5">No Subusers</h2>
-                    <p className="text-[12px] font-bold text-muted-foreground text-center max-w-[280px] leading-relaxed">
-                        Invite teammates to collaborate on this instance with scoped permissions.
-                    </p>
+                <div className="border border-surface-lighter rounded-lg py-20 px-6 relative overflow-hidden">
+                    {/* Abstract collaboration visual */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.035]">
+                        <div className="relative w-[280px] h-[280px]">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-[65%] -translate-y-1/2 w-[180px] h-[180px] rounded-full border-[2px]" style={{ borderColor: 'var(--color-brand)' }} />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-[35%] -translate-y-1/2 w-[180px] h-[180px] rounded-full border-[2px]" style={{ borderColor: 'var(--color-brand)' }} />
+                        </div>
+                    </div>
 
-                    <button
-                        onClick={() => { setInviteEmail(""); setInviteError(""); setInviteOpen(true); }}
-                        className="mt-6 h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer flex items-center gap-2 shadow-none"
-                    >
-                        <Plus size={12} />
-                        Add Access
-                    </button>
+                    <div className="relative flex flex-col items-center">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-8 h-8 rounded-full bg-surface-light border border-surface-lighter" />
+                            <div className="w-[2px] h-[2px] rounded-full bg-muted-foreground/20" />
+                            <div className="w-[2px] h-[2px] rounded-full bg-muted-foreground/20" />
+                            <div className="w-[2px] h-[2px] rounded-full bg-muted-foreground/20" />
+                            <div className="w-8 h-8 rounded-full border-[1.5px] border-dashed border-surface-lighter" />
+                        </div>
+                        <p className="text-[15px] font-bold text-foreground tracking-tight mb-1.5">Collaborate on this server</p>
+                        <p className="text-[11px] font-bold text-muted-foreground/50 text-center max-w-[280px] leading-relaxed mb-7">
+                            Share granular access with teammates — choose exactly which controls they can use.
+                        </p>
+                        <button
+                            onClick={() => { setInviteEmail(""); setInviteError(""); setInviteOpen(true); }}
+                            className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-lg font-bold text-[10px] uppercase tracking-widest cursor-pointer"
+                        >
+                            Send First Invite
+                        </button>
+                    </div>
                 </div>
             ) : (
-                <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-                    <div className="w-full">
-                        <div className="grid grid-cols-[2fr_1fr_0.5fr] px-6 py-3">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">User</span>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Permissions</span>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</span>
-                        </div>
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between px-1 mb-3">
+                        <p className="text-[11px] font-bold text-muted-foreground/40">
+                            {members.length} user{members.length !== 1 ? "s" : ""} with access
+                        </p>
+                    </div>
 
-                        <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden">
-                            {members.map((member, idx) => (
-                                <div
-                                    key={member.id}
-                                    className={`grid grid-cols-[2fr_1fr_0.5fr] px-6 py-4 border-b border-surface-lighter hover:bg-surface-light/40 transition-colors ${idx === members.length - 1 ? "border-b-0" : ""}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                            <img
+                    {members.map((member) => (
+                        <div
+                            key={member.id}
+                            className="group border border-surface-lighter rounded-lg hover:border-muted-foreground/10 transition-all"
+                        >
+                            <div className="flex items-center justify-between px-5 py-4">
+                                <div className="flex items-center gap-3.5">
+                                    <div className="relative">
+                                        <img
                                             src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(member.email)}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
                                             alt={member.email}
-                                            className="w-8 h-8 rounded-lg border border-surface-lighter bg-surface-light shrink-0"
+                                            className="w-9 h-9 rounded-full border border-surface-lighter bg-surface-light shrink-0"
                                         />
-                                        <span className="text-[12px] font-bold text-foreground">{member.email}</span>
-
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface border-2 border-surface flex items-center justify-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        {(member.permissions || []).slice(0, 2).map(p => (
-                                            <span key={p} className="px-2 py-0.5 rounded bg-surface/40 border border-surface-lighter text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                                    <div>
+                                        <p className="text-[12px] font-bold text-foreground tracking-tight leading-none">{member.email}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground/30 mt-1">
+                                            {new Date(member.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                        {(member.permissions || []).map(p => (
+                                            <span key={p} className="px-2 py-0.5 rounded bg-surface-light text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
                                                 {p.replace("control.", "").replace("file.", "")}
                                             </span>
                                         ))}
-                                        {(member.permissions || []).length > 2 && (
-                                            <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                                                +{member.permissions.length - 2} more
-                                            </span>
-                                        )}
-
                                     </div>
-                                    <div className="flex items-center justify-end">
-                                        <div className="relative">
-                                            <button
-                                                onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === member.id ? null : member.id); }}
-                                                className="p-2 rounded-md hover:bg-surface-lighter text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                                            >
-                                                <Ellipsis size={14} />
-                                            </button>
-
-                                            {openMenuId === member.id && (
-                                                <div
-                                                    className="absolute right-0 mt-2 w-32 bg-surface border border-surface-lighter rounded-md z-50 shadow-none py-1"
-                                                    onClick={e => e.stopPropagation()}
-                                                >
-                                                    <button
-                                                        onClick={() => { setOpenMenuId(null); setActionError(""); setDeleteTarget(member); }}
-                                                        className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest flex items-center gap-2"
-                                                    >
-                                                        <Trash2 size={11} />
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                    <div className="w-px h-4 bg-surface-lighter opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <button
+                                        onClick={() => { setActionError(""); setDeleteTarget(member); }}
+                                        className="text-[10px] font-bold text-muted-foreground/20 hover:text-red-500 uppercase tracking-widest transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                                    >
+                                        Revoke
+                                    </button>
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
+                    ))}
                 </div>
             )}
 
+            {/* Invite Modal */}
             <CenterModal isOpen={inviteOpen} onClose={() => !inviting && setInviteOpen(false)} maxWidth="max-w-sm">
                 <div className="p-6">
-                    <div className="mb-5">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Invite User</h2>
-                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Grant access to this instance</p>
-                    </div>
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Invite User</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-5">Grant access to this instance</p>
 
-                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Email address</label>
                     <input
                         type="email"
                         value={inviteEmail}
@@ -273,61 +252,77 @@ export default function Access() {
                         placeholder="user@example.com"
                         disabled={inviting}
                         autoFocus
-                        className="w-full h-9 bg-surface-light border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/30 transition-colors disabled:opacity-50"
+                        className="w-full h-9 bg-surface-light/50 border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all disabled:opacity-40"
                     />
 
                     {inviteError && (
-                        <div className="mt-3 px-3 py-2 rounded-md bg-red-500/5 border border-red-500/10">
-                            <p className="text-[11px] font-bold text-red-600">{inviteError}</p>
+                        <div className="mt-3 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                            <p className="text-[11px] font-bold text-red-500">{inviteError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 mt-5">
+
+                    <div className="flex items-center justify-end gap-2 mt-5">
                         <button
                             onClick={() => setInviteOpen(false)}
                             disabled={inviting}
-                            className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <Button
+                        <button
                             onClick={handleInvite}
                             disabled={inviting || !inviteEmail.trim()}
-                            className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+                            className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {inviting ? "Inviting..." : "Send Invite"}
-                        </Button>
+                            {inviting ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                                    Inviting
+                                </>
+                            ) : (
+                                "Send Invite"
+                            )}
+                        </button>
                     </div>
                 </div>
             </CenterModal>
 
+            {/* Delete Modal */}
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
-                    <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Remove User</h2>
-                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
-                            Remove <span className="text-foreground">{deleteTarget?.email}</span> from this instance? They will lose all access immediately.
-                        </p>
-                    </div>
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Remove User</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+                        Remove <span className="text-foreground font-bold">{deleteTarget?.email}</span> from this instance? They will lose all access immediately.
+                    </p>
+
                     {actionError && (
-                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 mb-6">
-                            <p className="text-[11px] font-bold text-red-600">{actionError}</p>
+                        <div className="mb-4 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                            <p className="text-[11px] font-bold text-red-500">{actionError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 mt-8">
+
+                    <div className="flex items-center justify-end gap-2">
                         <button
                             onClick={() => setDeleteTarget(null)}
                             disabled={deleting}
-                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <Button
+                        <button
                             onClick={handleDelete}
                             disabled={deleting}
-                            className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+                            className="h-8 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {deleting ? "Removing..." : "Confirm Remove"}
-                        </Button>
+                            {deleting ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+                                    Removing
+                                </>
+                            ) : (
+                                "Remove"
+                            )}
+                        </button>
                     </div>
                 </div>
             </CenterModal>

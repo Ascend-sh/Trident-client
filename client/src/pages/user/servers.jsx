@@ -371,7 +371,7 @@ export default function Servers() {
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer"
+                    className="h-8 px-4 flex items-center gap-2 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
                 >
                     <Plus size={12} />
                     New Instance
@@ -382,7 +382,7 @@ export default function Servers() {
                 {[
                     { label: "Slots", value: <>{totalServers} <span className="text-foreground/20 mx-0.5 font-medium">/</span> {slotsLimit}</> },
                     { label: "Online", value: onlineServers },
-                    { label: "Credits", value: `${balance} ${currencyName}`, action: () => setIsCreditsModalOpen(true), actionLabel: "Add Funds" },
+                    { label: "Credits", value: balance, action: () => setIsCreditsModalOpen(true), actionLabel: "Add Funds" },
                     { label: "Tickets", value: "0" },
                 ].map((stat, i) => (
                     <div key={i} className={`px-6 py-5 ${i > 0 ? 'border-l border-surface-lighter' : ''}`}>
@@ -705,27 +705,33 @@ export default function Servers() {
             <CenterModal
                 isOpen={isCreateModalOpen}
                 onClose={handleCloseModal}
-                maxWidth="max-w-2xl"
+                maxWidth="max-w-xl"
             >
                 <div className="relative overflow-hidden">
-                    <div className="h-[3px] bg-surface-lighter">
-                        <div
-                            className="h-full bg-brand transition-all duration-500 ease-out"
-                            style={{ width: `${(createStep / 4) * 100}%` }}
-                        />
-                    </div>
-
-                    <div className="px-6 pt-5 pb-0">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Create Server</h2>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                            {createStep === 1 ? 'Server Details' :
-                             createStep === 2 ? 'Select Location' :
-                             createStep === 3 ? 'Select Software' :
-                             'Review & Deploy'}
+                    <div className="px-6 pt-6 pb-0">
+                        <div className="flex items-center justify-between mb-1">
+                            <h2 className="text-[16px] font-bold text-foreground tracking-tight">New Instance</h2>
+                            <span className="text-[10px] font-bold text-muted-foreground/50 tabular-nums">{createStep}/4</span>
+                        </div>
+                        <p className="text-[11px] font-bold text-muted-foreground">
+                            {createStep === 1 ? 'Give your server a name and description' :
+                             createStep === 2 ? 'Choose a deployment region' :
+                             createStep === 3 ? 'Pick your server software' :
+                             'Confirm your configuration'}
                         </p>
+                        <div className="flex gap-1.5 mt-4">
+                            {[1, 2, 3, 4].map((s) => (
+                                <div
+                                    key={s}
+                                    className={`h-[2px] flex-1 rounded-full transition-all duration-300 ${
+                                        s <= createStep ? 'bg-brand' : 'bg-surface-lighter'
+                                    }`}
+                                />
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="px-6 pt-6 pb-2 min-h-[280px]">
+                    <div className="px-6 pt-5 pb-2 min-h-[260px]">
                         <AnimatePresence mode="wait">
                             {createStep === 1 && (
                                 <motion.div
@@ -733,27 +739,27 @@ export default function Servers() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="space-y-5"
+                                    transition={{ duration: 0.15 }}
+                                    className="space-y-4"
                                 >
                                     <div>
-                                        <label className="block text-[10px] font-bold text-foreground/60 uppercase tracking-widest mb-2">Server Name</label>
+                                        <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Name</label>
                                         <input
                                             type="text"
                                             value={serverData.name}
                                             onChange={(e) => setServerData({ ...serverData, name: e.target.value })}
                                             placeholder="e.g. My Vanilla Survival"
-                                            className="w-full h-10 px-4 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all"
+                                            className="w-full h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-foreground/60 uppercase tracking-widest mb-2">Description</label>
+                                        <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Description</label>
                                         <textarea
                                             value={serverData.description}
                                             onChange={(e) => setServerData({ ...serverData, description: e.target.value })}
                                             placeholder="Optional description..."
                                             rows={3}
-                                            className="w-full px-4 py-3 bg-surface-light border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-foreground/60 focus:outline-none focus:border-brand/20 transition-all resize-none"
+                                            className="w-full px-3 py-2.5 bg-surface-light/50 border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all resize-none"
                                         />
                                     </div>
                                 </motion.div>
@@ -765,40 +771,39 @@ export default function Servers() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
+                                    transition={{ duration: 0.15 }}
                                 >
                                     {loadingLocations ? (
-                                        <div className="py-12 text-center">
-                                            <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
-                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Loading locations...</p>
+                                        <div className="py-16 flex flex-col items-center justify-center gap-3">
+                                            <div className="w-5 h-5 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin" />
+                                            <p className="text-[10px] font-bold text-muted-foreground">Loading regions...</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {locations.map((loc) => (
-                                                <button
-                                                    key={loc.id}
-                                                    onClick={() => setServerData({ ...serverData, location: loc })}
-                                                    className={`relative p-4 rounded-md border text-left transition-all cursor-pointer ${
-                                                        serverData.location?.id === loc.id
-                                                            ? 'bg-brand/5 border-brand text-foreground'
-                                                            : 'bg-surface-light border-surface-lighter text-foreground/60 hover:border-brand/20'
-                                                    }`}
-                                                >
-                                                    {serverData.location?.id === loc.id && (
-                                                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
-                                                            <Check size={10} strokeWidth={3} className="text-surface" />
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-3">
+                                        <div className="border border-surface-lighter rounded-lg overflow-hidden">
+                                            {locations.map((loc, i) => {
+                                                const selected = serverData.location?.id === loc.id;
+                                                return (
+                                                    <button
+                                                        key={loc.id}
+                                                        onClick={() => setServerData({ ...serverData, location: loc })}
+                                                        className={`w-full flex items-center gap-3.5 px-4 py-3 text-left transition-all cursor-pointer ${
+                                                            i > 0 ? 'border-t border-surface-lighter' : ''
+                                                        } ${selected ? 'bg-brand/[0.06]' : 'hover:bg-surface-light/50'}`}
+                                                    >
                                                         <img
                                                             src={`https://flagsapi.com/${loc.shortCode}/flat/64.png`}
                                                             alt={loc.shortCode}
-                                                            className="w-6 h-4 rounded-sm object-cover"
+                                                            className="w-5 h-3.5 rounded-sm object-cover shrink-0"
                                                         />
-                                                        <span className="text-[12px] font-bold uppercase tracking-tight">{loc.description || loc.shortCode}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                                        <span className="text-[12px] font-bold text-foreground tracking-tight flex-1">{loc.description || loc.shortCode}</span>
+                                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                            selected ? 'border-brand bg-brand' : 'border-surface-lighter'
+                                                        }`}>
+                                                            {selected && <Check size={9} strokeWidth={3} className="text-surface" />}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </motion.div>
@@ -810,36 +815,37 @@ export default function Servers() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
+                                    transition={{ duration: 0.15 }}
                                 >
                                     {loadingNests ? (
-                                        <div className="py-12 text-center">
-                                            <div className="w-6 h-6 border-2 border-brand/20 border-t-brand rounded-full animate-spin mx-auto mb-4" />
-                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Loading software...</p>
+                                        <div className="py-16 flex flex-col items-center justify-center gap-3">
+                                            <div className="w-5 h-5 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin" />
+                                            <p className="text-[10px] font-bold text-muted-foreground">Loading software...</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {availableEggs.map((egg) => (
-                                                <button
-                                                    key={egg.id}
-                                                    onClick={() => setServerData({ ...serverData, software: egg })}
-                                                    className={`relative p-4 rounded-md border text-left transition-all cursor-pointer ${
-                                                        serverData.software?.id === egg.id
-                                                            ? 'bg-brand/5 border-brand text-foreground'
-                                                            : 'bg-surface-light border-surface-lighter text-foreground/60 hover:border-brand/20'
-                                                    }`}
-                                                >
-                                                    {serverData.software?.id === egg.id && (
-                                                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
-                                                            <Check size={10} strokeWidth={3} className="text-surface" />
+                                        <div className="border border-surface-lighter rounded-lg overflow-hidden">
+                                            {availableEggs.map((egg, i) => {
+                                                const selected = serverData.software?.id === egg.id;
+                                                return (
+                                                    <button
+                                                        key={egg.id}
+                                                        onClick={() => setServerData({ ...serverData, software: egg })}
+                                                        className={`w-full flex items-center gap-3.5 px-4 py-3 text-left transition-all cursor-pointer ${
+                                                            i > 0 ? 'border-t border-surface-lighter' : ''
+                                                        } ${selected ? 'bg-brand/[0.06]' : 'hover:bg-surface-light/50'}`}
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-[12px] font-bold text-foreground tracking-tight">{egg.name}</span>
+                                                            <span className="text-[10px] font-bold text-muted-foreground ml-2">{egg.nestName}</span>
                                                         </div>
-                                                    )}
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[12px] font-bold uppercase tracking-tight">{egg.name}</span>
-                                                        <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-widest">{egg.nestName}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                            selected ? 'border-brand bg-brand' : 'border-surface-lighter'
+                                                        }`}>
+                                                            {selected && <Check size={9} strokeWidth={3} className="text-surface" />}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </motion.div>
@@ -851,43 +857,37 @@ export default function Servers() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="space-y-6"
+                                    transition={{ duration: 0.15 }}
                                 >
-                                    <div className="bg-surface-light border border-surface-lighter rounded-xl overflow-hidden">
-                                        <div className="px-5 py-3 border-b border-surface-lighter">
-                                            <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Deployment Manifest</p>
-                                        </div>
-                                        <div className="divide-y divide-surface-lighter">
-                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
-                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Instance Identity</p>
-                                                <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.name}</p>
+                                    <div className="border border-surface-lighter rounded-lg overflow-hidden">
+                                        {[
+                                            { label: "Name", value: serverData.name },
+                                            { label: "Software", value: serverData.software?.name },
+                                            {
+                                                label: "Region",
+                                                value: (
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`}
+                                                            alt={serverData.location?.shortCode}
+                                                            className="w-4 h-3 rounded-sm object-cover"
+                                                        />
+                                                        <span>{serverData.location?.description}</span>
+                                                    </div>
+                                                )
+                                            },
+                                            { label: "Type", value: serverData.software?.nestName },
+                                        ].map((row, i) => (
+                                            <div key={i} className={`flex items-center justify-between px-4 py-3.5 ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{row.label}</span>
+                                                <span className="text-[12px] font-bold text-foreground tracking-tight">{row.value}</span>
                                             </div>
-                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
-                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Software</p>
-                                                <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.software?.name}</p>
-                                            </div>
-                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
-                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Region</p>
-                                                <div className="flex items-center gap-2">
-                                                    <img
-                                                        src={`https://flagsapi.com/${serverData.location?.shortCode}/flat/64.png`}
-                                                        alt={serverData.location?.shortCode}
-                                                        className="w-4 h-3 rounded-sm object-cover opacity-80"
-                                                    />
-                                                    <p className="text-[13px] font-bold text-foreground tracking-tight">{serverData.location?.description}</p>
-                                                </div>
-                                            </div>
-                                            <div className="px-5 py-4 flex items-center justify-between hover:bg-surface-highlight/50 transition-colors">
-                                                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest">Architecture</p>
-                                                <p className="text-[13px] font-bold text-foreground tracking-tight uppercase tracking-tighter">{serverData.software?.nestName}</p>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
 
                                     {createServerError && (
-                                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10">
-                                            <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight">{createServerError}</p>
+                                        <div className="mt-4 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                                            <p className="text-[11px] font-bold text-red-500">{createServerError}</p>
                                         </div>
                                     )}
                                 </motion.div>
@@ -895,10 +895,10 @@ export default function Servers() {
                         </AnimatePresence>
                     </div>
 
-                    <div className="px-6 py-4 border-t border-surface-lighter flex items-center justify-between">
+                    <div className="px-6 py-4 flex items-center justify-end gap-2">
                         <button
                             onClick={createStep === 1 ? handleCloseModal : handleBack}
-                            className="px-4 py-2 text-[10px] font-bold text-foreground/60 hover:text-foreground uppercase tracking-widest transition-all cursor-pointer"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
                         >
                             {createStep === 1 ? 'Cancel' : 'Back'}
                         </button>
@@ -910,7 +910,7 @@ export default function Servers() {
                                     (createStep === 2 && !serverData.location) ||
                                     (createStep === 3 && !serverData.software)
                                 }
-                                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                                className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 Continue
                             </button>
@@ -943,15 +943,15 @@ export default function Servers() {
                                     }
                                 }}
                                 disabled={creatingServer}
-                                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shadow-none"
+                                className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                             >
                                 {creatingServer ? (
                                     <>
                                         <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
-                                        Initializing...
+                                        Deploying...
                                     </>
                                 ) : (
-                                    'Deploy Instance'
+                                    'Deploy'
                                 )}
                             </button>
                         )}
