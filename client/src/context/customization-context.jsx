@@ -35,7 +35,6 @@ export const CustomizationProvider = ({ children }) => {
         if (!config) return;
         const root = document.documentElement;
 
-        // Set Light Mode Variables
         root.style.setProperty('--brand-l', config.brandColor);
         root.style.setProperty('--brand-hover-l', config.brandHover);
         root.style.setProperty('--surface-l', config.surface);
@@ -46,8 +45,6 @@ export const CustomizationProvider = ({ children }) => {
         root.style.setProperty('--foreground-l', config.foreground);
         root.style.setProperty('--border-color-l', config.borderColor);
 
-
-        // Set Dark Mode Variables
         root.style.setProperty('--brand-d', config.brandColorDark);
         root.style.setProperty('--brand-hover-d', config.brandHoverDark);
         root.style.setProperty('--surface-d', config.surfaceDark);
@@ -58,18 +55,13 @@ export const CustomizationProvider = ({ children }) => {
         root.style.setProperty('--foreground-d', config.foregroundDark);
         root.style.setProperty('--border-color-d', config.borderColorDark);
 
-
-        // Common Variables
         root.style.setProperty('--border-radius', config.borderRadius);
         root.style.setProperty('--font-family', config.fontFamily);
 
-        // Enforce theme only if "Dark Persistence" (isDark) is enabled
+
         if (config.isDark) {
             root.classList.add('dark');
         } else {
-            // When persistence is off, we don't force 'dark' or 'light'.
-            // This allows the useTheme hook (localStorage) to maintain user preference.
-            // If the user has never toggled, it defaults to light via index.css mapping.
         }
     };
 

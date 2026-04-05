@@ -14,37 +14,11 @@ import CenterModal from "../../../components/modals/center-modal";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import { request } from "@/lib/request.js";
 
 const MAX_HISTORY = 30;
 
 const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
 
 const sanitizeConsoleLine = (line) => {
     const s = String(line ?? "");
@@ -453,7 +427,6 @@ export default function ServerOverview() {
 
     return (
         <div className="bg-surface px-10 py-10">
-            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
@@ -576,7 +549,6 @@ export default function ServerOverview() {
 
             <ServerNav />
 
-            {/* Console */}
             <div className="border border-surface-lighter rounded-lg overflow-hidden">
                 <div
                     ref={terminalRef}
@@ -594,7 +566,6 @@ export default function ServerOverview() {
                 </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-4 border border-surface-lighter rounded-lg overflow-hidden mt-6">
                 {[
                     { label: "CPU", value: `${Math.round(stats.cpu)}%`, dataKey: "cpu" },
@@ -660,7 +631,6 @@ export default function ServerOverview() {
                 ))}
             </div>
 
-            {/* EULA Modal */}
             <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">EULA Required</h2>

@@ -10,7 +10,6 @@ export default function GlobalLoader({ onLoadingComplete }) {
   useEffect(() => {
     const duration = 600;
     
-    // Start progress animation on mount
     requestAnimationFrame(() => {
       setIsAnimating(true);
     });

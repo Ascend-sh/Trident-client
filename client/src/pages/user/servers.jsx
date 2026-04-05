@@ -13,35 +13,7 @@ import { useAuth } from "../../context/auth-context.jsx";
 import { Button } from "@/components/ui/button";
 import AddCredits from "../economy/AddCredits";
 import { motion, AnimatePresence } from "framer-motion";
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
+import { request } from "@/lib/request.js";
 
 export default function Servers() {
     const navigate = useNavigate();

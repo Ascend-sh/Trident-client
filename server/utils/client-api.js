@@ -10,7 +10,7 @@ import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
-import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl, listServerBackups, createServerBackup, getServerBackupDetails, getServerBackupDownloadUrl, toggleServerBackupLock, deleteServerBackup } from "../modules/server.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, createAllocation, setAllocationPrimary, updateAllocation, deleteAllocation, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl, listServerBackups, createServerBackup, getServerBackupDetails, getServerBackupDownloadUrl, toggleServerBackupLock, deleteServerBackup } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
 import { getCustomization, updateCustomization } from "../utils/customization.js";
@@ -276,8 +276,6 @@ export const clientApi = new Elysia({ name: "client-api" })
           });
           continue;
         }
-
-        continue;
 
         if (items.length >= limit) break;
       }
@@ -818,6 +816,132 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'server_allocations_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await createAllocation({ userId: res.body.user.id, serverId: id });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'create_allocation_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations/:allocationId/primary", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await setAllocationPrimary({ userId: res.body.user.id, serverId: id, allocationId });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'set_primary_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations/:allocationId", async ({ request, set, params, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await updateAllocation({ userId: res.body.user.id, serverId: id, allocationId, notes: body?.notes });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'update_allocation_failed', set.status));
+    }
+  })
+  .delete("/servers/:id/network/allocations/:allocationId", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await deleteAllocation({ userId: res.body.user.id, serverId: id, allocationId });
+      set.status = 204;
+      return null;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'delete_allocation_failed', set.status));
     }
   })
   .get("/servers/:id/files/list", async ({ request, set, params, query }) => {

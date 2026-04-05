@@ -93,7 +93,6 @@ export default function Access() {
 
     return (
         <div className="bg-surface px-10 py-10">
-            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
@@ -155,7 +154,6 @@ export default function Access() {
 
             {members.length === 0 ? (
                 <div className="border border-surface-lighter rounded-lg py-20 px-6 relative overflow-hidden">
-                    {/* Abstract collaboration visual */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.035]">
                         <div className="relative w-[280px] h-[280px]">
                             <div className="absolute top-1/2 left-1/2 -translate-x-[65%] -translate-y-1/2 w-[180px] h-[180px] rounded-full border-[2px]" style={{ borderColor: 'var(--color-brand)' }} />
@@ -233,7 +231,6 @@ export default function Access() {
                 </div>
             )}
 
-            {/* Invite Modal */}
             <CenterModal isOpen={inviteOpen} onClose={() => !inviting && setInviteOpen(false)} maxWidth="max-w-sm">
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Invite User</h2>
@@ -282,7 +279,6 @@ export default function Access() {
                 </div>
             </CenterModal>
 
-            {/* Delete Modal */}
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Remove User</h2>

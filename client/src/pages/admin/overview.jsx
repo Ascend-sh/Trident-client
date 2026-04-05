@@ -6,35 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import CenterModal from "../../components/modals/center-modal";
 import { Button } from "@/components/ui/button";
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
+import { request } from "@/lib/request.js";
 
 export default function AdminOverview() {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
@@ -181,7 +153,6 @@ export default function AdminOverview() {
       <div className="mb-10">
         <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">User Blacklist</h2>
         <div className="border border-surface-lighter rounded-lg">
-          {/* Add user input */}
           <div className="px-6 py-4 border-b border-surface-lighter">
             <div className="flex gap-2">
               <input
@@ -195,7 +166,6 @@ export default function AdminOverview() {
             </div>
           </div>
 
-          {/* Banned users table */}
           <div className="grid grid-cols-[2fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">User</span>
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Banned</span>

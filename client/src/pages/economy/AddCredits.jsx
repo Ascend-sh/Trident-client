@@ -61,13 +61,12 @@ export default function AddCredits({ isOpen, onClose }) {
     const [selectedAmount, setSelectedAmount] = useState(10);
     const [isProcessing, setIsProcessing] = useState(false);
     
-    // UPI Specific
+    
     const [upiData, setUpiData] = useState(null);
     const [utrNumber, setUtrNumber] = useState("");
 
     const handleProceed = async () => {
         if (currentStep === 1) {
-            // If UPI, pre-fetch conversion data to show in Step 2
             if (selectedMethod === "upi") {
                 setIsProcessing(true);
                 try {
@@ -94,7 +93,6 @@ export default function AddCredits({ isOpen, onClose }) {
             setDirection(1);
             setCurrentStep(3);
         } else {
-            // Finalize
             setIsProcessing(true);
             if (selectedMethod === "paypal") {
                 try {
@@ -128,7 +126,7 @@ export default function AddCredits({ isOpen, onClose }) {
                     const data = await res.json();
                     if (data.success) {
                         setDirection(1);
-                        setCurrentStep(4); // Success screen
+                        setCurrentStep(4);
                     } else throw new Error();
                 } catch (e) {
                     alert("UTR Submission failed.");

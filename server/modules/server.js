@@ -7,7 +7,7 @@ import { getLogger } from '../middlewares/logger.js';
 import { getPteroServerWebsocket } from './server/websocket.js';
 import { connectServerConsole } from './server/console.js';
 import { sendPowerSignal } from './server/state.js';
-import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
+import { listServerAllocations as listPteroServerAllocations, createServerAllocation as createPteroAllocation, setAllocationAsPrimary as setPteroAllocationPrimary, updateAllocationNotes as updatePteroAllocationNotes, deleteServerAllocation as deletePteroAllocation } from './server/network.js';
 import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel, renameFiles, createFolder, copyFile, getDownloadUrl, getUploadUrl } from './server/explorer.js';
 import { listBackups as listPteroBackups, createBackup as createPteroBackup, getBackupDetails as getPteroBackupDetails, getBackupDownloadUrl as getPteroBackupDownloadUrl, toggleBackupLock as togglePteroBackupLock, deleteBackup as deletePteroBackup } from './server/backups.js';
 
@@ -178,6 +178,7 @@ export async function listUserServers({ userId }) {
         memory: memoryLimit,
         disk: diskLimit,
         cpu: cpuLimit,
+        allocations: Number(s.featureAllocations) || 0,
         backups: Number(s.featureBackups) || 0
       },
       usage: {
@@ -836,4 +837,90 @@ export async function deleteServerBackup({ userId, serverId, backupUuid }) {
 
   await deletePteroBackup({ identifier, uuid: backupUuid });
   return { ok: true };
+}
+
+export async function createAllocation({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return createPteroAllocation({ identifier });
+}
+
+export async function setAllocationPrimary({ userId, serverId, allocationId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return setPteroAllocationPrimary({ identifier, allocationId: allocId });
+}
+
+export async function updateAllocation({ userId, serverId, allocationId, notes }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return updatePteroAllocationNotes({ identifier, allocationId: allocId, notes });
+}
+
+export async function deleteAllocation({ userId, serverId, allocationId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return deletePteroAllocation({ identifier, allocationId: allocId });
 }

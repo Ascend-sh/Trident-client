@@ -8,41 +8,9 @@ import ImageModal from "../../../components/modals/image-modal.jsx";
 import CenterModal from "../../../components/modals/center-modal";
 import UploadModal from "../../../components/modals/upload-modal.jsx";
 import ServerNav from "../../../components/navigation/server-nav";
+import { request } from "@/lib/request.js";
 
 const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const contentType = String(res.headers.get('content-type') || '').toLowerCase();
-  const text = await res.text();
-
-  const isJson = contentType.includes('application/json');
-
-  let data = text;
-  if (isJson) {
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
-    }
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
 
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -604,7 +572,6 @@ export default function ServerFiles() {
         </div>
       </CenterModal>
 
-      {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-5">
         <div>
           <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">File Manager</h1>
@@ -634,7 +601,6 @@ export default function ServerFiles() {
 
       <ServerNav />
 
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1 mb-6 overflow-x-auto no-scrollbar">
         {breadcrumb.map((c, idx) => {
           const isLast = idx === breadcrumb.length - 1;
@@ -663,7 +629,6 @@ export default function ServerFiles() {
         </div>
       )}
 
-      {/* File Table */}
       <div className="border border-surface-lighter rounded-lg">
         <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3 border-b border-surface-lighter">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>

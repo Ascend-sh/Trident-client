@@ -13,7 +13,8 @@ import {
   Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-// Removed useTheme import as it is not shared globally
+import { request } from "@/lib/request.js";
+import { useTheme } from "@/hooks/use-theme";
 
 ChartJS.register(
   CategoryScale,
@@ -26,25 +27,8 @@ ChartJS.register(
   Filler
 );
 
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error || data?.message || "request_failed");
-  }
-  return data;
-}
-
 const AdminTransactions = () => {
-    const [isDark, setIsDark] = useState(typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false);
+    const { isDark } = useTheme();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
@@ -66,18 +50,6 @@ const AdminTransactions = () => {
 
     useEffect(() => {
         fetchPayments();
-        
-        // Setup MutationObserver to detect theme changes on the root element
-        const observer = new MutationObserver(() => {
-            setIsDark(document.documentElement.classList.contains('dark'));
-        });
-        
-        observer.observe(document.documentElement, { 
-            attributes: true, 
-            attributeFilter: ['class'] 
-        });
-        
-        return () => observer.disconnect();
     }, []);
 
     const handleAction = async (paymentId, action) => {
@@ -127,7 +99,7 @@ const AdminTransactions = () => {
                 .reduce((sum, p) => sum + Number(p.amount), 0);
         }).reverse();
 
-        // Removed static isDark check in favor of useTheme hook
+
 
         return {
             labels: labels.map(d => {
@@ -239,7 +211,6 @@ const AdminTransactions = () => {
 
     return (
         <div className="bg-surface px-10 py-10 min-h-screen">
-            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Transactions & Payments</h1>
@@ -248,7 +219,6 @@ const AdminTransactions = () => {
             </div>
 
 
-            {/* Top Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, i) => (
                     <div key={i} className="border border-surface-lighter rounded-lg py-1.5 px-6 flex flex-col justify-center min-h-[85px] transition-all hover:bg-surface-light/30">
@@ -261,7 +231,6 @@ const AdminTransactions = () => {
             </div>
 
 
-            {/* Main Content Grid (Chart) */}
             <div className="mb-8">
                 <div className="border border-surface-lighter rounded-lg overflow-hidden bg-surface">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 p-5 pb-2">
@@ -293,7 +262,6 @@ const AdminTransactions = () => {
                 </div>
             </div>
 
-            {/* Transaction History Section */}
             <div className="mt-12">
                 <div className="flex items-center justify-between gap-6 mb-6">
                     <div className="flex items-center gap-1.5">

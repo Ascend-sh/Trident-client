@@ -55,7 +55,6 @@
 
 
 @theme {
-  /* Neutral White Theme Variables */
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-surface: var(--surface);
@@ -63,10 +62,8 @@
   --color-surface-highlight: var(--surface-highlight);
   --color-surface-lighter: var(--surface-lighter);
 
-  /* Font */
   --font-sans: var(--font-family, 'Satoshi', sans-serif);
 
-  /* Shadcn Mapping */
   --color-background: var(--color-surface);
   --color-foreground: var(--foreground);
 

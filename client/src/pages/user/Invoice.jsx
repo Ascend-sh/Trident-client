@@ -61,7 +61,6 @@ const Invoice = () => {
 
     return (
         <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans print:bg-white">
-            {/* Top Toolbar - Hidden on print */}
             <div className="max-w-[850px] w-full mx-auto px-6 py-8 flex items-center justify-between print:hidden">
                 <button 
                     onClick={() => navigate('/app/billing')}
@@ -80,10 +79,8 @@ const Invoice = () => {
                 </div>
             </div>
 
-            {/* Invoice Container */}
             <div className="max-w-[850px] w-full mx-auto px-6 pb-20">
                 <div className="bg-white border border-gray-100 shadow-sm print:border-0 print:shadow-none p-12 rounded-2xl print:p-0">
-                    {/* Header */}
                     <div className="flex justify-between items-start mb-16">
                         <div>
                             <div className="flex items-center gap-2 mb-6">
@@ -119,7 +116,6 @@ const Invoice = () => {
 
                     <div className="h-px bg-gray-100 w-full mb-12" />
 
-                    {/* Billing Details */}
                     <div className="grid grid-cols-2 gap-12 mb-16">
                         <div>
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Billed To</p>
@@ -135,7 +131,6 @@ const Invoice = () => {
                         </div>
                     </div>
 
-                    {/* Table */}
                     <div className="mb-16">
                         <table className="w-full">
                             <thead>
@@ -160,7 +155,6 @@ const Invoice = () => {
                         </table>
                     </div>
 
-                    {/* Totals */}
                     <div className="flex justify-end mb-16">
                         <div className="w-[300px] space-y-4">
                             <div className="flex justify-between items-center px-2">
@@ -196,7 +190,6 @@ const Invoice = () => {
                 </div>
             </div>
 
-            {/* Print specific CSS */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
                     @page { margin: 0; }

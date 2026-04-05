@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { CloudUploadIcon, DataRecoveryIcon } from "@hugeicons/core-free-icons";
 import ServerNav from "../../../components/navigation/server-nav";
 import CenterModal from "../../../components/modals/center-modal";
+import { request } from "@/lib/request.js";
 
 const API_BASE = "/api/v1/client";
 
@@ -26,25 +27,6 @@ function relativeTime(iso) {
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     return `${days}d ago`;
-}
-
-async function request(path, { method = "GET", body } = {}) {
-    const res = await fetch(`${API_BASE}${path}`, {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: "include"
-    });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch { data = text; }
-    if (!res.ok) {
-        const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-        const error = new Error(message);
-        error.status = res.status;
-        throw error;
-    }
-    return data;
 }
 
 export default function Backups() {
@@ -184,7 +166,6 @@ export default function Backups() {
 
     return (
         <div className="bg-surface px-10 py-10">
-            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
@@ -257,7 +238,6 @@ export default function Backups() {
                 </div>
             ) : (
             <>
-            {/* Backup limit indicator */}
             <div className="flex items-center justify-between px-1 mb-4">
                 <div className="flex items-center gap-3">
                     {backupLimit > 0 && (
@@ -296,7 +276,6 @@ export default function Backups() {
                 </div>
             ) : (
                 <div className="border border-surface-lighter rounded-lg">
-                    {/* Table header */}
                     <div className="grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Size</span>
@@ -412,7 +391,6 @@ export default function Backups() {
             </>
             )}
 
-            {/* Create Modal */}
             <CenterModal isOpen={createModalOpen} onClose={() => !creating && setCreateModalOpen(false)} maxWidth="max-w-sm">
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Create Backup</h2>
@@ -461,7 +439,6 @@ export default function Backups() {
                 </div>
             </CenterModal>
 
-            {/* Delete Modal */}
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Delete Backup</h2>
@@ -501,7 +478,6 @@ export default function Backups() {
                 </div>
             </CenterModal>
 
-            {/* Restore Modal */}
             <CenterModal isOpen={!!restoreTarget} onClose={() => !restoring && setRestoreTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
                     <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Download Backup</h2>

@@ -2,35 +2,7 @@ import { useState, useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CheckmarkCircle02Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { useAuth } from "@/context/auth-context.jsx";
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-    const res = await fetch(`${API_BASE}${path}`, {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: "include"
-    });
-
-    const text = await res.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch {
-        data = text;
-    }
-
-    if (!res.ok) {
-        const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-        const error = new Error(message);
-        error.status = res.status;
-        error.data = data;
-        throw error;
-    }
-
-    return data;
-}
+import { request } from "@/lib/request.js";
 
 const Settings = () => {
     const { user, refresh } = useAuth();
@@ -166,7 +138,6 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Profile */}
             <div className="mb-10">
                 <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Profile</h2>
                 <div className="border border-surface-lighter rounded-lg p-6">
@@ -211,7 +182,6 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Security */}
             <div className="mb-10">
                 <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Security</h2>
                 <div className="border border-surface-lighter rounded-lg p-6 space-y-6">
@@ -249,7 +219,6 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Danger Zone */}
             <div className="mb-10">
                 <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Danger Zone</h2>
                 <div className="border border-surface-lighter rounded-lg p-6 space-y-6">
@@ -281,7 +250,6 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Activity */}
             <div className="mb-10">
                 <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Recent Activity</h2>
                 <div className="border border-surface-lighter rounded-lg">

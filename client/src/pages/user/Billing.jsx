@@ -9,31 +9,7 @@ import {
     Rocket
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context.jsx";
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    throw new Error(data?.error || data?.message || "request_failed");
-  }
-
-  return data;
-}
+import { request } from "@/lib/request.js";
 
 const Billing = () => {
     const { user, balance, currencyName, refresh } = useAuth();
@@ -58,10 +34,10 @@ const Billing = () => {
         const payerId = params.get('PayerID');
         const status = params.get('status');
 
-        console.log("Billing Page Load:", { status, paymentId, payerId });
+
 
         if (status === 'success' && paymentId && payerId) {
-            console.log("Detected PayPal return. Initiating execution...");
+
             const executePayment = async () => {
                 setLoading(true);
                 try {
@@ -69,11 +45,10 @@ const Billing = () => {
                         method: 'POST', 
                         body: { paymentId, payerId } 
                     });
-                    console.log("Execution successful:", res);
-                    // Refresh balance and history
+
                     await refresh();
                     await fetchPayments();
-                    // Clear params from URL
+
                     window.history.replaceState({}, document.title, window.location.pathname);
                 } catch (error) {
                     console.error("Execution failed:", error);
