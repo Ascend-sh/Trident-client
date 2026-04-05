@@ -1,7 +1,6 @@
-import { Package, Plus, Server, Code, Trash2, Search } from "lucide-react";
+import { Plus, Ellipsis } from "lucide-react";
 import { useEffect, useState } from "react";
 import CenterModal from "../../components/modals/center-modal";
-import { Button } from "@/components/ui/button";
 
 const API_BASE = "/api/v1/client";
 
@@ -12,23 +11,15 @@ async function request(path, { method = "GET", body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
     credentials: "include"
   });
-
   const text = await res.text();
   let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
+  try { data = JSON.parse(text); } catch { data = text; }
   if (!res.ok) {
     const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
     const error = new Error(message);
     error.status = res.status;
-    error.data = data;
     throw error;
   }
-
   return data;
 }
 
@@ -61,52 +52,29 @@ export default function AdminSoftware() {
   const [deletingNestId, setDeletingNestId] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [nestToDelete, setNestToDelete] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-
     setError("");
 
     fetchPanelNests()
-      .then((res) => {
-        if (cancelled) return;
-        setAvailableNests(res?.nests || []);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setAvailableNests([]);
-        setError(err?.message || "Failed to fetch nests from panel");
-      });
+      .then((res) => { if (!cancelled) setAvailableNests(res?.nests || []); })
+      .catch((err) => { if (!cancelled) { setAvailableNests([]); setError(err?.message || "Failed to fetch nests from panel"); } });
 
     fetchImportedNests()
-      .then((res) => {
-        if (cancelled) return;
-        setActiveNests(res?.nests || []);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setActiveNests([]);
-        setError(err?.message || "Failed to fetch imported nests");
-      });
+      .then((res) => { if (!cancelled) setActiveNests(res?.nests || []); })
+      .catch((err) => { if (!cancelled) { setActiveNests([]); setError(err?.message || "Failed to fetch imported nests"); } });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
-
-  const handleViewEggs = (nest) => {
-    setSelectedNest(nest);
-    setEggsModalOpen(true);
-  };
 
   const importedNestIds = new Set(activeNests.map(n => n.id));
 
   const handleAddNest = async (nestId) => {
     if (importedNestIds.has(nestId)) return;
-
     setError("");
     setAddingNestId(nestId);
-
     try {
       await addNest(nestId);
       const res = await fetchImportedNests();
@@ -120,11 +88,9 @@ export default function AdminSoftware() {
 
   const handleDeleteNest = async () => {
     if (!nestToDelete) return;
-
     setError("");
     setDeletingNestId(nestToDelete.id);
     setDeleteModalOpen(false);
-
     try {
       await deleteNest(nestToDelete.id);
       const res = await fetchImportedNests();
@@ -141,250 +107,261 @@ export default function AdminSoftware() {
     }
   };
 
-  const confirmDeleteNest = (nest) => {
-    setNestToDelete(nest);
-    setDeleteModalOpen(true);
-  };
-
   return (
     <div className="bg-surface px-10 py-10">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[20px] font-bold text-foreground tracking-tight">Software Management</h1>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Software</h1>
+          <p className="text-[13px] font-bold text-muted-foreground mt-2">Manage nests and server software from your panel</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-8">
-        <button
-          onClick={() => setActiveTab("active")}
-          className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-            activeTab === "active" 
-              ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
-              : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
-          }`}
-        >
-          Active Nests
-        </button>
-        <button
-          onClick={() => setActiveTab("available")}
-          className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-            activeTab === "available" 
-              ? 'bg-surface-highlight border border-surface-lighter text-foreground' 
-              : 'text-foreground/60 hover:text-foreground/60 hover:bg-surface-lighter'
-          }`}
-        >
-          Available Nests
-        </button>
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-6">
+        {[
+          { label: "Active", value: "active", count: activeNests.length },
+          { label: "Available", value: "available", count: availableNests.length },
+        ].map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === tab.value
+                ? 'bg-foreground text-surface'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.label}
+            <span className={`tabular-nums ${activeTab === tab.value ? 'text-surface/50' : 'text-muted-foreground/40'}`}>{tab.count}</span>
+          </button>
+        ))}
       </div>
 
       {error && (
-        <div className="mb-8 px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 text-[11px] font-bold text-red-600">
-          {error}
+        <div className="mb-6 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+          <p className="text-[11px] font-bold text-red-500">{error}</p>
         </div>
       )}
 
-      {activeTab === "available" && (
-        <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-          <div className="w-full">
-            <div className="grid grid-cols-[1.5fr_2fr_1fr_1fr] px-6 py-3">
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Nest Name</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Description</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Author</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
+      {/* Active Nests */}
+      {activeTab === "active" && (
+        activeNests.length === 0 ? (
+          <div className="border border-surface-lighter rounded-lg py-20 px-6">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-1.5 mb-6">
+                <div className="w-3 h-3 rounded bg-surface-lighter" />
+                <div className="w-3 h-3 rounded bg-surface-lighter" />
+                <div className="w-3 h-3 rounded bg-surface-lighter" />
+              </div>
+              <p className="text-[15px] font-bold text-foreground tracking-tight mb-1.5">No nests imported</p>
+              <p className="text-[11px] font-bold text-muted-foreground/50 text-center max-w-[260px] leading-relaxed mb-7">
+                Import nests from your panel to make server software available to users.
+              </p>
+              <button
+                onClick={() => setActiveTab("available")}
+                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-lg font-bold text-[10px] uppercase tracking-widest cursor-pointer"
+              >
+                Browse Available
+              </button>
             </div>
-            <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
-              {availableNests.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center flex-1">
-                  <span className="text-[12px] font-bold text-foreground/60 italic">No nests found in panel</span>
+          </div>
+        ) : (
+          <div className="border border-surface-lighter rounded-lg">
+            <div className="grid grid-cols-[2fr_2fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nest</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Description</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Eggs</span>
+              <span className="w-8" />
+            </div>
+
+            {activeNests.map((nest, idx) => (
+              <div
+                key={nest.id}
+                className={`group grid grid-cols-[2fr_2fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
+              >
+                <div className="flex flex-col justify-center min-w-0">
+                  <span className="text-[13px] font-bold text-foreground tracking-tight truncate">{nest.name}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground/40 mt-0.5">ID {nest.id}</span>
                 </div>
-              ) : (
-                availableNests.map((nest) => (
-                  <div
-                    key={nest.id}
-                    className="grid grid-cols-[1.5fr_2fr_1fr_1fr] px-6 py-4 hover:bg-surface-light/50 transition-colors border-b border-surface-lighter"
-                  >
-                    <div className="flex flex-col justify-center">
-                      <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">{nest.name}</span>
-                      <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-tighter">ID: {nest.id}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-[11px] font-bold text-foreground/60 line-clamp-1">{nest.description || "No description provided"}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest truncate">support@pterodactyl.io</span>
-                    </div>
-                    <div className="flex items-center justify-end">
-                      <Button
-                        onClick={() => handleAddNest(nest.id)}
-                        disabled={addingNestId === nest.id || importedNestIds.has(nest.id)}
-                        className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-none"
+                <div className="flex items-center min-w-0">
+                  <span className="text-[11px] font-bold text-muted-foreground truncate">{nest.description || "No description"}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-[11px] font-bold text-muted-foreground tabular-nums">{nest.eggCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="relative">
+                    <button
+                      onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === nest.id ? null : nest.id); }}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                    >
+                      <Ellipsis size={14} />
+                    </button>
+
+                    {openMenuId === nest.id && (
+                      <div
+                        className="absolute right-0 mt-1 w-36 rounded-lg border border-surface-lighter shadow-xl z-50 overflow-hidden"
+                        style={{ backgroundColor: 'var(--surface)' }}
+                        onClick={e => e.stopPropagation()}
                       >
-                        {addingNestId === nest.id ? (
+                        <div className="p-1">
+                          <button
+                            onClick={() => { setOpenMenuId(null); setSelectedNest(nest); setEggsModalOpen(true); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all rounded-md"
+                          >
+                            View Eggs
+                          </button>
+                          <button
+                            onClick={() => { setOpenMenuId(null); setNestToDelete(nest); setDeleteModalOpen(true); }}
+                            disabled={deletingNestId === nest.id}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all rounded-md disabled:opacity-30"
+                          >
+                            {deletingNestId === nest.id ? "Removing..." : "Remove"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* Available Nests */}
+      {activeTab === "available" && (
+        availableNests.length === 0 ? (
+          <div className="border border-surface-lighter rounded-lg py-16 px-6">
+            <div className="flex flex-col items-center">
+              <p className="text-[13px] font-bold text-muted-foreground/50">No nests found in panel</p>
+            </div>
+          </div>
+        ) : (
+          <div className="border border-surface-lighter rounded-lg">
+            <div className="grid grid-cols-[2fr_2fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nest</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Description</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Author</span>
+              <span className="w-20" />
+            </div>
+
+            {availableNests.map((nest, idx) => {
+              const isImported = importedNestIds.has(nest.id);
+              const isAdding = addingNestId === nest.id;
+
+              return (
+                <div
+                  key={nest.id}
+                  className={`group grid grid-cols-[2fr_2fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
+                >
+                  <div className="flex flex-col justify-center min-w-0">
+                    <span className="text-[13px] font-bold text-foreground tracking-tight truncate">{nest.name}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground/40 mt-0.5">ID {nest.id}</span>
+                  </div>
+                  <div className="flex items-center min-w-0">
+                    <span className="text-[11px] font-bold text-muted-foreground truncate">{nest.description || "No description"}</span>
+                  </div>
+                  <div className="flex items-center min-w-0">
+                    <span className="text-[11px] font-bold text-muted-foreground truncate">support@pterodactyl.io</span>
+                  </div>
+                  <div className="flex items-center justify-end">
+                    {isImported ? (
+                      <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">Imported</span>
+                    ) : (
+                      <button
+                        onClick={() => handleAddNest(nest.id)}
+                        disabled={isAdding}
+                        className="h-8 px-4 flex items-center gap-1.5 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
+                      >
+                        {isAdding ? (
                           <>
-                            <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin mr-2" />
-                            Adding...
+                            <div className="w-3 h-3 border-2 border-muted-foreground/20 border-t-muted-foreground rounded-full animate-spin" />
+                            Importing
                           </>
-                        ) : importedNestIds.has(nest.id) ? (
-                          "Imported"
                         ) : (
                           <>
-                            <Plus size={12} className="mr-1.5" />
+                            <Plus size={12} />
                             Import
                           </>
                         )}
-                      </Button>
-                    </div>
+                      </button>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "active" && (
-        <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-          <div className="w-full">
-            <div className="grid grid-cols-[1.5fr_2fr_1fr_1fr] px-6 py-3">
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Nest Name</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Description</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Statistics</span>
-              <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.2em] text-right">Actions</span>
-            </div>
-            <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
-              {activeNests.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center flex-1">
-                  <Package size={32} className="text-foreground/60 mb-4" />
-                  <span className="text-[12px] font-bold text-foreground/60 italic mb-4">No active nests imported yet</span>
-                  <Button
-                    onClick={() => setActiveTab("available")}
-                    variant="outline"
-                    className="h-8 px-4 border-surface-lighter text-foreground/60 hover:bg-surface-light transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none"
-                  >
-                    <Search size={12} className="mr-1.5" />
-                    Browse Available
-                  </Button>
                 </div>
-              ) : (
-                activeNests.map((nest) => (
-                  <div
-                    key={nest.id}
-                    className="grid grid-cols-[1.5fr_2fr_1fr_1fr] px-6 py-4 hover:bg-surface-light/50 transition-colors border-b border-surface-lighter"
-                  >
-                    <div className="flex flex-col justify-center">
-                      <span className="text-[12px] font-bold text-foreground uppercase tracking-tight">{nest.name}</span>
-                      <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-tighter">ID: {nest.id}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-[11px] font-bold text-foreground/60 line-clamp-1">{nest.description || "No description provided"}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-widest">{nest.eggCount || 0} Eggs Loaded</span>
-                    </div>
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        onClick={() => handleViewEggs(nest)}
-                        className="text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer"
-                      >
-                        View Eggs
-                      </button>
-                      <button
-                        onClick={() => confirmDeleteNest(nest)}
-                        disabled={deletingNestId === nest.id}
-                        className="text-[10px] font-bold text-red-500/40 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-30"
-                      >
-                        {deletingNestId === nest.id ? "..." : "Delete"}
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+              );
+            })}
           </div>
-        </div>
+        )
       )}
 
-      <CenterModal
-        isOpen={eggsModalOpen}
-        onClose={() => setEggsModalOpen(false)}
-        maxWidth="max-w-2xl"
-      >
+      {/* Eggs Modal */}
+      <CenterModal isOpen={eggsModalOpen} onClose={() => setEggsModalOpen(false)} maxWidth="max-w-2xl">
         {selectedNest && (
-          <div className="p-4">
-            <div className="mb-4">
-              <h2 className="text-[15px] font-bold text-foreground">{selectedNest.name} · Eggs</h2>
-              <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest mt-0.5 truncate max-w-[400px]">
-                {selectedNest.description ? selectedNest.description.replace(/Minecraft - the classic game from Mojang\. With support for Vanilla MC, Spigot, and many others!/i, "Classic game from Mojang with Vanilla, Spigot support.") : "Software repository details"}
-              </p>
-            </div>
+          <div className="p-6">
+            <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">{selectedNest.name}</h2>
+            <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-5">
+              {selectedNest.description || "Software repository details"}
+            </p>
 
-            <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-              <div className="w-full">
-                <div className="grid grid-cols-[1.5fr_1fr_2fr] px-5 py-2">
-                  <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Egg Name</span>
-                  <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Author</span>
-                  <span className="text-[9px] font-bold text-foreground/60 uppercase tracking-[0.2em]">Docker Image</span>
+            {selectedNest.eggs && selectedNest.eggs.length > 0 ? (
+              <div className="border border-surface-lighter rounded-lg max-h-[300px] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-[1.5fr_1fr_2fr] px-5 py-2.5 border-b border-surface-lighter">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Egg</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Author</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Docker Image</span>
                 </div>
-                <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col max-h-[260px] overflow-y-auto custom-scrollbar divide-y divide-surface-lighter">
-                  {selectedNest.eggs && selectedNest.eggs.length > 0 ? (
-                    selectedNest.eggs.map((egg) => (
-                      <div key={egg.id} className="grid grid-cols-[1.5fr_1fr_2fr] px-5 py-2.5 hover:bg-surface-light/30 transition-colors">
-                        <span className="text-[11px] font-bold text-foreground uppercase tracking-tight">{egg.name}</span>
-                        <span className="text-[10px] font-bold text-foreground/60 uppercase tracking-widest truncate">{egg.author}</span>
-                        <span className="text-[10px] font-bold text-foreground/60 font-mono truncate">{egg.dockerImage}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-10 text-center">
-                      <span className="text-[11px] font-bold text-foreground/60 italic">No eggs found for this nest</span>
-                    </div>
-                  )}
-                </div>
+                {selectedNest.eggs.map((egg, idx) => (
+                  <div key={egg.id} className={`grid grid-cols-[1.5fr_1fr_2fr] px-5 py-3 hover:bg-surface-light/50 transition-colors ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}>
+                    <span className="text-[12px] font-bold text-foreground tracking-tight truncate">{egg.name}</span>
+                    <span className="text-[11px] font-bold text-muted-foreground truncate">{egg.author}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground font-mono truncate">{egg.dockerImage}</span>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="border border-surface-lighter rounded-lg py-10 flex items-center justify-center">
+                <span className="text-[12px] font-bold text-muted-foreground/40">No eggs found</span>
+              </div>
+            )}
 
-            <div className="flex items-center justify-end mt-3">
+            <div className="flex items-center justify-end mt-5">
               <button
                 onClick={() => setEggsModalOpen(false)}
-                className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+                className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
               >
-                Close View
+                Close
               </button>
             </div>
           </div>
         )}
       </CenterModal>
 
-      <CenterModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        maxWidth="max-w-md"
-      >
-        <div className="p-4">
-          <h2 className="text-[16px] font-bold text-foreground mb-4 tracking-tight">Delete Nest</h2>
-          <p className="text-[12px] font-bold text-foreground/60 mb-6">
-            Are you sure you want to remove <span className="text-foreground">"{nestToDelete?.name}"</span>? This will remove the nest and all associated software eggs from your system.
+      {/* Delete Modal */}
+      <CenterModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="max-w-md">
+        <div className="p-6">
+          <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Remove Nest</h2>
+          <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+            Remove <span className="text-foreground">"{nestToDelete?.name}"</span> and all its eggs from your system?
           </p>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => setDeleteModalOpen(false)}
-              className="px-4 py-2 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-all cursor-pointer"
+              className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
             >
               Cancel
             </button>
-            <Button
+            <button
               onClick={handleDeleteNest}
-              className="h-9 px-6 bg-red-500 text-white hover:bg-red-600 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest shadow-none cursor-pointer"
+              className="h-8 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer flex items-center gap-2"
             >
-              Confirm Delete
-            </Button>
+              Remove
+            </button>
           </div>
         </div>
       </CenterModal>
     </div>
   );
 }
-
-
-

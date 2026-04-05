@@ -13,6 +13,7 @@ import AdminLocations from "./pages/admin/locations";
 import AdminPayments from "./pages/admin/Payments";
 import AdminConfigs from "./pages/admin/configs";
 import AdminCustomization from "./pages/admin/customization";
+import ServerNetwork from "./pages/user/server/network";
 import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
 import ServerBackups from "./pages/user/server/backups";
@@ -158,6 +159,7 @@ function App() {
               <Route path="/app/server/:identifier/users" element={<ServerPlayers />} />
               <Route path="/app/server/:identifier/access" element={<ServerAccess />} />
               <Route path="/app/server/:identifier/settings" element={<ServerSettings />} />
+              <Route path="/app/server/:identifier/network" element={<ServerNetwork />} />
               <Route path="/app/server/:identifier/activity" element={<ServerActivity />} />
 
               <Route element={<RequireAdmin />}>

@@ -1,18 +1,11 @@
 import {
-    Users,
     RefreshCw,
-    AlertCircle,
-    Shield,
-    Database,
-    HardDrive,
-    Plus
+    AlertCircle
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import CenterModal from "../../components/modals/center-modal";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 
 const API_BASE = "/api/v1/client";
 
@@ -46,26 +39,6 @@ async function request(path, { method = "GET", body } = {}) {
 export default function AdminOverview() {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [serverDefaults, setServerDefaults] = useState({
-    memory: 1024,
-    swap: 0,
-    disk: 2048,
-    cpu: 100,
-    io: 0,
-    databases: 0,
-    backups: 0,
-    allocations: 0,
-    slots: 1
-  });
-  const [defaultsLoading, setDefaultsLoading] = useState(false);
-  const [defaultsSaving, setDefaultsSaving] = useState(false);
-  const [defaultsError, setDefaultsError] = useState("");
-  const [defaultsSaved, setDefaultsSaved] = useState(false);
-  const [systemSettings, setSystemSettings] = useState({
-    maintenance: false,
-    registration: true,
-    economy: false
-  });
   const [trafficRange, setTrafficRange] = useState("7d");
 
   const trafficData = useMemo(() => {
@@ -81,41 +54,6 @@ export default function AdminOverview() {
       visitors: Math.floor((r.base + Math.random() * r.variance) * 0.4)
     }));
   }, [trafficRange]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setDefaultsLoading(true);
-    setDefaultsError("");
-
-    request('/admin/server-defaults')
-      .then((res) => {
-        if (cancelled) return;
-        const d = res?.defaults || {};
-        setServerDefaults({
-          memory: Number(d.memory ?? 1024),
-          swap: Number(d.swap ?? 0),
-          disk: Number(d.disk ?? 2048),
-          cpu: Number(d.cpu ?? 100),
-          io: Number(d.io ?? 0),
-          databases: Number(d.databases ?? 0),
-          backups: Number(d.backups ?? 0),
-          allocations: Number(d.allocations ?? 0),
-          slots: Number(d.slots ?? 1)
-        });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setDefaultsError(err?.message || 'Failed to load server defaults');
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setDefaultsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleUpdate = () => {
     setIsUpdating(true);
@@ -239,128 +177,54 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em]">Default Resources</h2>
-          {defaultsSaved && <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest animate-pulse">Saved</span>}
-        </div>
-
-        {defaultsError && (
-          <div className="mb-4 px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 text-[11px] font-bold text-red-600">
-            {defaultsError}
-          </div>
-        )}
-
-        <div className={`border border-surface-lighter rounded-lg p-6 ${defaultsLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[
-              { label: "Memory (MB)", key: "memory" },
-              { label: "Swap (MB)", key: "swap" },
-              { label: "Disk (MB)", key: "disk" },
-              { label: "CPU (%)", key: "cpu" },
-              { label: "Server Slots", key: "slots" },
-              { label: "Databases", key: "databases" },
-              { label: "Backups", key: "backups" },
-              { label: "Allocations", key: "allocations" },
-            ].map((field) => (
-              <div key={field.key}>
-                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">{field.label}</label>
-                <Input
-                  type="number"
-                  value={serverDefaults[field.key]}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, [field.key]: Number(e.target.value) })}
-                  className="h-8.5 px-3 bg-surface-light/50 border-surface-lighter text-[12px] font-bold text-foreground focus:border-brand/20 shadow-none transition-all"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end mt-5 pt-5 border-t border-surface-lighter">
-            <Button
-              onClick={async () => {
-                setDefaultsSaving(true);
-                setDefaultsError("");
-                try {
-                  await request('/admin/update-defaults', { method: 'PATCH', body: serverDefaults });
-                  setDefaultsSaved(true);
-                  setTimeout(() => setDefaultsSaved(false), 2000);
-                } catch (err) {
-                  setDefaultsError(err?.message || 'Failed to save');
-                } finally {
-                  setDefaultsSaving(false);
-                }
-              }}
-              disabled={defaultsLoading || defaultsSaving}
-              className="h-8 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest shadow-none cursor-pointer disabled:opacity-50"
-            >
-              {defaultsSaving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </div>
-      </div>
 
       <div className="mb-10">
-        <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">System Management</h2>
-        <div className="border border-surface-lighter rounded-lg overflow-hidden">
-          {[
-            { title: "Maintenance Mode", desc: "Disable dashboard access temporarily", icon: Shield, key: "maintenance" },
-            { title: "Public Registration", desc: "Allow new account creation", icon: Users, key: "registration" },
-            { title: "Economy System", desc: "Enable virtual currency features", icon: Database, key: "economy" },
-            { title: "Legacy Backups", desc: "Deprecated backup system", icon: HardDrive, key: "legacy", disabled: true },
-          ].map((item, i) => (
-            <div key={i} className={`px-6 py-4 flex items-center justify-between group hover:bg-surface-light/50 transition-colors ${i > 0 ? 'border-t border-surface-lighter' : ''} ${item.disabled ? 'opacity-40' : ''}`}>
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
-                  <item.icon size={15} />
-                </div>
-                <div>
-                  <p className="text-[12px] font-bold text-foreground">{item.title}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{item.desc}</p>
-                </div>
-              </div>
-              <Switch
-                checked={systemSettings[item.key]}
-                onCheckedChange={(checked) => setSystemSettings({ ...systemSettings, [item.key]: checked })}
-                disabled={item.disabled}
+        <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">User Blacklist</h2>
+        <div className="border border-surface-lighter rounded-lg">
+          {/* Add user input */}
+          <div className="px-6 py-4 border-b border-surface-lighter">
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="Enter email address..."
+                className="flex-1 h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all"
               />
+              <button className="h-9 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer">
+                Ban User
+              </button>
+            </div>
+          </div>
+
+          {/* Banned users table */}
+          <div className="grid grid-cols-[2fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">User</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Banned</span>
+            <span className="w-16" />
+          </div>
+
+          {[
+            { email: "john.doe@example.com", date: "Jan 15, 2024" },
+            { email: "alice.baker@example.com", date: "Jan 12, 2024" },
+          ].map((user, i) => (
+            <div key={i} className={`group grid grid-cols-[2fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
+              <div className="flex items-center gap-3">
+                <img
+                  src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(user.email)}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
+                  alt={user.email}
+                  className="w-8 h-8 rounded-full border border-surface-lighter bg-surface-light shrink-0"
+                />
+                <span className="text-[13px] font-bold text-foreground tracking-tight">{user.email}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-[11px] font-bold text-muted-foreground">{user.date}</span>
+              </div>
+              <div className="flex items-center justify-end">
+                <button className="text-[10px] font-bold text-muted-foreground/20 hover:text-red-500 uppercase tracking-widest transition-all cursor-pointer opacity-0 group-hover:opacity-100">
+                  Unban
+                </button>
+              </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="mb-10">
-        <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">User Blacklist</h2>
-        <div className="border border-surface-lighter rounded-lg overflow-hidden">
-          <div className="p-5">
-            <div className="space-y-2.5 mb-4">
-              {[
-                { email: "john.doe@example.com", date: "2024-01-15", initial: "JD" },
-                { email: "alice.baker@example.com", date: "2024-01-12", initial: "AB" },
-              ].map((user, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-md border border-surface-lighter bg-surface-light/30 group hover:bg-surface-light transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-surface-light border border-surface-lighter flex items-center justify-center text-[9px] font-bold text-muted-foreground">
-                      {user.initial}
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold text-foreground">{user.email}</p>
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{user.date}</p>
-                    </div>
-                  </div>
-                  <button className="text-[9px] font-bold text-muted-foreground hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer">Remove</button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="EMAIL ADDRESS..."
-                className="h-8 flex-1 px-3 bg-surface-light/50 border-surface-lighter text-[10px] font-bold text-foreground placeholder:text-muted-foreground uppercase tracking-widest focus:border-brand/20 shadow-none"
-              />
-              <Button className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest shadow-none cursor-pointer">
-                Ban
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 

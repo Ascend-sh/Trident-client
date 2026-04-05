@@ -184,54 +184,49 @@ export default function Access() {
                     </div>
                 </div>
             ) : (
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between px-1 mb-3">
-                        <p className="text-[11px] font-bold text-muted-foreground/40">
-                            {members.length} user{members.length !== 1 ? "s" : ""} with access
-                        </p>
+                <div className="border border-surface-lighter rounded-lg">
+                    <div className="grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">User</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Permissions</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Added</span>
+                        <span className="w-8" />
                     </div>
 
-                    {members.map((member) => (
+                    {members.map((member, idx) => (
                         <div
                             key={member.id}
-                            className="group border border-surface-lighter rounded-lg hover:border-muted-foreground/10 transition-all"
+                            className={`group grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
                         >
-                            <div className="flex items-center justify-between px-5 py-4">
-                                <div className="flex items-center gap-3.5">
-                                    <div className="relative">
-                                        <img
-                                            src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(member.email)}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
-                                            alt={member.email}
-                                            className="w-9 h-9 rounded-full border border-surface-lighter bg-surface-light shrink-0"
-                                        />
-                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface border-2 border-surface flex items-center justify-center">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-[12px] font-bold text-foreground tracking-tight leading-none">{member.email}</p>
-                                        <p className="text-[10px] font-bold text-muted-foreground/30 mt-1">
-                                            {new Date(member.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                    src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(member.email)}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
+                                    alt={member.email}
+                                    className="w-8 h-8 rounded-full border border-surface-lighter bg-surface-light shrink-0"
+                                />
+                                <span className="text-[13px] font-bold text-foreground tracking-tight truncate">{member.email}</span>
+                            </div>
 
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1">
-                                        {(member.permissions || []).map(p => (
-                                            <span key={p} className="px-2 py-0.5 rounded bg-surface-light text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
-                                                {p.replace("control.", "").replace("file.", "")}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <div className="w-px h-4 bg-surface-lighter opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <button
-                                        onClick={() => { setActionError(""); setDeleteTarget(member); }}
-                                        className="text-[10px] font-bold text-muted-foreground/20 hover:text-red-500 uppercase tracking-widest transition-all cursor-pointer opacity-0 group-hover:opacity-100"
-                                    >
-                                        Revoke
-                                    </button>
-                                </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {(member.permissions || []).map(p => (
+                                    <span key={p} className="px-2 py-0.5 rounded bg-surface-light text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
+                                        {p.replace("control.", "").replace("file.", "")}
+                                    </span>
+                                ))}
+                            </div>
+
+                            <div className="flex items-center">
+                                <span className="text-[11px] font-bold text-muted-foreground">
+                                    {new Date(member.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-end">
+                                <button
+                                    onClick={() => { setActionError(""); setDeleteTarget(member); }}
+                                    className="text-[10px] font-bold text-muted-foreground/20 hover:text-red-500 uppercase tracking-widest transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                                >
+                                    Revoke
+                                </button>
                             </div>
                         </div>
                     ))}

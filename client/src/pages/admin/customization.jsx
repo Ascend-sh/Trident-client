@@ -175,25 +175,25 @@ export default function AdminCustomization() {
     const advancedColorsLight = [
         { label: "Brand Color", key: "brandColor" },
         { label: "Brand Hover", key: "brandHover" },
-        { label: "Surface", key: "surface" },
-        { label: "Surface Light", key: "surfaceLight" },
-        { label: "Surface Highlight", key: "surfaceHighlight" },
-        { label: "Surface Lighter", key: "surfaceLighter" },
-        { label: "Muted Foreground", key: "mutedForeground" },
-        { label: "Document Text", key: "foreground" },
-        { label: "Border Color", key: "borderColor" },
+        { label: "Primary", key: "surface" },
+        { label: "Secondary", key: "surfaceLight" },
+        { label: "Tertiary", key: "surfaceHighlight" },
+        { label: "Quaternary", key: "surfaceLighter" },
+        { label: "Muted Text", key: "mutedForeground" },
+        { label: "Body Text", key: "foreground" },
+        { label: "Border", key: "borderColor" },
     ];
 
     const advancedColorsDark = [
-        { label: "Brand Color Dark", key: "brandColorDark" },
-        { label: "Brand Hover Dark", key: "brandHoverDark" },
-        { label: "Surface Dark", key: "surfaceDark" },
-        { label: "Surface Light Dark", key: "surfaceLightDark" },
-        { label: "Surface Highlight Dark", key: "surfaceHighlightDark" },
-        { label: "Surface Lighter Dark", key: "surfaceLighterDark" },
-        { label: "Muted Foreground Dark", key: "mutedForegroundDark" },
-        { label: "Document Text Dark", key: "foregroundDark" },
-        { label: "Border Color Dark", key: "borderColorDark" },
+        { label: "Brand Color", key: "brandColorDark" },
+        { label: "Brand Hover", key: "brandHoverDark" },
+        { label: "Primary Dark", key: "surfaceDark" },
+        { label: "Secondary Dark", key: "surfaceLightDark" },
+        { label: "Tertiary Dark", key: "surfaceHighlightDark" },
+        { label: "Quaternary Dark", key: "surfaceLighterDark" },
+        { label: "Muted Text Dark", key: "mutedForegroundDark" },
+        { label: "Body Text Dark", key: "foregroundDark" },
+        { label: "Border Dark", key: "borderColorDark" },
     ];
 
     if (isLoading) {
@@ -208,7 +208,8 @@ export default function AdminCustomization() {
     }
 
     return (
-        <div className="bg-surface px-10 py-10 min-h-screen">
+        <div className="bg-surface px-10 py-10">
+            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Customization</h1>
@@ -218,7 +219,7 @@ export default function AdminCustomization() {
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
+                        className="h-8 px-4 flex items-center gap-2 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                     >
                         {isSaving ? (
                             <>
@@ -237,11 +238,11 @@ export default function AdminCustomization() {
 
             {/* Branding */}
             <div className="mb-10">
-                <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">Branding</h2>
-                <div className="border border-surface-lighter rounded-lg p-6">
-                    <div className="grid grid-cols-2 gap-5 mb-6">
+                <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Branding</h2>
+                <div className="border border-surface-lighter rounded-lg p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Site Name</label>
+                            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Site Name</label>
                             <input
                                 type="text"
                                 value={config.siteName}
@@ -250,7 +251,7 @@ export default function AdminCustomization() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Logo Path</label>
+                            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Logo Path</label>
                             <input
                                 type="text"
                                 value={config.logoUrl}
@@ -259,15 +260,16 @@ export default function AdminCustomization() {
                             />
                         </div>
                     </div>
-                    <div className="pt-1">
-                        <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Accent Color</label>
+
+                    <div>
+                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Accent Color</label>
                         <div className="flex flex-wrap items-center gap-2">
                             {colorPresets.map((color) => (
                                 <button
                                     key={color.value}
                                     onClick={() => updateConfig('brandColor', color.value)}
-                                    className={`w-7 h-7 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                                        config.brandColor === color.value ? 'border-brand ring-1 ring-brand ring-offset-1 ring-offset-surface' : 'border-surface-lighter'
+                                    className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                                        config.brandColor === color.value ? 'border-foreground/30 ring-1 ring-foreground/10' : 'border-transparent'
                                     }`}
                                     style={{ backgroundColor: color.value }}
                                 />
@@ -275,7 +277,7 @@ export default function AdminCustomization() {
                         </div>
                         <button
                             onClick={() => setShowCustomColor(!showCustomColor)}
-                            className="flex items-center gap-1.5 mt-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-all cursor-pointer"
+                            className="flex items-center gap-1.5 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-all cursor-pointer"
                         >
                             Custom Color
                             <HugeiconsIcon icon={ArrowDown01Icon} size={10} className={`transition-transform ${showCustomColor ? 'rotate-180' : ''}`} />
@@ -283,7 +285,7 @@ export default function AdminCustomization() {
                         {showCustomColor && (
                             <div className="mt-3 flex items-center gap-2">
                                 <div
-                                    className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                    className="w-8 h-8 rounded-lg border border-surface-lighter shrink-0"
                                     style={{ backgroundColor: config.brandColor }}
                                 />
                                 <input
@@ -301,7 +303,7 @@ export default function AdminCustomization() {
                                         }
                                     }}
                                     maxLength={7}
-                                    className="w-[100px] h-7 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
+                                    className="w-[100px] h-8 px-2.5 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
                                     placeholder="#000000"
                                 />
                             </div>
@@ -312,8 +314,8 @@ export default function AdminCustomization() {
 
             {/* Theme */}
             <div className="mb-10">
-                <h2 className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4">Theme</h2>
-                <div className="border border-surface-lighter rounded-lg p-6">
+                <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Theme</h2>
+                <div className="border border-surface-lighter rounded-lg p-6 space-y-6">
                     <div className="flex items-center justify-between relative" ref={presetMenuRef}>
                         <div>
                             <p className="text-[13px] font-bold text-foreground tracking-tight">Preset Template</p>
@@ -321,20 +323,20 @@ export default function AdminCustomization() {
                         </div>
                         <button
                             onClick={() => setIsPresetMenuOpen(!isPresetMenuOpen)}
-                            className="h-8 flex items-center gap-2 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground hover:bg-surface-lighter/30 transition-all cursor-pointer"
+                            className="h-8 flex items-center gap-2 px-3 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground hover:border-foreground/20 transition-all cursor-pointer"
                         >
                             <span className="font-mono tracking-wide">{currentTemplate?.name || "Custom"}</span>
                             <HugeiconsIcon icon={ArrowDown01Icon} size={14} className={`text-muted-foreground transition-transform ${isPresetMenuOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isPresetMenuOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 border border-surface-lighter rounded-lg shadow-lg z-50 overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
+                            <div className="absolute right-0 top-full mt-2 w-56 border border-surface-lighter rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
                                 <div className="p-1 max-h-64 overflow-y-auto custom-scrollbar-prominent">
                                     {themeTemplates.map((template) => (
                                         <button
                                             key={template.name}
                                             onClick={() => applyTemplate(template)}
-                                            className="w-full px-3 py-2 text-left rounded-md hover:bg-surface-lighter/30 transition-all flex items-center justify-between"
+                                            className="w-full px-3 py-2 text-left rounded-md hover:bg-surface-light transition-all flex items-center justify-between"
                                         >
                                             <div>
                                                 <span className="text-[11px] font-bold text-foreground block leading-tight">{template.name}</span>
@@ -350,43 +352,68 @@ export default function AdminCustomization() {
                         )}
                     </div>
 
-                    <div className="mt-3 space-y-0">
-                        <div className="flex items-center justify-between py-3">
-                            <div>
-                                <p className="text-[13px] font-bold text-foreground tracking-tight">Compact Mode</p>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Optimize layout density</p>
-                            </div>
-                            <button
-                                onClick={() => handleToggle('isCompact', !config.isCompact)}
-                                className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isCompact ? 'bg-brand' : 'bg-surface-lighter'}`}
-                            >
-                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isCompact ? 'left-[18px]' : 'left-0.5'}`} />
-                            </button>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[13px] font-bold text-foreground tracking-tight">Compact Mode</p>
+                            <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Optimize layout density</p>
                         </div>
-                        <div className="flex items-center justify-between py-3">
-                            <div>
-                                <p className="text-[13px] font-bold text-foreground tracking-tight">Force Dark Mode</p>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Disable user theme switching</p>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    const val = !config.isDark;
-                                    const newConfig = { ...config, isDark: val };
-                                    if (config.brandColor === '#000000' && val) newConfig.brandColor = '#ffffff';
-                                    else if (config.brandColor === '#ffffff' && !val) newConfig.brandColor = '#000000';
-                                    setConfig(newConfig);
-                                    fetch('/api/v1/client/admin/customization', {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(newConfig)
-                                    }).then(res => res.json()).then(data => {
-                                        if (data.ok) setOriginalConfig(newConfig);
-                                    });
-                                }}
-                                className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isDark ? 'bg-brand' : 'bg-surface-lighter'}`}
-                            >
-                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${config.isDark ? 'left-[18px]' : 'left-0.5'}`} />
-                            </button>
+                        <button
+                            onClick={() => handleToggle('isCompact', !config.isCompact)}
+                            className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isCompact ? 'bg-foreground' : 'bg-surface-lighter'}`}
+                        >
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-surface shadow-sm transition-all ${config.isCompact ? 'left-[18px]' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[13px] font-bold text-foreground tracking-tight">Force Dark Mode</p>
+                            <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Disable user theme switching</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const val = !config.isDark;
+                                const newConfig = { ...config, isDark: val };
+                                if (config.brandColor === '#000000' && val) newConfig.brandColor = '#ffffff';
+                                else if (config.brandColor === '#ffffff' && !val) newConfig.brandColor = '#000000';
+                                setConfig(newConfig);
+                                fetch('/api/v1/client/admin/customization', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(newConfig)
+                                }).then(res => res.json()).then(data => {
+                                    if (data.ok) setOriginalConfig(newConfig);
+                                });
+                            }}
+                            className={`w-9 h-5 rounded-full transition-all cursor-pointer relative ${config.isDark ? 'bg-foreground' : 'bg-surface-lighter'}`}
+                        >
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-surface shadow-sm transition-all ${config.isDark ? 'left-[18px]' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Typography */}
+            <div className="mb-10">
+                <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">Typography</h2>
+                <div className="border border-surface-lighter rounded-lg p-6">
+                    <div className="grid grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Font Family</label>
+                            <input
+                                type="text"
+                                value={config.fontFamily}
+                                onChange={(e) => updateConfig('fontFamily', e.target.value)}
+                                className="w-full h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono focus:outline-none focus:border-brand/20 transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Border Radius</label>
+                            <input
+                                type="text"
+                                value={config.borderRadius}
+                                onChange={(e) => updateConfig('borderRadius', e.target.value)}
+                                className="w-full h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[11px] font-bold text-foreground font-mono focus:outline-none focus:border-brand/20 transition-all"
+                            />
                         </div>
                     </div>
                 </div>
@@ -396,78 +423,84 @@ export default function AdminCustomization() {
             <div className="mb-10">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-4 hover:text-foreground transition-all cursor-pointer"
+                    className="flex items-center gap-2 text-[14px] font-bold text-foreground/60 tracking-tight mb-4 hover:text-foreground transition-all cursor-pointer"
                 >
                     Advanced Palette
-                    <HugeiconsIcon icon={ArrowDown01Icon} size={12} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                    <HugeiconsIcon icon={ArrowDown01Icon} size={14} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showAdvanced && (
-                    <div className="border border-surface-lighter rounded-lg p-6">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Light Mode</p>
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
-                            {advancedColorsLight.map((item) => (
-                                <div key={item.key} className="flex items-center justify-between">
-                                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</label>
-                                    <div className="flex items-center gap-2">
+                    <div className="border border-surface-lighter rounded-lg">
+                        {/* Light Mode */}
+                        <div className="p-6">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-5">Light Mode</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {advancedColorsLight.map((item) => (
+                                    <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg bg-surface-light/30">
                                         <div
-                                            className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                            className="w-8 h-8 rounded-lg border border-surface-lighter shrink-0"
                                             style={{ backgroundColor: config[item.key] }}
                                         />
-                                        <input
-                                            type="text"
-                                            value={config[item.key]}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-                                                    setConfig(prev => ({ ...prev, [item.key]: val }));
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
-                                                    updateConfig(item.key, config[item.key]);
-                                                }
-                                            }}
-                                            maxLength={7}
-                                            className="w-[85px] h-6 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground/60 font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
-                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1 truncate">{item.label}</label>
+                                            <input
+                                                type="text"
+                                                value={config[item.key]}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                                        setConfig(prev => ({ ...prev, [item.key]: val }));
+                                                    }
+                                                }}
+                                                onBlur={() => {
+                                                    if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
+                                                        updateConfig(item.key, config[item.key]);
+                                                    }
+                                                }}
+                                                maxLength={7}
+                                                className="w-full h-6 px-0 bg-transparent text-[10px] font-bold text-muted-foreground font-mono uppercase focus:outline-none transition-all"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="my-5 border-t border-surface-lighter" />
+                        <div className="border-t border-surface-lighter" />
 
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Dark Mode</p>
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
-                            {advancedColorsDark.map((item) => (
-                                <div key={item.key} className="flex items-center justify-between">
-                                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</label>
-                                    <div className="flex items-center gap-2">
+                        {/* Dark Mode */}
+                        <div className="p-6">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-5">Dark Mode</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {advancedColorsDark.map((item) => (
+                                    <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg bg-surface-light/30">
                                         <div
-                                            className="w-7 h-7 rounded-md border border-surface-lighter shrink-0"
+                                            className="w-8 h-8 rounded-lg border border-surface-lighter shrink-0"
                                             style={{ backgroundColor: config[item.key] }}
                                         />
-                                        <input
-                                            type="text"
-                                            value={config[item.key]}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-                                                    setConfig(prev => ({ ...prev, [item.key]: val }));
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
-                                                    updateConfig(item.key, config[item.key]);
-                                                }
-                                            }}
-                                            maxLength={7}
-                                            className="w-[85px] h-6 px-2 bg-surface-light/50 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground/60 font-mono uppercase focus:outline-none focus:border-brand/20 transition-all"
-                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1 truncate">{item.label}</label>
+                                            <input
+                                                type="text"
+                                                value={config[item.key]}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                                        setConfig(prev => ({ ...prev, [item.key]: val }));
+                                                    }
+                                                }}
+                                                onBlur={() => {
+                                                    if (/^#[0-9A-Fa-f]{6}$/.test(config[item.key])) {
+                                                        updateConfig(item.key, config[item.key]);
+                                                    }
+                                                }}
+                                                maxLength={7}
+                                                className="w-full h-6 px-0 bg-transparent text-[10px] font-bold text-muted-foreground font-mono uppercase focus:outline-none transition-all"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

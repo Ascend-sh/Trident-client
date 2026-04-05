@@ -1,11 +1,32 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Trash2, RotateCcw, HardDrive, Clock, Archive, Ellipsis, X } from "lucide-react";
+import { Plus, Ellipsis, Copy, Check } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CloudUploadIcon, DataRecoveryIcon } from "@hugeicons/core-free-icons";
 import ServerNav from "../../../components/navigation/server-nav";
 import CenterModal from "../../../components/modals/center-modal";
-import { Button } from "@/components/ui/button";
 
 const API_BASE = "/api/v1/client";
+
+function formatBytes(bytes) {
+    const b = Number(bytes || 0);
+    if (b < 1024) return `${b} B`;
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+    if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function relativeTime(iso) {
+    if (!iso) return "—";
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+}
 
 async function request(path, { method = "GET", body } = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -26,45 +47,15 @@ async function request(path, { method = "GET", body } = {}) {
     return data;
 }
 
-function formatBytes(bytes) {
-    const b = Number(bytes || 0);
-    if (b < 1024) return `${b} B`;
-    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-    if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-function formatDate(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function relativeTime(iso) {
-    if (!iso) return "—";
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
-}
-
-const MOCK_BACKUPS = [
-    { uuid: "b1", name: "Pre-update snapshot", bytes: 1289748234, is_successful: true, is_locked: false, completed_at: new Date(Date.now() - 3600 * 1000).toISOString() },
-    { uuid: "b2", name: "Weekly backup", bytes: 987654321, is_successful: true, is_locked: true, completed_at: new Date(Date.now() - 86400 * 2 * 1000).toISOString() },
-    { uuid: "b3", name: "", bytes: 543210987, is_successful: false, is_locked: false, completed_at: new Date(Date.now() - 86400 * 5 * 1000).toISOString() },
-];
-
 export default function Backups() {
     const { identifier } = useParams();
     const [serverInfo, setServerInfo] = useState(null);
-    const [backups, setBackups] = useState(MOCK_BACKUPS);
-    const [loading, setLoading] = useState(false);
+    const [primaryAllocation, setPrimaryAllocation] = useState(null);
+    const [status, setStatus] = useState("offline");
+    const [copied, setCopied] = useState(false);
+    const [backups, setBackups] = useState([]);
+    const [backupLimit, setBackupLimit] = useState(0);
     const [openMenuId, setOpenMenuId] = useState(null);
-
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [createName, setCreateName] = useState("");
     const [creating, setCreating] = useState(false);
@@ -76,6 +67,35 @@ export default function Backups() {
     const [restoring, setRestoring] = useState(false);
 
     const [actionError, setActionError] = useState("");
+    const [pollingRef] = useState({ current: null });
+
+    const stopPolling = () => {
+        if (pollingRef.current) {
+            clearTimeout(pollingRef.current);
+            pollingRef.current = null;
+        }
+    };
+
+    const fetchBackups = (serverId, { poll = false } = {}) => {
+        request(`/servers/${serverId}/backups`)
+            .then(d => {
+                const list = d?.backups || [];
+                setBackups(list);
+                if (d?.backupLimit !== undefined) setBackupLimit(d.backupLimit);
+
+                const hasPending = list.some(b => !b.completed_at);
+                stopPolling();
+                if (hasPending) {
+                    pollingRef.current = setTimeout(() => fetchBackups(serverId, { poll: true }), 5000);
+                }
+            })
+            .catch(() => {
+                if (poll) {
+                    stopPolling();
+                    pollingRef.current = setTimeout(() => fetchBackups(serverId, { poll: true }), 5000);
+                }
+            });
+    };
 
     useEffect(() => {
         if (!identifier) return;
@@ -85,28 +105,37 @@ export default function Backups() {
                 const found = (d?.servers || []).find(s =>
                     String(s.identifier || "").toLowerCase() === String(identifier || "").toLowerCase()
                 );
-                if (found) setServerInfo(found);
+                if (found) {
+                    setServerInfo(found);
+                    fetch(`${API_BASE}/servers/${found.id}/network/allocations`, { credentials: "include" })
+                        .then(r => r.json())
+                        .then(a => setPrimaryAllocation(a?.primary || null))
+                        .catch(() => setPrimaryAllocation(null));
+                    fetchBackups(found.id);
+                }
             })
             .catch(() => {});
+        return () => stopPolling();
     }, [identifier]);
 
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     const totalSize = backups.reduce((acc, b) => acc + Number(b.bytes || 0), 0);
-    const successCount = backups.filter(b => b.is_successful).length;
 
     const handleCreate = async () => {
+        if (!serverInfo?.id) return;
         setCreating(true);
         setActionError("");
         try {
-            const fake = {
-                uuid: `b${Date.now()}`,
-                name: createName.trim() || `Backup ${backups.length + 1}`,
-                bytes: 0,
-                is_successful: true,
-                is_locked: false,
-                completed_at: new Date().toISOString()
-            };
-            await new Promise(r => setTimeout(r, 600));
-            setBackups(prev => [fake, ...prev]);
+            await request(`/servers/${serverInfo.id}/backups`, {
+                method: "POST",
+                body: { name: createName.trim() || undefined }
+            });
+            fetchBackups(serverInfo.id);
             setCreateModalOpen(false);
             setCreateName("");
         } catch (err) {
@@ -117,11 +146,12 @@ export default function Backups() {
     };
 
     const handleDelete = async () => {
+        if (!serverInfo?.id || !deleteTarget?.uuid) return;
         setDeleting(true);
         setActionError("");
         try {
-            await new Promise(r => setTimeout(r, 500));
-            setBackups(prev => prev.filter(b => b.uuid !== deleteTarget.uuid));
+            await request(`/servers/${serverInfo.id}/backups/${deleteTarget.uuid}`, { method: "DELETE" });
+            fetchBackups(serverInfo.id);
             setDeleteTarget(null);
         } catch (err) {
             setActionError(err?.message || "Failed to delete backup");
@@ -131,147 +161,262 @@ export default function Backups() {
     };
 
     const handleRestore = async () => {
+        if (!serverInfo?.id || !restoreTarget?.uuid) return;
         setRestoring(true);
         setActionError("");
         try {
-            await new Promise(r => setTimeout(r, 800));
+            const data = await request(`/servers/${serverInfo.id}/backups/${restoreTarget.uuid}/download`);
+            if (data?.url) {
+                window.open(data.url, "_blank");
+            }
             setRestoreTarget(null);
         } catch (err) {
-            setActionError(err?.message || "Failed to restore backup");
+            setActionError(err?.message || "Failed to download backup");
         } finally {
             setRestoring(false);
         }
     };
 
+    const normalizedState = (status || "").toLowerCase();
+    const isOnline = normalizedState === "running" || normalizedState === "online";
+    const isStarting = normalizedState === "starting";
+    const statusColor = isOnline ? "green" : isStarting ? "yellow" : "red";
+
     return (
-        <div className="bg-surface px-16 py-10">
-            <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="bg-surface px-10 py-10">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-md bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
                         <img src="/defaulticon.webp" alt="Server" className="w-full h-full object-cover opacity-80" />
                     </div>
                     <div>
-                        <h1 className="text-[20px] font-bold text-foreground tracking-tight">
-                            {serverInfo?.name || "Loading Instance..."}
-                        </h1>
-                        <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-[0.1em] mt-1">
-                            Backups
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">{serverInfo?.name || "Loading..."}</h1>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-${statusColor}-500`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-widest text-${statusColor}-500`}>{normalizedState || "offline"}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 mt-1.5">
+                            {serverInfo?.location && (
+                                <>
+                                    <div className="flex items-center gap-1.5">
+                                        {serverInfo.location.shortCode && (
+                                            <img
+                                                src={`https://flagsapi.com/${serverInfo.location.shortCode}/flat/64.png`}
+                                                alt={serverInfo.location.shortCode}
+                                                className="w-4 h-3 rounded-sm object-cover opacity-80"
+                                            />
+                                        )}
+                                        <span className="text-[13px] font-bold text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
+                                    </div>
+                                    <span className="text-muted-foreground/20">·</span>
+                                </>
+                            )}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[13px] font-bold text-muted-foreground font-mono">
+                                    {primaryAllocation
+                                        ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
+                                        : "Assigning..."}
+                                </span>
+                                {primaryAllocation && (
+                                    <button
+                                        onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
+                                        className="text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+                                    >
+                                        {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
-
                 </div>
-                <Button
-                    onClick={() => { setCreateName(""); setActionError(""); setCreateModalOpen(true); }}
-                    className="h-8 px-3 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow-none"
-                >
-                    <Plus size={12} />
-                    Create Backup
-                </Button>
+                {backupLimit > 0 && (
+                    <button
+                        onClick={() => { setCreateName(""); setActionError(""); setCreateModalOpen(true); }}
+                        className="h-8 px-4 flex items-center gap-2 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+                    >
+                        <Plus size={12} />
+                        New Backup
+                    </button>
+                )}
             </div>
 
             <ServerNav />
 
+            {backupLimit === 0 && serverInfo ? (
+                <div className="border border-surface-lighter rounded-lg py-20 px-6">
+                    <div className="flex flex-col items-center">
+                        <HugeiconsIcon icon={DataRecoveryIcon} size={32} className="text-muted-foreground/30 mb-5" />
+                        <p className="text-[15px] font-bold text-foreground tracking-tight mb-1.5">Backups are disabled</p>
+                        <p className="text-[11px] font-bold text-muted-foreground/50 text-center max-w-[280px] leading-relaxed">
+                            This server does not have any backup slots allocated. Contact an administrator to enable backups.
+                        </p>
+                    </div>
+                </div>
+            ) : (
+            <>
+            {/* Backup limit indicator */}
+            <div className="flex items-center justify-between px-1 mb-4">
+                <div className="flex items-center gap-3">
+                    {backupLimit > 0 && (
+                        <div className="flex items-center gap-1.5">
+                            {[...Array(backupLimit)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-1.5 h-1.5 rounded-full ${i < backups.length ? 'bg-brand/50' : 'bg-surface-lighter'}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    <span className="text-[10px] font-bold text-muted-foreground tabular-nums">{backups.length}{backupLimit > 0 ? `/${backupLimit}` : ''} backups used</span>
+                </div>
+                {backups.length > 0 && (
+                    <span className="text-[10px] font-bold text-muted-foreground">{formatBytes(totalSize)} total</span>
+                )}
+            </div>
 
-            <div className="bg-surface-light border border-surface-lighter rounded-xl px-[2px] pb-[2px] pt-0">
-                <div className="w-full">
-                    <div className="grid grid-cols-[2fr_1fr_1fr_0.6fr] px-6 py-3">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Name</span>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Size</span>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">Created</span>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</span>
+            {backups.length === 0 ? (
+                <div className="border border-surface-lighter rounded-lg py-20 px-6 relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+                        <div className="w-[200px] h-[200px] rounded-full border-[2px]" style={{ borderColor: 'var(--color-brand)' }} />
+                    </div>
+                    <div className="relative flex flex-col items-center">
+                        <div className="flex flex-col items-center gap-1 mb-6">
+                            <div className="w-6 h-1 rounded-full bg-surface-lighter" />
+                            <div className="w-8 h-1 rounded-full bg-surface-lighter" />
+                            <div className="w-10 h-1 rounded-full bg-surface-lighter" />
+                        </div>
+                        <p className="text-[15px] font-bold text-foreground tracking-tight mb-1.5">Start saving snapshots</p>
+                        <p className="text-[11px] font-bold text-muted-foreground/50 text-center max-w-[260px] leading-relaxed">
+                            Capture your server state at any point and roll back whenever you need to.
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="border border-surface-lighter rounded-lg">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Size</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Created</span>
+                        <span className="w-8" />
                     </div>
 
+                    {backups.map((backup, idx) => {
+                        const isPending = !backup.completed_at;
 
-                    {backups.length === 0 ? (
-                        <div className="bg-surface border border-surface-lighter rounded-lg py-16 flex flex-col items-center justify-center min-h-[210px]">
-                            <Archive size={24} className="text-muted-foreground/10 mb-3" />
-                            <span className="text-[12px] font-bold text-muted-foreground italic">No backups yet. Create your first one.</span>
-                        </div>
-
-                    ) : (
-                        <div className="bg-surface border border-surface-lighter rounded-lg overflow-hidden flex flex-col min-h-[210px]">
-                            {backups.map((backup, idx) => (
-                                <div
-                                    key={backup.uuid}
-                                    className={`grid grid-cols-[2fr_1fr_1fr_0.6fr] px-6 py-4 group border-b border-surface-lighter transition-colors hover:bg-surface-light/40 ${idx === backups.length - 1 ? 'border-b-0' : ''}`}
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${backup.is_successful ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <div className="min-w-0">
-                                            <p className="text-[12px] font-bold text-foreground truncate">
-                                                {backup.name || <span className="italic text-muted-foreground">Unnamed backup</span>}
+                        return isPending ? (
+                            <div
+                                key={backup.uuid}
+                                className={`grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-4 ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded bg-surface-lighter animate-pulse shrink-0" />
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-3.5 w-36 rounded bg-surface-lighter animate-pulse" />
+                                        <span className="px-1.5 py-0.5 rounded bg-surface-light text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest shrink-0">
+                                            Creating
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="h-3 w-16 rounded bg-surface-lighter animate-pulse" />
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="h-3 w-14 rounded bg-surface-lighter animate-pulse" />
+                                </div>
+                                <div className="w-8" />
+                            </div>
+                        ) : (
+                            <div
+                                key={backup.uuid}
+                                className={`group grid grid-cols-[2fr_1fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <HugeiconsIcon icon={CloudUploadIcon} size={16} className={`shrink-0 ${backup.is_successful ? 'text-muted-foreground' : 'text-red-500/60'}`} />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[13px] font-bold text-foreground tracking-tight truncate leading-none">
+                                                {backup.name || <span className="text-muted-foreground/50 italic">Unnamed backup</span>}
                                             </p>
-
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <span className={`text-[9px] font-bold uppercase tracking-widest ${backup.is_successful ? 'text-green-600' : 'text-red-500'}`}>
-                                                    {backup.is_successful ? "Complete" : "Failed"}
+                                            {backup.is_locked && (
+                                                <span className="px-1.5 py-0.5 rounded bg-surface-light text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest shrink-0">
+                                                    Locked
                                                 </span>
-                                                {backup.is_locked && (
-                                                    <>
-                                                        <span className="text-foreground/10">·</span>
-                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Locked</span>
-                                                    </>
-                                                )}
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-center">
-                                        <span className="text-[11px] font-bold text-muted-foreground font-mono">{formatBytes(backup.bytes)}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center">
-                                        <span className="text-[11px] font-bold text-muted-foreground">{relativeTime(backup.completed_at)}</span>
-                                        <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">{formatDate(backup.completed_at)}</span>
-                                    </div>
-
-                                    <div className="flex items-center justify-end">
-                                        <div className="relative">
-                                            <button
-                                                onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === backup.uuid ? null : backup.uuid); }}
-                                                className="p-2 rounded-md hover:bg-surface-lighter text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                                            >
-                                                <Ellipsis size={14} />
-                                            </button>
-
-                                            {openMenuId === backup.uuid && (
-                                                <div
-                                                    className="absolute right-0 mt-2 w-36 bg-surface border border-surface-lighter rounded-md z-50 shadow-none py-1"
-                                                    onClick={e => e.stopPropagation()}
-                                                >
-                                                    <button
-                                                        onClick={() => { setOpenMenuId(null); setActionError(""); setRestoreTarget(backup); }}
-                                                        disabled={!backup.is_successful}
-                                                        className="w-full px-4 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-                                                    >
-                                                        <RotateCcw size={11} />
-                                                        Restore
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => { setOpenMenuId(null); setActionError(""); setDeleteTarget(backup); }}
-                                                        disabled={backup.is_locked}
-                                                        className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 transition-all uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-                                                    >
-                                                        <Trash2 size={11} />
-                                                        Delete
-                                                    </button>
-                                                </div>
+                                            )}
+                                            {!backup.is_successful && (
+                                                <span className="px-1.5 py-0.5 rounded bg-red-500/5 text-[8px] font-bold text-red-500/60 uppercase tracking-widest shrink-0">
+                                                    Failed
+                                                </span>
                                             )}
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
 
+                                <div className="flex items-center">
+                                    <span className="text-[11px] font-bold text-muted-foreground font-mono">{formatBytes(backup.bytes)}</span>
+                                </div>
+
+                                <div className="flex items-center">
+                                    <span className="text-[11px] font-bold text-muted-foreground">{relativeTime(backup.completed_at)}</span>
+                                </div>
+
+                                <div className="flex items-center justify-end">
+                                    <div className="relative">
+                                        <button
+                                            onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === backup.uuid ? null : backup.uuid); }}
+                                            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
+                                        >
+                                            <Ellipsis size={14} />
+                                        </button>
+
+                                        {openMenuId === backup.uuid && (
+                                            <div
+                                                className="absolute right-0 mt-1 w-36 rounded-lg border border-surface-lighter shadow-xl z-50 overflow-hidden"
+                                                style={{ backgroundColor: 'var(--surface)' }}
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <div className="p-1">
+                                                    {backup.is_successful && (
+                                                        <button
+                                                            onClick={() => { setOpenMenuId(null); setActionError(""); setRestoreTarget(backup); }}
+                                                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-light transition-all rounded-md"
+                                                        >
+                                                            Download
+                                                        </button>
+                                                    )}
+                                                    {!backup.is_locked ? (
+                                                        <button
+                                                            onClick={() => { setOpenMenuId(null); setActionError(""); setDeleteTarget(backup); }}
+                                                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all rounded-md"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    ) : (
+                                                        <span className="block px-3 py-2 text-[11px] font-bold text-muted-foreground/20">
+                                                            Locked
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+            </>
+            )}
+
+            {/* Create Modal */}
             <CenterModal isOpen={createModalOpen} onClose={() => !creating && setCreateModalOpen(false)} maxWidth="max-w-sm">
                 <div className="p-6">
-                    <div className="mb-5">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Create Backup</h2>
-                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Optional name for this backup</p>
-                    </div>
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Create Backup</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-5">Give your backup a name to find it later.</p>
 
                     <input
                         type="text"
@@ -281,93 +426,117 @@ export default function Backups() {
                         placeholder="e.g. Pre-update snapshot"
                         disabled={creating}
                         autoFocus
-                        className="w-full h-9 bg-surface-light border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/30 transition-colors disabled:opacity-50"
+                        className="w-full h-9 bg-surface-light/50 border border-surface-lighter rounded-md px-3 text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all disabled:opacity-40"
                     />
 
                     {actionError && (
-                        <div className="mt-3 px-3 py-2 rounded-md bg-red-500/5 border border-red-500/10">
-                            <p className="text-[11px] font-bold text-red-600">{actionError}</p>
+                        <div className="mt-3 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                            <p className="text-[11px] font-bold text-red-500">{actionError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 mt-5">
+
+                    <div className="flex items-center justify-end gap-2 mt-5">
                         <button
                             onClick={() => setCreateModalOpen(false)}
                             disabled={creating}
-                            className="px-3 py-1.5 text-[10px] font-bold text-foreground/60 hover:text-brand uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <Button
+                        <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+                            className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {creating ? "Creating..." : "Create Backup"}
-                        </Button>
+                            {creating ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                                    Creating
+                                </>
+                            ) : (
+                                "Create"
+                            )}
+                        </button>
                     </div>
                 </div>
             </CenterModal>
 
+            {/* Delete Modal */}
             <CenterModal isOpen={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
-                    <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Delete Backup</h2>
-                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
-                            Are you sure you want to delete <span className="text-foreground">"{deleteTarget?.name || "this backup"}"</span>? This action cannot be undone.
-                        </p>
-                    </div>
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Delete Backup</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+                        Delete <span className="text-foreground">"{deleteTarget?.name || "this backup"}"</span>? This cannot be undone.
+                    </p>
+
                     {actionError && (
-                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 mb-6">
-                            <p className="text-[11px] font-bold text-red-600">{actionError}</p>
+                        <div className="mb-4 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                            <p className="text-[11px] font-bold text-red-500">{actionError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 mt-8">
+
+                    <div className="flex items-center justify-end gap-2">
                         <button
                             onClick={() => setDeleteTarget(null)}
                             disabled={deleting}
-                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <Button
+                        <button
                             onClick={handleDelete}
                             disabled={deleting}
-                            className="h-8 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+                            className="h-8 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {deleting ? "Deleting..." : "Confirm Delete"}
-                        </Button>
+                            {deleting ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+                                    Deleting
+                                </>
+                            ) : (
+                                "Delete"
+                            )}
+                        </button>
                     </div>
                 </div>
             </CenterModal>
 
+            {/* Restore Modal */}
             <CenterModal isOpen={!!restoreTarget} onClose={() => !restoring && setRestoreTarget(null)} maxWidth="max-w-md">
                 <div className="p-6">
-                    <div className="mb-6">
-                        <h2 className="text-[16px] font-bold text-foreground tracking-tight">Restore Backup</h2>
-                        <p className="text-[12px] font-bold text-foreground/60 mt-1">
-                            Restoring <span className="text-foreground">"{restoreTarget?.name || "this backup"}"</span> will overwrite all current server files. The server will be stopped during the restore process.
-                        </p>
-                    </div>
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Download Backup</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+                        Download <span className="text-foreground">"{restoreTarget?.name || "this backup"}"</span> to your local machine.
+                    </p>
+
                     {actionError && (
-                        <div className="px-4 py-3 rounded-md bg-red-500/5 border border-red-500/10 mb-6">
-                            <p className="text-[11px] font-bold text-red-600">{actionError}</p>
+                        <div className="mb-4 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+                            <p className="text-[11px] font-bold text-red-500">{actionError}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 mt-8">
+
+                    <div className="flex items-center justify-end gap-2">
                         <button
                             onClick={() => setRestoreTarget(null)}
                             disabled={restoring}
-                            className="px-4 py-2 text-[10px] font-bold text-foreground hover:text-foreground/70 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-40"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
                             Cancel
                         </button>
-                        <Button
+                        <button
                             onClick={handleRestore}
                             disabled={restoring}
-                            className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer shadow-none disabled:opacity-40"
+                            className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {restoring ? "Restoring..." : "Confirm Restore"}
-                        </Button>
+                            {restoring ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                                    Downloading
+                                </>
+                            ) : (
+                                "Download"
+                            )}
+                        </button>
                     </div>
                 </div>
             </CenterModal>
