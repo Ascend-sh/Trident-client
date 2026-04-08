@@ -12,7 +12,7 @@ import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
 import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, createAllocation, setAllocationPrimary, updateAllocation, deleteAllocation, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl, listServerBackups, createServerBackup, getServerBackupDetails, getServerBackupDownloadUrl, toggleServerBackupLock, deleteServerBackup } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
-import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
+import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/economy/payments.js";
 import { getCustomization, updateCustomization } from "../utils/customization.js";
 import { listLocalUsers, getLocalUser } from "../modules/get-users.js";
 
