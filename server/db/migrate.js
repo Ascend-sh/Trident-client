@@ -3,7 +3,7 @@ import { Database } from 'bun:sqlite';
 import { db } from './client.js';
 
 function ensureSchemaConsistency() {
-  const dbPath = process.env.TORQEN_DB_PATH ?? './server/db/data/torqen.sqlite';
+  const dbPath = process.env.TRIDENT_DB_PATH ?? './server/db/data/trident.sqlite';
   const sqlite = new Database(dbPath);
   
   // Ensure eggs.env_vars
@@ -17,12 +17,18 @@ function ensureSchemaConsistency() {
   if (!defaultCols.some(c => c?.name === 'slots')) {
     sqlite.run("ALTER TABLE `server_defaults` ADD COLUMN `slots` integer NOT NULL DEFAULT 1;");
   }
-  
+
+  // Ensure users.has_2fa
+  const userCols = sqlite.query("PRAGMA table_info(users)").all();
+  if (!userCols.some(c => c?.name === 'has_2fa')) {
+    sqlite.run("ALTER TABLE `users` ADD COLUMN `has_2fa` integer NOT NULL DEFAULT 0;");
+  }
+
   sqlite.close();
 }
 
 function applyManualMigrations() {
-  const dbPath = process.env.TORQEN_DB_PATH ?? './server/db/data/torqen.sqlite';
+  const dbPath = process.env.TRIDENT_DB_PATH ?? './server/db/data/trident.sqlite';
   const sqlite = new Database(dbPath);
   
   try {

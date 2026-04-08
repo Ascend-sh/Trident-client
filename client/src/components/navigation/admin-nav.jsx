@@ -12,6 +12,7 @@ import {
     PaintBrush03Icon,
     Sun03Icon,
     Moon02Icon,
+    UserMultiple02Icon,
 } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,7 @@ const AdminNav = () => {
     const navItems = [
         { path: "/app/admin/overview", label: "Overview", icon: Home04Icon },
         { path: "/app/admin/payments", label: "Transactions", icon: CreditCardChangeIcon },
+        { path: "/app/admin/users", label: "Users", icon: UserMultiple02Icon },
         { path: "/app/admin/software", label: "Software", icon: Package01Icon },
         { path: "/app/admin/locations", label: "Locations", icon: MapingIcon },
         { path: "/app/admin/configs", label: "Configs", icon: ThirdBracketIcon },

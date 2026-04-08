@@ -6,7 +6,7 @@ import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
 import { verifyJwt } from '../utils/jwt.js';
 import { getServerDefaults } from '../utils/configuration.js';
 function jwtSecret() {
-  const secret = process.env.TORQEN_JWT_SECRET;
+  const secret = process.env.TRIDENT_JWT_SECRET;
   return secret ? String(secret) : null;
 }
 
@@ -112,8 +112,8 @@ export async function listNestsCli({ full = false } = {}) {
 }
 
 async function fetchImportedLocationsFromApi() {
-  const base = String(process.env.TORQEN_CLI_BASE_URL ?? 'http://localhost:3000').trim().replace(/\/+$/, '');
-  const token = String(process.env.TORQEN_CLI_TOKEN ?? '').trim();
+  const base = String(process.env.TRIDENT_CLI_BASE_URL ?? 'http://localhost:3000').trim().replace(/\/+$/, '');
+  const token = String(process.env.TRIDENT_CLI_TOKEN ?? '').trim();
   if (!token) return null;
 
   const res = await fetch(`${base}/api/v1/client/admin/imported-locations`, {
@@ -262,7 +262,7 @@ export async function statusCli({ baseUrl } = {}) {
   }
 
   const httpStatus = { ok: false };
-  const url = (baseUrl || process.env.TORQEN_BASE_URL || `http://127.0.0.1:${process.env.PORT || 3000}`).replace(/\/+$/, '');
+  const url = (baseUrl || process.env.TRIDENT_BASE_URL || `http://127.0.0.1:${process.env.PORT || 3000}`).replace(/\/+$/, '');
   try {
     const res = await fetch(`${url}/health`);
     httpStatus.status = res.status;
@@ -282,7 +282,7 @@ export async function statusCli({ baseUrl } = {}) {
 }
 
 export function helpCli() {
-  console.log('Torqen CLI - Available Commands:');
+  console.log('Trident CLI - Available Commands:');
   console.log('');
   const commands = [
     { cmd: 'help', desc: 'Show this help message' },

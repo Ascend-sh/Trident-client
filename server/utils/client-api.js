@@ -14,6 +14,7 @@ import { createServer, deleteServer, editServer, getServerWebsocket, listUserSer
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
 import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
 import { getCustomization, updateCustomization } from "../utils/customization.js";
+import { listLocalUsers, getLocalUser } from "../modules/get-users.js";
 
 const wsLogger = getLogger('ws');
 
@@ -1866,6 +1867,82 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'backup_delete_failed', set.status));
+    }
+  })
+  .get("/admin/users", async ({ request, set, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    try {
+      const filter = {};
+      if (query?.email) filter.email = query.email;
+      if (query?.username) filter.username = query.username;
+      if (query?.uuid) filter.uuid = query.uuid;
+
+      const data = await listLocalUsers({
+        page: Number(query?.page) || 1,
+        perPage: Number(query?.per_page ?? query?.perPage) || 50,
+        filter: Object.keys(filter).length ? filter : undefined,
+        sort: query?.sort || undefined
+      });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'list_users_failed', set.status));
+    }
+  })
+  .get("/admin/users/:userId", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const userId = Number(params?.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getLocalUser({ userId });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'get_user_failed', set.status));
     }
   })
   .all("*", ({ set }) => send(set, notFound("not_found")));

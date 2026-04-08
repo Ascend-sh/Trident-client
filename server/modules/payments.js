@@ -32,7 +32,7 @@ export async function createPayPalPayment({ userId, amount }) {
                 currency: process.env.PAYPAL_CURRENCY || "USD",
                 total: val.toFixed(2)
             },
-            description: `Purchase of ${credits} Torqen tokens.`
+            description: `Purchase of ${credits} Trident tokens.`
         }]
     };
 

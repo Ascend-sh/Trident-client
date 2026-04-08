@@ -13,6 +13,7 @@ import AdminLocations from "./pages/admin/locations";
 import AdminPayments from "./pages/admin/Payments";
 import AdminConfigs from "./pages/admin/configs";
 import AdminCustomization from "./pages/admin/customization";
+import AdminUsers from "./pages/admin/users";
 import ServerNetwork from "./pages/user/server/network";
 import ServerOverview from "./pages/user/server/overview";
 import ServerFiles from "./pages/user/server/files";
@@ -169,6 +170,7 @@ function App() {
                 <Route path="/app/admin/locations" element={<AdminLocations />} />
                 <Route path="/app/admin/configs" element={<AdminConfigs />} />
                 <Route path="/app/admin/customization" element={<AdminCustomization />} />
+                <Route path="/app/admin/users" element={<AdminUsers />} />
               </Route>
             </Route>
             <Route path="/app/billing/invoice/:id" element={<Invoice />} />

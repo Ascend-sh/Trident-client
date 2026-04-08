@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `has_2fa` integer DEFAULT false NOT NULL;

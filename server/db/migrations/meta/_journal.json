@@ -162,6 +162,20 @@
       "when": 1775059095848,
       "tag": "0022_legal_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1775567682066,
+      "tag": "0023_sticky_carlie_cooper",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1775678478437,
+      "tag": "0024_greedy_roland_deschain",
+      "breakpoints": true
     }
   ]
 }
