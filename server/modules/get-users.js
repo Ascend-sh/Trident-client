@@ -35,7 +35,14 @@ export async function listLocalUsers({ page = 1, perPage = 50, filter, sort } = 
   const sortCol = sortMap[sortField] || users.id;
   query = query.orderBy(sortDir(sortCol));
 
-  const countResult = await db.select({ count: sql`COUNT(*)` }).from(users);
+  let countQuery = db.select({ count: sql`COUNT(*)` }).from(users);
+  if (filter?.username) {
+    countQuery = countQuery.where(like(users.username, `%${filter.username}%`));
+  } else if (filter?.email) {
+    countQuery = countQuery.where(like(users.email, `%${filter.email}%`));
+  }
+
+  const countResult = await countQuery;
   const total = Number(countResult[0]?.count) || 0;
   const totalPages = Math.ceil(total / pp) || 1;
 

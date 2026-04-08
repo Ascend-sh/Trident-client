@@ -1,13 +1,12 @@
-# Torqen
+# Trident (formerly Torqen)
 
-Torqen is a Bun-powered dashboard and API with a React (Vite) client and a SQLite database managed via Drizzle.
+Trident is a Bun-powered dashboard and API with a React (Vite) client and a SQLite database managed via Drizzle.
 
 > [!NOTE]
 > This project is under active development and the API and UI are subject to change.
 
 > [!IMPORTANT]
-> Cookie auth requires `TORQEN_JWT_SECRET` to be set in your `.env`.
-
+> Cookie auth requires `TRIDENT_JWT_SECRET` to be set in your `.env`.
 
 ## Requirements
 
@@ -22,7 +21,7 @@ Torqen is a Bun-powered dashboard and API with a React (Vite) client and a SQLit
 
 ## Quick Start (Production)
 
-This section describes the recommended setup for running Torqen in production.
+This section describes the recommended setup for running Trident in production.
 
 ### 1) Install dependencies
 
@@ -41,8 +40,8 @@ cp .env_example .env
 
 Required variables:
 
-- `TORQEN_DB_PATH` Path to the SQLite database file
-- `TORQEN_JWT_SECRET` Secret used to sign/verify session JWTs
+- `TRIDENT_DB_PATH` Path to the SQLite database file
+- `TRIDENT_JWT_SECRET` Secret used to sign/verify session JWTs
 
 Optional variables:
 
@@ -88,28 +87,23 @@ cp .env_example .env
 bun run db:migrate
 ```
 
-### 4) Run the server (watch mode)
+### 4) Run the unified dev script
 
 ```bash
-bun run dev:server
+bun run st
 ```
-
-### 5) Run the client (Vite dev server)
-
-```bash
-bun run dev:client
-```
+*(Optionally you can run backend and frontend separately via `bun run dev:server` and `bun run dev:client`).*
 
 ## Authentication
 
 The web dashboard uses cookie-based authentication backed by:
 
 - A `sessions` table in SQLite
-- A JWT stored in the `torqen_session` cookie containing a session id (`sid`)
+- A JWT stored in the `trident_session` cookie containing a session id (`sid`)
 
 The backend supports reading auth from either:
 
-- Cookie (`torqen_session`) for browser sessions
+- Cookie (`trident_session`) for browser sessions
 - `Authorization: Bearer <jwt>` for programmatic access
 
 ## CLI
@@ -133,7 +127,7 @@ bun run cli:servers
 
 - `cli:users` List users.
 - `cli:sessions` List sessions (active/expired).
-- `cli:user-delete -- <userId>` Delete a user and their sessions.
+- `cli:user-delete -- <userId>` Safely cascade-delete a user and their sessions (suspends Pterodactyl instances automatically).
 - `cli:status` Print DB + HTTP health checks.
 - `cli:reset` Drop all tables and re-run migrations (destructive).
 - `cli:nests` List imported nests and eggs.
@@ -147,10 +141,10 @@ bun run cli:servers
 - The client API is mounted under `/api/v1/client`.
 
 > [!WARNING]
-> If you do not have Pterodactyl configured, registration may fail depending on how the integration is used.
+> If you do not have Pterodactyl configured, registration and server provisioning will fail depending on how the integration is used.
 
 ## Maintainers
 
 | Maintainer |
 |-----------|
-| <a href="https://github.com/Masondeguy"><img src="https://github.com/Masondeguy.png?size=60" width="60" height="60" alt="Masondeguy" /><br /><sub><b>@Masondeguy</b></sub></a> |
+| <a href="https://github.com/austndoesui"><img src="https://github.com/austndoesui.png?size=60" width="60" height="60" alt="austndoesui" /><br /><sub><b>@austndoesui</b></sub></a> |
