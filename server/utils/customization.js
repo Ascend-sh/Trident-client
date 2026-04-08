@@ -25,7 +25,7 @@ export async function ensureCustomization() {
   try {
     await db.insert(customization).values({ 
       id: 1,
-      siteName: 'Torqen Cloud',
+      siteName: 'Trident Cloud',
       logoUrl: '/Logo-dark.png',
       brandColor: '#18181b',
       brandColorDark: '#ffffff',

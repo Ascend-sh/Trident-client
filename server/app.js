@@ -21,10 +21,10 @@ function fileFromDist(urlPath) {
 const app = new Elysia()
   .use(errorHandler)
   .use(appRouter)
-  .get('/health', () => ({ ok: true, name: 'Torqen', ts: Date.now() }))
+  .get('/health', () => ({ ok: true, name: 'Trident', ts: Date.now() }))
   .get('/', () => {
     if (hasDist) return Bun.file(distIndex);
-    return { message: 'Torqen API', docs: '/health' };
+    return { message: 'Trident API', docs: '/health' };
   })
   .get('*', ({ request, set }) => {
     if (!hasDist) {
@@ -51,4 +51,4 @@ const app = new Elysia()
   })
   .listen({ hostname: '0.0.0.0', port });
 
-console.log(`Torqen server listening on http://localhost:${app.server?.port}`);
+console.log(`Trident server listening on http://localhost:${app.server?.port}`);

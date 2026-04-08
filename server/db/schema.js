@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  has2fa: integer('has_2fa', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date())
@@ -142,7 +143,7 @@ export const payments = sqliteTable('payments', {
 
 export const customization = sqliteTable('customization', {
   id: integer('id').primaryKey(), // Always 1
-  siteName: text('site_name').notNull().default('Torqen Cloud'),
+  siteName: text('site_name').notNull().default('Trident Cloud'),
   logoUrl: text('logo_url').notNull().default('/Logo-dark.png'),
   brandColor: text('brand_color').notNull().default('#18181b'),
   brandColorDark: text('brand_color_dark').notNull().default('#ffffff'),

@@ -7,10 +7,10 @@ import { HTTP_STATUS, badGateway, badRequest, ok, unauthorized, unprocessable } 
 import { signJwt, verifyJwt } from '../utils/jwt.js';
 import { authLogger } from '../middlewares/logger.js';
 
-const COOKIE_NAME = 'torqen_session';
+const COOKIE_NAME = 'trident_session';
 
 function sessionTtlDays() {
-  const raw = process.env.TORQEN_SESSION_TTL_DAYS;
+  const raw = process.env.TRIDENT_SESSION_TTL_DAYS;
   const n = Number.parseFloat(String(raw ?? ''));
   return Number.isFinite(n) && n > 0 ? n : 2;
 }
@@ -18,7 +18,7 @@ function sessionTtlDays() {
 const SESSION_TTL_MS = Math.floor(1000 * 60 * 60 * 24 * sessionTtlDays());
 
 function jwtSecret() {
-  const secret = process.env.TORQEN_JWT_SECRET;
+  const secret = process.env.TRIDENT_JWT_SECRET;
   return secret ? String(secret) : null;
 }
 
@@ -36,7 +36,7 @@ function normalizeEmail(email) {
   return String(email ?? '').trim().toLowerCase();
 }
 
-async function createPterodactylUser({ username, email, password, firstName = 'signup', lastName = 'torqen' }) {
+async function createPterodactylUser({ username, email, password, firstName = 'signup', lastName = 'trident' }) {
   const cleanUsername = String(username ?? '').trim();
   const cleanEmail = normalizeEmail(email);
 
@@ -46,7 +46,7 @@ async function createPterodactylUser({ username, email, password, firstName = 's
     email: cleanEmail,
     username: cleanUsername,
     first_name: String(firstName ?? 'signup'),
-    last_name: String(lastName ?? 'torqen'),
+    last_name: String(lastName ?? 'trident'),
     language: 'en',
     root_admin: false
   };
@@ -64,11 +64,12 @@ function publicUser(row) {
     username: row.username,
     email: row.email,
     isAdmin: Boolean(row.isAdmin),
+    has2fa: Boolean(row.has2fa),
     createdAt: row.createdAt
   };
 }
 
-async function fetchPteroAdminByEmail(email) {
+async function fetchPteroUserInfo(email) {
   try {
     const res = await pteroApplicationRequest({
       path: '/api/application/users',
@@ -80,7 +81,11 @@ async function fetchPteroAdminByEmail(email) {
     if (!Array.isArray(data) || data.length === 0) return null;
 
     const attrs = data[0]?.attributes;
-    return attrs ? Boolean(attrs.root_admin) : null;
+    if (!attrs) return null;
+    return {
+      isAdmin: Boolean(attrs.root_admin),
+      has2fa: Boolean(attrs['2fa'])
+    };
   } catch {
     return null;
   }
@@ -180,7 +185,7 @@ export async function register({ username, email, password }) {
   const panelPassword = crypto.randomUUID();
 
   try {
-    await createPterodactylUser({ username: cleanUsername, email: cleanEmail, password: panelPassword, firstName: 'signup', lastName: 'torqen' });
+    await createPterodactylUser({ username: cleanUsername, email: cleanEmail, password: panelPassword, firstName: 'signup', lastName: 'trident' });
   } catch {
     return badGateway('pterodactyl_create_user_failed');
   }
@@ -234,10 +239,15 @@ export async function login({ email, password }) {
     return unauthorized('invalid_credentials');
   }
 
-  const panelIsAdmin = await fetchPteroAdminByEmail(user.email);
-  if (panelIsAdmin !== null && Boolean(user.isAdmin) !== panelIsAdmin) {
-    await db.update(users).set({ isAdmin: panelIsAdmin }).where(eq(users.id, user.id));
-    user.isAdmin = panelIsAdmin;
+  const pteroInfo = await fetchPteroUserInfo(user.email);
+  if (pteroInfo !== null) {
+    const updates = {};
+    if (Boolean(user.isAdmin) !== pteroInfo.isAdmin) updates.isAdmin = pteroInfo.isAdmin;
+    if (Boolean(user.has2fa) !== pteroInfo.has2fa) updates.has2fa = pteroInfo.has2fa;
+    if (Object.keys(updates).length) {
+      await db.update(users).set(updates).where(eq(users.id, user.id));
+      Object.assign(user, updates);
+    }
   }
 
   const session = await createSession(user.id);
@@ -269,10 +279,15 @@ export async function account({ authorization, cookieToken }) {
   }
 
   try {
-    const panelIsAdmin = await fetchPteroAdminByEmail(user.email);
-    if (panelIsAdmin !== null && panelIsAdmin !== user.isAdmin) {
-      await db.update(users).set({ isAdmin: panelIsAdmin }).where(eq(users.id, user.id));
-      user.isAdmin = panelIsAdmin;
+    const pteroInfo = await fetchPteroUserInfo(user.email);
+    if (pteroInfo !== null) {
+      const updates = {};
+      if (pteroInfo.isAdmin !== user.isAdmin) updates.isAdmin = pteroInfo.isAdmin;
+      if (pteroInfo.has2fa !== user.has2fa) updates.has2fa = pteroInfo.has2fa;
+      if (Object.keys(updates).length) {
+        await db.update(users).set(updates).where(eq(users.id, user.id));
+        Object.assign(user, updates);
+      }
     }
   } catch {
   }
