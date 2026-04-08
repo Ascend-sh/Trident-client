@@ -1,7 +1,8 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db } from '../db/client.js';
-import { eggs, locationNodes, locations, nestEggs, nests, servers, sessions, users } from '../db/schema.js';
+import { eggs, locationNodes, locations, nestEggs, nests, servers, sessions, users, wallets, payments } from '../db/schema.js';
+import { pteroApplicationRequest } from '../utils/importer.js';
 import { HTTP_STATUS, ok, unauthorized } from '../middlewares/error-handler.js';
 import { verifyJwt } from '../utils/jwt.js';
 import { getServerDefaults } from '../utils/configuration.js';
@@ -218,6 +219,26 @@ export async function deleteUserCli(userId) {
     return { ok: false, error: 'user_not_found' };
   }
 
+  // 1. Suspend the user's servers on Pterodactyl
+  const userServers = await db.select().from(servers).where(eq(servers.userId, id));
+  for (const s of userServers) {
+    if (s.pteroServerId) {
+      try {
+        await pteroApplicationRequest({
+          path: `/api/application/servers/${s.pteroServerId}/suspend`,
+          method: 'POST'
+        });
+        console.log(`Suspended server ${s.pteroServerId} on Pterodactyl`);
+      } catch (err) {
+        console.error(`Failed to suspend Pterodactyl server ${s.pteroServerId}:`, err?.message || err);
+      }
+    }
+  }
+
+  // 2. Cascade delete local SQLite records
+  await db.delete(servers).where(eq(servers.userId, id));
+  await db.delete(payments).where(eq(payments.userId, id));
+  await db.delete(wallets).where(eq(wallets.userId, id));
   await db.delete(sessions).where(eq(sessions.userId, id));
   await db.delete(users).where(eq(users.id, id));
 

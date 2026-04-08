@@ -374,7 +374,22 @@ export async function createServer({ userId, userEmail, name, description = '', 
     updatedAt: now
   };
 
-  const inserted = await db.insert(servers).values(row).returning();
+  let inserted;
+  try {
+    inserted = await db.insert(servers).values(row).returning();
+  } catch (err) {
+    serverLogger.error('server_local_insert_failed_rolling_back', { meta: { error: String(err?.message || err), pteroServerId } });
+    if (Number.isInteger(pteroServerId) && pteroServerId > 0) {
+      await pteroApplicationRequest({
+        path: `/api/application/servers/${pteroServerId}`,
+        method: 'DELETE'
+      }).catch(e => {
+        serverLogger.error('ptero_rollback_delete_failed', { meta: { error: String(e?.message || e), pteroServerId } });
+      });
+    }
+    throw new Error('server_creation_failed_local_db_error');
+  }
+
   const local = inserted[0] || null;
   serverLogger.info('server_created', { meta: { ok: Boolean(local), userId: uid, serverId: local?.id ?? null, pteroServerId, name: local?.name ?? serverName, locationId: locId, eggId: eId } });
   return { local, panel: created };
