@@ -1,44 +1,24 @@
-import { Play, Square, RotateCw, EthernetPort, ClockArrowUp, Fingerprint, Map, Cpu, MemoryStick, HardDrive, Network } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    Play,
+    Square,
+    RefreshCw,
+    Copy,
+    Check,
+    Loader2
+} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import ServerNav from "../../../components/navigation/server-nav";
+import CenterModal from "../../../components/modals/center-modal";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
 import "@xterm/xterm/css/xterm.css";
-import CenterModal from "../../../components/modals/center-modal";
-import { Line } from "react-chartjs-2";
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-} from 'chart.js';
+import { request } from "@/lib/request.js";
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-);
+const MAX_HISTORY = 30;
 
-const HISTORY_POINTS = 30;
-
-const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
-
-const appendHistory = (arr, value) => {
-    const next = [...arr, value];
-    if (next.length > HISTORY_POINTS) return next.slice(next.length - HISTORY_POINTS);
-    return next;
-};
+const API_BASE = "/api/v1/client";
 
 const sanitizeConsoleLine = (line) => {
     const s = String(line ?? "");
@@ -47,288 +27,226 @@ const sanitizeConsoleLine = (line) => {
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F\x7F]/g, "");
 };
 
-const formatUptime = (ms) => {
-    const total = Math.max(0, Number(ms) || 0);
-    const sec = Math.floor(total / 1000);
-    const days = Math.floor(sec / 86400);
-    const hours = Math.floor((sec % 86400) / 3600);
-    const minutes = Math.floor((sec % 3600) / 60);
-    const seconds = sec % 60;
-    const s = String(seconds).padStart(2, '0');
-    if (days > 0) return `${days}d ${hours}h ${minutes}m ${s}s`;
-    return `${hours}h ${minutes}m ${s}s`;
-};
-
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-        mode: 'index',
-        intersect: false
-    },
-    plugins: {
-        legend: {
-            display: false,
-        },
-        tooltip: {
-            enabled: true,
-            backgroundColor: '#121212',
-            borderRadius: '0.75rem',
-            padding: 6,
-            bodyColor: '#fff',
-            titleColor: '#fff',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
-            displayColors: true,
-            boxWidth: 6,
-            boxHeight: 6,
-            boxPadding: 3,
-            cornerRadius: 4,
-            titleFont: {
-                size: 10,
-                weight: '500'
-            },
-            bodyFont: {
-                size: 10,
-                weight: '400'
-            },
-            callbacks: {
-                title: function() {
-                    return '';
-                },
-                label: function(context) {
-                    const label = context.dataset.label || '';
-                    const value = Math.round(context.parsed.y * 10) / 10;
-                    return ` ${label}: ${value}`;
-                }
-            }
-        },
-    },
-    scales: {
-        x: {
-            display: false,
-        },
-        y: {
-            display: false,
-            min: 0,
-            max: 100,
-        },
-    },
-    elements: {
-        point: {
-            radius: 0,
-        },
-        line: {
-            tension: 0.4,
-        },
-    },
-};
-
-const createChartData = (data, color) => ({
-    labels: Array.from({ length: data.length }, (_, i) => i),
-    datasets: [
-        {
-            data: data,
-            borderColor: color,
-            backgroundColor: `${color}20`,
-            fill: true,
-            borderWidth: 2,
-        },
-    ],
-});
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-    const res = await fetch(`${API_BASE}${path}`, {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: "include"
-    });
-
-    const text = await res.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch {
-        data = text;
-    }
-
-    if (!res.ok) {
-        const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-        const error = new Error(message);
-        error.status = res.status;
-        error.data = data;
-        throw error;
-    }
-
-    return data;
-}
-
-function useServerIdFromParams() {
-    const params = useParams();
-    return useMemo(() => {
-        const id = Number(params?.id);
-        return Number.isFinite(id) && id > 0 ? id : null;
-    }, [params?.id]);
-}
-
 export default function ServerOverview() {
-    const serverId = useServerIdFromParams();
-    const wsRef = useRef(null);
-    const [wsReady, setWsReady] = useState(false);
-    const [wsAuthed, setWsAuthed] = useState(false);
+    const { identifier } = useParams();
+    const [status, setStatus] = useState("offline");
+    const [serverInfo, setServerInfo] = useState(null);
+    const [primaryAllocation, setPrimaryAllocation] = useState(null);
+    const [stats, setStats] = useState({
+        cpu: 0,
+        memory: 0,
+        memoryLimit: 1024,
+        disk: 0,
+        diskLimit: 2048,
+        uptime: 0,
+        networkRx: 0,
+        networkTx: 0
+    });
+    const [statsHistory, setStatsHistory] = useState([]);
+    const [copied, setCopied] = useState(false);
     const [command, setCommand] = useState("");
-
-    const terminalRef = useRef(null);
-    const xtermRef = useRef(null);
-    const fitAddonRef = useRef(null);
-    const [serverState, setServerState] = useState(null);
-    const lastStatusLoggedRef = useRef(null);
-
+    const [isConnecting, setIsConnecting] = useState(true);
+    const [powerLoading, setPowerLoading] = useState(null);
+    const [isInitializing, setIsInitializing] = useState(false);
     const [eulaModalOpen, setEulaModalOpen] = useState(false);
     const [acceptingEula, setAcceptingEula] = useState(false);
     const eulaTriggeredRef = useRef(false);
     const eulaCheckInFlightRef = useRef(false);
+    const terminalRef = useRef(null);
+    const xtermRef = useRef(null);
+    const fitAddonRef = useRef(null);
+    const wsRef = useRef(null);
 
-    const [serverInfo, setServerInfo] = useState(null);
-    const [primaryAllocation, setPrimaryAllocation] = useState(null);
-    const [locationInfo, setLocationInfo] = useState(null);
-    const [metricsLoaded, setMetricsLoaded] = useState(false);
-
-    const [metrics, setMetrics] = useState({
-        cpuPercent: 0,
-        memoryBytes: 0,
-        memoryLimitBytes: 0,
-        memoryPercent: 0,
-        diskBytes: 0,
-        networkRxBytes: 0,
-        networkTxBytes: 0,
-        uptime: 0
-    });
-
-    const [series, setSeries] = useState({
-        cpu: Array.from({ length: 10 }, () => 0),
-        ram: Array.from({ length: 10 }, () => 0),
-        disk: Array.from({ length: 10 }, () => 0),
-        networkRx: Array.from({ length: 10 }, () => 0),
-        networkTx: Array.from({ length: 10 }, () => 0)
-    });
     useEffect(() => {
         if (!terminalRef.current) return;
 
-        if (xtermRef.current) {
-            try {
-                xtermRef.current.dispose();
-            } catch {
-            }
-            xtermRef.current = null;
-            fitAddonRef.current = null;
-        }
-
-        terminalRef.current.innerHTML = "";
-
         const term = new Terminal({
-            allowTransparency: true,
-            rendererType: 'canvas',
-            fontFamily: "Consolas, 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Monaco, monospace",
-            fontSize: 14,
-            fontWeight: '400',
-            lineHeight: 1.2,
-            letterSpacing: 0,
             cursorBlink: false,
             disableStdin: true,
-            convertEol: true,
-            scrollback: 2000,
+            allowTransparency: true,
+            fontSize: 14,
+            fontFamily: "Consolas, 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Monaco, monospace",
             theme: {
-                background: "rgba(0,0,0,0)",
-                foreground: "rgba(255,255,255,0.75)",
-                cursor: "rgba(173,229,218,1)",
-                selectionBackground: "rgba(173,229,218,0.2)",
+                background: getComputedStyle(document.documentElement).getPropertyValue('--surface-light').trim() || "#18181b",
+                foreground: "rgba(255, 255, 255, 0.8)",
+                selectionBackground: "rgba(255, 255, 255, 0.1)",
             },
         });
 
         const fitAddon = new FitAddon();
-        const webLinksAddon = new WebLinksAddon();
         term.loadAddon(fitAddon);
-        term.loadAddon(webLinksAddon);
-
         term.open(terminalRef.current);
 
         setTimeout(() => {
             try {
                 fitAddon.fit();
-                term.refresh(0, term.rows - 1);
-            } catch {
+            } catch (err) {
+                console.error("Fit failed:", err);
             }
         }, 100);
 
         xtermRef.current = term;
         fitAddonRef.current = fitAddon;
 
-        const resizeObserver = new ResizeObserver(() => {
+        const handleResize = () => {
             try {
                 fitAddon.fit();
-            } catch {
-            }
-        });
-
-        resizeObserver.observe(terminalRef.current);
+            } catch {}
+        };
+        window.addEventListener('resize', handleResize);
 
         return () => {
-            resizeObserver.disconnect();
-            try {
-                term.dispose();
-            } catch {
-            }
-            xtermRef.current = null;
-            fitAddonRef.current = null;
+            window.removeEventListener('resize', handleResize);
+            term.dispose();
         };
     }, []);
 
+    const checkEulaFile = async () => {
+        if (!serverInfo?.id || eulaCheckInFlightRef.current) return;
+        eulaCheckInFlightRef.current = true;
+        try {
+            const res = await fetch(`${API_BASE}/servers/${serverInfo.id}/files/contents?file=${encodeURIComponent('/eula.txt')}`, {
+                method: "GET",
+                credentials: "include"
+            });
+            if (!res.ok) {
+                eulaTriggeredRef.current = false;
+                return;
+            }
+            const content = (await res.text()) || '';
+            if (!content.toLowerCase().includes('eula=true')) {
+                eulaTriggeredRef.current = false;
+            }
+        } catch {
+            eulaTriggeredRef.current = false;
+        } finally {
+            eulaCheckInFlightRef.current = false;
+        }
+    };
+
+    const acceptEula = async () => {
+        if (!serverInfo?.id || acceptingEula) return;
+        setAcceptingEula(true);
+        eulaCheckInFlightRef.current = true;
+        try {
+            await fetch(`${API_BASE}/servers/${serverInfo.id}/files/write?file=${encodeURIComponent('/eula.txt')}`, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: "eula=true",
+                credentials: "include"
+            });
+            setEulaModalOpen(false);
+            eulaTriggeredRef.current = false;
+            eulaCheckInFlightRef.current = false;
+        } catch (err) {
+            console.error("Failed to accept EULA:", err);
+            eulaTriggeredRef.current = false;
+            eulaCheckInFlightRef.current = false;
+        } finally {
+            setAcceptingEula(false);
+        }
+    };
+
+    const formatUptime = (ms) => {
+        const total = Math.max(0, Number(ms) || 0);
+        const sec = Math.floor(total / 1000);
+        const days = Math.floor(sec / 86400);
+        const hours = Math.floor((sec % 86400) / 3600);
+        const minutes = Math.floor((sec % 3600) / 60);
+        const seconds = sec % 60;
+        const s = String(seconds).padStart(2, '0');
+        if (days > 0) return `${days}d ${hours}h ${minutes}m ${s}s`;
+        return `${hours}h ${minutes}m ${s}s`;
+    };
+
+    const formatMB = (mb) => {
+        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+        return `${Math.round(mb)} MB`;
+    };
+
+    const formatBytes = (bytes) => {
+        if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(2)} GB`;
+        if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+        if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${bytes} B`;
+    };
+
+    const handleSendCommand = (e) => {
+        if (e.key === 'Enter' && command.trim() && wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ event: "send command", args: [command.trim()] }));
+            setCommand("");
+        }
+    };
+
+    const handlePower = async (action) => {
+        if (!serverInfo?.id || powerLoading) return;
+        setPowerLoading(action);
+        try {
+            await request(`/servers/${serverInfo.id}/power`, {
+                method: "POST",
+                body: { state: action }
+            });
+        } catch (err) {
+            console.error("Power action failed:", err);
+        } finally {
+            setPowerLoading(null);
+        }
+    };
+
     useEffect(() => {
-        if (!serverId) return;
+        if (!identifier) return;
 
         request('/servers')
             .then((res) => {
-                const found = (res?.servers || []).find((s) => s.id === serverId);
-                setServerInfo(found || null);
+                const found = (res?.servers || []).find((s) =>
+                    String(s.identifier || '').toLowerCase() === String(identifier || '').toLowerCase()
+                );
+                if (found) {
+                    setServerInfo(found);
 
-                const locationId = Number(found?.location?.id);
-                if (!Number.isFinite(locationId) || locationId <= 0) {
-                    setLocationInfo(null);
-                    return;
+                    request(`/servers/${found.id}/network/allocations`)
+                        .then((res) => {
+                            setPrimaryAllocation(res?.primary || null);
+                            setIsInitializing(false);
+                        })
+                        .catch((err) => {
+                            if (err?.status === 409) {
+                                setIsInitializing(true);
+                            }
+                            setPrimaryAllocation(null);
+                        });
                 }
-
-                request('/locations')
-                    .then((locRes) => {
-                        const loc = (locRes?.locations || []).find((l) => l.id === locationId);
-                        setLocationInfo(loc || null);
-                    })
-                    .catch(() => setLocationInfo(null));
             })
-            .catch(() => {
+            .catch((err) => {
+                console.error("Failed to fetch server info:", err);
                 setServerInfo(null);
-                setLocationInfo(null);
             });
-
-        request(`/servers/${serverId}/network/allocations`)
-            .then((res) => {
-                setPrimaryAllocation(res?.primary || null);
-            })
-            .catch(() => setPrimaryAllocation(null));
-    }, [serverId]);
+    }, [identifier]);
 
     useEffect(() => {
-        if (!serverId) return;
+        if (!isInitializing || !serverInfo?.id) return;
+        const interval = setInterval(async () => {
+            try {
+                const res = await request(`/servers/${serverInfo.id}/network/allocations`);
+                setPrimaryAllocation(res?.primary || null);
+                setIsInitializing(false);
+            } catch (err) {
+                if (err?.status !== 409) setIsInitializing(false);
+            }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [isInitializing, serverInfo?.id]);
+
+    useEffect(() => {
+        if (!serverInfo?.id) return;
 
         let ws;
         let cancelled = false;
+        setIsConnecting(true);
 
         const connect = async () => {
             try {
-                const creds = await request(`/servers/${serverId}/websocket`);
+                const creds = await request(`/servers/${serverInfo.id}/websocket`);
                 if (cancelled) return;
                 if (!creds?.socket || !creds?.token) return;
 
@@ -337,7 +255,6 @@ export default function ServerOverview() {
 
                 ws.onopen = () => {
                     if (cancelled) return;
-                    setWsReady(true);
                     ws.send(JSON.stringify({ event: "auth", args: [creds.token] }));
                 };
 
@@ -353,32 +270,42 @@ export default function ServerOverview() {
                     const args = Array.isArray(msg?.args) ? msg.args : [];
 
                     if (evt === "auth success") {
-                        setWsAuthed(true);
+                        setIsConnecting(false);
                         eulaTriggeredRef.current = false;
                         eulaCheckInFlightRef.current = false;
-                        ws.send(JSON.stringify({ event: "send logs", args: [] }));
-                        ws.send(JSON.stringify({ event: "send stats", args: [] }));
-                        
+
+                        const safeSend = (event) => {
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ event, args: [] }));
+                            }
+                        };
+
+                        safeSend("send logs");
+                        safeSend("send stats");
+
+                        setTimeout(() => safeSend("send stats"), 750);
+                        setTimeout(() => safeSend("send stats"), 2000);
+
                         checkEulaFile();
+
+                        if (xtermRef.current) {
+                            xtermRef.current.writeln('\x1b[33m[Torqen]\x1b[0m Connection established successfully.');
+                        }
                         return;
                     }
 
                     if (evt === "console output") {
                         const line = typeof args[0] === "string" ? args[0] : "";
-                        if (!line) return;
-                        const cleaned = sanitizeConsoleLine(line);
-                        if (!cleaned) return;
-
-                        try {
-                            xtermRef.current?.writeln(cleaned);
-                        } catch {
+                        if (line && xtermRef.current) {
+                            const cleaned = sanitizeConsoleLine(line);
+                            if (cleaned) {
+                                xtermRef.current.writeln(cleaned);
+                                if (!eulaTriggeredRef.current && !eulaCheckInFlightRef.current && cleaned.toLowerCase().includes('eula')) {
+                                    eulaTriggeredRef.current = true;
+                                    setEulaModalOpen(true);
+                                }
+                            }
                         }
-
-                        if (!eulaTriggeredRef.current && !eulaCheckInFlightRef.current && cleaned.toLowerCase().includes('eula')) {
-                            eulaTriggeredRef.current = true;
-                            setEulaModalOpen(true);
-                        }
-
                         return;
                     }
 
@@ -386,14 +313,9 @@ export default function ServerOverview() {
                         const s = typeof args[0] === "string" ? args[0] : null;
                         if (s) {
                             const normalized = s.toLowerCase();
-                            setServerState(normalized);
-
-                            if (lastStatusLoggedRef.current !== normalized) {
-                                lastStatusLoggedRef.current = normalized;
-                                try {
-                                    xtermRef.current?.writeln(`\x1b[33m[Torqen]\x1b[0m Server marked as ${normalized}...`);
-                                } catch {
-                                }
+                            setStatus(normalized);
+                            if (xtermRef.current) {
+                                xtermRef.current.writeln(`\r\x1b[33m[Torqen]\x1b[0m Instance marked as \x1b[1m${normalized}\x1b[0m.`);
                             }
                         }
                         return;
@@ -401,76 +323,55 @@ export default function ServerOverview() {
 
                     if (evt === "stats") {
                         const raw = args[0];
-                        let stats;
+                        let statsData;
                         try {
-                            stats = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                            statsData = typeof raw === 'string' ? JSON.parse(raw) : raw;
                         } catch {
                             return;
                         }
 
-                        const s = typeof stats?.state === 'string' ? stats.state : null;
-                        if (s) setServerState(s);
+                        if (statsData?.state) setStatus(statsData.state.toLowerCase());
 
-                        const cpuPercent = Number(stats?.cpu_absolute || 0);
-                        const memoryBytes = Number(stats?.memory_bytes || 0);
-                        const memoryLimitBytes = Number(stats?.memory_limit_bytes || 0);
-                        const memoryPercent = memoryLimitBytes > 0 ? clamp((memoryBytes / memoryLimitBytes) * 100, 0, 100) : 0;
-                        const diskBytes = Number(stats?.disk_bytes || 0);
-                        const rxBytes = Number(stats?.network?.rx_bytes || 0);
-                        const txBytes = Number(stats?.network?.tx_bytes || 0);
-                        const uptime = Number(stats?.uptime || 0);
+                        const cpuVal = Number(statsData?.cpu_absolute || 0);
+                        const memVal = Number(statsData?.memory_bytes || 0) / (1024 * 1024);
+                        const memLimitVal = Number(statsData?.memory_limit_bytes || 0) / (1024 * 1024);
+                        const diskVal = Number(statsData?.disk_bytes || 0) / (1024 * 1024);
+                        const rxVal = Number(statsData?.network?.rx_bytes || 0);
+                        const txVal = Number(statsData?.network?.tx_bytes || 0);
 
-                        setMetrics({
-                            cpuPercent,
-                            memoryBytes,
-                            memoryLimitBytes,
-                            memoryPercent,
-                            diskBytes,
-                            networkRxBytes: rxBytes,
-                            networkTxBytes: txBytes,
-                            uptime
-                        });
-                        
-                        setMetricsLoaded(true);
-
-                        const rxKbps = rxBytes / 1024;
-                        const txKbps = txBytes / 1024;
-
-                        setSeries(prev => ({
-                            cpu: appendHistory(prev.cpu, clamp(cpuPercent, 0, 100)),
-                            ram: appendHistory(prev.ram, clamp(memoryPercent, 0, 100)),
-                            disk: appendHistory(prev.disk, clamp((diskBytes / (1024 * 1024)) % 100, 0, 100)),
-                            networkRx: appendHistory(prev.networkRx, clamp(rxKbps, 0, 100)),
-                            networkTx: appendHistory(prev.networkTx, clamp(txKbps, 0, 100))
+                        setStats(prev => ({
+                            ...prev,
+                            cpu: cpuVal,
+                            memory: memVal,
+                            memoryLimit: memLimitVal,
+                            disk: diskVal,
+                            uptime: Number(statsData?.uptime || 0),
+                            networkRx: rxVal,
+                            networkTx: txVal
                         }));
 
-                        return;
+                        setStatsHistory(prev => {
+                            const next = [...prev, {
+                                cpu: cpuVal,
+                                mem: memLimitVal > 0 ? (memVal / memLimitVal) * 100 : 0,
+                                disk: diskVal,
+                                netRx: rxVal,
+                                netTx: txVal
+                            }];
+                            return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
+                        });
                     }
                 };
 
                 ws.onclose = () => {
-                    if (cancelled) return;
-                    setWsReady(false);
-                    setWsAuthed(false);
-                    eulaTriggeredRef.current = false;
-                    eulaCheckInFlightRef.current = false;
-                    try {
-                        xtermRef.current?.writeln('\x1b[33m[Torqen]\x1b[0m Console disconnected');
-                    } catch {
-                    }
+                    if (!cancelled) setIsConnecting(true);
                 };
-
-                ws.onerror = () => {
-                    if (cancelled) return;
-                    setWsReady(false);
-                    setWsAuthed(false);
-                    eulaTriggeredRef.current = false;
-                    eulaCheckInFlightRef.current = false;
-                };
-            } catch {
-                if (cancelled) return;
-                setWsReady(false);
-                setWsAuthed(false);
+            } catch (err) {
+                if (err?.status === 409) {
+                    setIsInitializing(true);
+                    return;
+                }
+                console.error("Websocket connection failed:", err);
             }
         };
 
@@ -478,17 +379,18 @@ export default function ServerOverview() {
 
         return () => {
             cancelled = true;
-            try {
-                ws?.close();
-            } catch {
-            }
+            if (ws) ws.close();
             wsRef.current = null;
         };
-    }, [serverId]);
+    }, [serverInfo?.id]);
 
-    const [powerActionLoading, setPowerActionLoading] = useState(null);
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-    const normalizedState = (serverState || '').toLowerCase();
+    const normalizedState = (status || '').toLowerCase();
     const isOnline = normalizedState === 'running' || normalizedState === 'online';
     const isOffline = !normalizedState || normalizedState === 'offline' || normalizedState === 'stopped';
     const isStarting = normalizedState === 'starting';
@@ -499,351 +401,253 @@ export default function ServerOverview() {
     const canRestart = isOnline && !isStarting && !isStopping && !isInstalling;
     const canStop = (isOnline || isStarting) && !isStopping && !isInstalling;
 
-    const canSendCommand = wsReady && wsAuthed;
+    const statusColor = isOnline ? 'green' : isStarting ? 'yellow' : 'red';
+    const memPercent = stats.memoryLimit > 0 ? Math.min(100, (stats.memory / stats.memoryLimit) * 100) : 0;
 
-    const setPower = async (state) => {
-        if (!serverId) return;
-        if (powerActionLoading) return;
-        setPowerActionLoading(state);
-        try {
-            await request(`/servers/${serverId}/power`, {
-                method: "POST",
-                body: { state }
-            });
-        } finally {
-            setPowerActionLoading(null);
-        }
-    };
-
-    const sendCommand = () => { 
-        const value = command.trim();
-        if (!value) return;
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-        wsRef.current.send(JSON.stringify({ event: "send command", args: [value] }));
-        setCommand("");
-    };
-
-    const checkEulaFile = async () => {
-        if (!serverId || eulaCheckInFlightRef.current) return;
-        eulaCheckInFlightRef.current = true;
-
-        try {
-            const res = await fetch(`${API_BASE}/servers/${serverId}/files/contents?file=${encodeURIComponent('/eula.txt')}`, {
-                method: "GET",
-                credentials: "include"
-            });
-
-            if (!res.ok) {
-                eulaTriggeredRef.current = false;
-                return;
-            }
-
-            const content = (await res.text()) || '';
-            const hasAcceptedEula = content.toLowerCase().includes('eula=true');
-
-            if (!hasAcceptedEula) {
-                eulaTriggeredRef.current = false;
-            }
-        } catch {
-            eulaTriggeredRef.current = false;
-        } finally {
-            eulaCheckInFlightRef.current = false;
-        }
-    };
-
-    const acceptEula = async () => {
-        if (!serverId || acceptingEula) return;
-        setAcceptingEula(true);
-        eulaCheckInFlightRef.current = true;
-        try {
-            const res = await fetch(`${API_BASE}/servers/${serverId}/files/write?file=${encodeURIComponent('/eula.txt')}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: "eula=true",
-                credentials: "include"
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Failed to write EULA file');
-            }
-
-            setEulaModalOpen(false);
-            eulaTriggeredRef.current = false;
-            eulaCheckInFlightRef.current = false;
-        } catch (err) {
-            try {
-                xtermRef.current?.writeln(`\x1b[31m[Torqen]\x1b[0m Failed to accept EULA: ${err.message}`);
-            } catch {}
-            eulaTriggeredRef.current = false;
-            eulaCheckInFlightRef.current = false;
-        } finally {
-            setAcceptingEula(false);
-        }
-    };
+    if (isInitializing) {
+        return (
+            <div className="bg-surface min-h-screen flex flex-col items-center justify-center px-16">
+                <div className="flex flex-col items-center max-w-[280px]">
+                    <div className="w-12 h-12 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden mb-6">
+                        <img
+                            src="/defaulticon.webp"
+                            alt="Server"
+                            className="w-full h-full object-cover opacity-80"
+                        />
+                    </div>
+                    <div className="w-5 h-5 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin mb-5" />
+                    <p className="text-[13px] font-bold text-foreground tracking-tight mb-1.5">Initializing Server</p>
+                    <p className="text-[11px] font-bold text-muted-foreground text-center leading-relaxed">
+                        Your server is being installed. This may take a few minutes. This page will update automatically.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="p-8">
-            <div className="mb-8">
-                <div className="flex items-center justify-between">
+        <div className="bg-surface px-10 py-10">
+            <div className="flex items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-lg bg-surface-light border border-surface-lighter flex items-center justify-center overflow-hidden shrink-0">
+                        <img
+                            src="/defaulticon.webp"
+                            alt="Server"
+                            className="w-full h-full object-cover opacity-80"
+                        />
+                    </div>
                     <div>
-                        <h1 className="text-xl font-semibold text-white mb-1">{serverInfo?.name || 'Server'}</h1>
-                        <p className="text-sm text-white/50">{serverInfo?.description || '-'}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={() => setPower('start')}
-                            disabled={!serverId || powerActionLoading || !canStart || isStarting}
-                            className="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                            style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
-                        >
-                            {powerActionLoading === 'start' || isStarting ? (
-                                <>
-                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Starting...
-                                </>
-                            ) : (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                                        <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                                    </svg>
-                                    Start
-                                </>
-                            )}
-                        </button>
-                        <button 
-                            onClick={() => setPower('restart')}
-                            disabled={!serverId || powerActionLoading || !canRestart || isStopping}
-                            className="px-3 py-1.5 text-xs font-medium text-white rounded-md border border-white/10 hover:bg-white/5 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            {powerActionLoading === 'restart' ? (
-                                <>
-                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Restarting...
-                                </>
-                            ) : (
-                                <>
-                                    <RotateCw size={14} />
-                                    Restart
-                                </>
-                            )}
-                        </button>
-                        <button 
-                            onClick={() => setPower('stop')}
-                            disabled={!serverId || powerActionLoading || !canStop || isStopping}
-                            className="px-3 py-1.5 text-xs font-medium text-white rounded-md border border-white/10 hover:bg-white/5 transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            {powerActionLoading === 'stop' || isStopping ? (
-                                <>
-                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Stopping...
-                                </>
-                            ) : (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                                        <path fillRule="evenodd" d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z" clipRule="evenodd" />
-                                    </svg>
-                                    Stop
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                {!metricsLoaded ? (
-                    <>
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col animate-pulse">
-                                <div className="h-4 w-32 bg-white/10 rounded mb-1" />
-                                <div className="h-3 w-20 bg-white/10 rounded" />
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">{serverInfo?.name || 'Loading...'}</h1>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full bg-${statusColor}-500`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-widest text-${statusColor}-500`}>{status}</span>
                             </div>
-                        ))}
-                    </>
-                ) : (
-                    <>
-                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
-                            <p className="text-sm font-medium text-white font-mono mb-0.5">
-                                {primaryAllocation
-                                    ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
-                                    : '-'
-                                }
-                            </p>
-                            <p className="text-[10px] text-white/60">Server IP & Port</p>
                         </div>
-
-                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
-                            <p className="text-sm font-medium text-white mb-0.5">{(isOffline || !wsReady || !wsAuthed) ? 'Offline' : formatUptime(metrics.uptime)}</p>
-                            <p className="text-[10px] text-white/60">Uptime</p>
-                        </div>
-
-                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
-                            <p className="text-sm font-medium text-white font-mono mb-0.5">{serverInfo?.identifier || '-'}</p>
-                            <p className="text-[10px] text-white/60">Server UID</p>
-                        </div>
-
-                        <div className="rounded-lg border border-white/10 bg-black/20 p-3 flex flex-col">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                {locationInfo?.shortCode && (
-                                    <img
-                                        src={`https://flagsapi.com/${locationInfo.shortCode}/flat/64.png`}
-                                        alt={locationInfo.shortCode}
-                                        className="w-5 h-4 rounded object-cover"
-                                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                                    />
+                        <div className="flex items-center gap-2.5 mt-1.5">
+                            {serverInfo?.location && (
+                                <>
+                                    <div className="flex items-center gap-1.5">
+                                        {serverInfo.location.shortCode && (
+                                            <img
+                                                src={`https://flagsapi.com/${serverInfo.location.shortCode}/flat/64.png`}
+                                                alt={serverInfo.location.shortCode}
+                                                className="w-4 h-3 rounded-sm object-cover opacity-80"
+                                            />
+                                        )}
+                                        <span className="text-[13px] font-bold text-muted-foreground">{serverInfo.location.description || serverInfo.location.shortCode}</span>
+                                    </div>
+                                    <span className="text-muted-foreground/20">·</span>
+                                </>
+                            )}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[13px] font-bold text-muted-foreground font-mono">
+                                    {primaryAllocation
+                                        ? `${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`
+                                        : 'Assigning...'}
+                                </span>
+                                {primaryAllocation && (
+                                    <button
+                                        onClick={() => handleCopy(`${primaryAllocation.ip_alias || primaryAllocation.ip}:${primaryAllocation.port}`)}
+                                        className="text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+                                    >
+                                        {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                                    </button>
                                 )}
-                                <p className="text-sm font-medium text-white">{locationInfo?.description || '-'}</p>
                             </div>
-                            <p className="text-[10px] text-white/60">Location</p>
+                            {isOnline && (
+                                <>
+                                    <span className="text-muted-foreground/20">·</span>
+                                    <span className="text-[13px] font-bold text-muted-foreground">{formatUptime(stats.uptime)}</span>
+                                </>
+                            )}
                         </div>
-                    </>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                {!metricsLoaded ? (
-                    <>
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="p-3 rounded-lg border border-white/10 bg-black/20 animate-pulse">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="h-3 w-20 bg-white/10 rounded" />
-                                    <div className="h-4 w-12 bg-white/10 rounded" />
-                                </div>
-                                <div className="h-20 bg-white/10 rounded" />
-                            </div>
-                        ))}
-                    </>
-                ) : (
-                    <>
-                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
-                            <div className="flex items-start justify-between mb-3 h-9">
-                                <p className="text-[10px] text-white/60 uppercase tracking-wider">CPU Usage</p>
-                                <div className="h-9 flex items-center">
-                                    <p className="text-sm font-medium text-white">{Math.round(metrics.cpuPercent)}%</p>
-                                </div>
-                            </div>
-                            <div className="h-20">
-                                <Line data={createChartData(series.cpu, '#60A5FA')} options={chartOptions} />
-                            </div>
-                        </div>
-
-                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
-                            <div className="flex items-start justify-between mb-3 h-9">
-                                <p className="text-[10px] text-white/60 uppercase tracking-wider">RAM Usage</p>
-                                <div className="h-9 flex items-center">
-                                    <p className="text-sm font-medium text-white">{Math.round(metrics.memoryBytes / (1024 * 1024))} MB</p>
-                                </div>
-                            </div>
-                            <div className="h-20">
-                                <Line data={createChartData(series.ram, '#A78BFA')} options={chartOptions} />
-                            </div>
-                        </div>
-
-                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
-                            <div className="flex items-start justify-between mb-3 h-9">
-                                <p className="text-[10px] text-white/60 uppercase tracking-wider">Disk Usage</p>
-                                <div className="h-9 flex items-center">
-                                    <p className="text-sm font-medium text-white">{Math.round(metrics.diskBytes / (1024 * 1024))} MB</p>
-                                </div>
-                            </div>
-                            <div className="h-20">
-                                <Line data={createChartData(series.disk, '#FB923C')} options={chartOptions} />
-                            </div>
-                        </div>
-
-                        <div className="p-3 rounded-lg border border-white/10 bg-black/20">
-                            <div className="flex items-start justify-between mb-3 h-9">
-                                <p className="text-[10px] text-white/60 uppercase tracking-wider">Network</p>
-                                <div className="h-9 flex flex-col justify-center items-end leading-tight">
-                                    <p className="text-[11px] font-medium text-white">Download {Math.round(metrics.networkRxBytes / 1024)} KB/s</p>
-                                    <p className="text-[11px] font-medium text-white/70">Upload {Math.round(metrics.networkTxBytes / 1024)} KB/s</p>
-                                </div>
-                            </div>
-                            <div className="h-20">
-                                <Line
-                                    data={{
-                                        labels: Array.from({ length: series.networkRx.length }, (_, i) => i),
-                                        datasets: [
-                                            {
-                                                label: 'Download',
-                                                data: series.networkRx,
-                                                borderColor: '#4ADE80',
-                                                backgroundColor: '#4ADE8020',
-                                                fill: true,
-                                                borderWidth: 2
-                                            },
-                                            {
-                                                label: 'Upload',
-                                                data: series.networkTx,
-                                                borderColor: '#60A5FA',
-                                                backgroundColor: '#60A5FA20',
-                                                fill: true,
-                                                borderWidth: 2
-                                            }
-                                        ]
-                                    }}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
-
-            <div className="rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent overflow-hidden">
-                <div className="p-4 bg-black/20 h-96">
-                    <div 
-                        ref={terminalRef} 
-                        className="w-full h-full [&_.xterm]:bg-transparent [&_.xterm-viewport]:bg-transparent [&_.xterm-screen]:bg-transparent"
-                    />
-                    {!serverId && (
-                        <div className="text-xs text-white/50 font-mono mt-2">[Server] No server selected.</div>
-                    )}
-                    {serverId && !wsReady && (
-                        <div className="text-xs text-white/50 font-mono mt-2">[Server] Connecting...</div>
-                    )}
-                    {serverId && wsReady && !wsAuthed && (
-                        <div className="text-xs text-white/50 font-mono mt-2">[Server] Authorizing...</div>
-                    )}
+                    </div>
                 </div>
-                <div className="p-3 border-t border-white/10">
+                <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => handlePower('start')}
+                        disabled={powerLoading || !canStart || isStarting}
+                        className={`h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed ${
+                            powerLoading === 'start' || isStarting
+                                ? 'border-yellow-500/20 text-yellow-500'
+                                : 'text-muted-foreground hover:text-foreground hover:border-foreground/20'
+                        }`}
+                    >
+                        {powerLoading === 'start' || isStarting ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
+                                Starting
+                            </>
+                        ) : (
+                            <>
+                                <Play size={11} className="fill-current" />
+                                Start
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => handlePower('restart')}
+                        disabled={powerLoading || !canRestart || isStopping}
+                        className="h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                    >
+                        {powerLoading === 'restart' ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-surface-lighter border-t-muted-foreground rounded-full animate-spin" />
+                                Restarting
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw size={11} />
+                                Restart
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => handlePower('stop')}
+                        disabled={powerLoading || !canStop || isStopping}
+                        className={`h-8 px-3.5 border border-surface-lighter rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed ${
+                            powerLoading === 'stop' || isStopping
+                                ? 'border-red-500/20 text-red-500'
+                                : 'text-muted-foreground hover:text-foreground hover:border-foreground/20'
+                        }`}
+                    >
+                        {powerLoading === 'stop' || isStopping ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+                                Stopping
+                            </>
+                        ) : (
+                            <>
+                                <Square size={11} className="fill-current" />
+                                Stop
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            <ServerNav />
+
+            <div className="border border-surface-lighter rounded-lg overflow-hidden">
+                <div
+                    ref={terminalRef}
+                    className="h-[420px] p-4 bg-surface-light overflow-hidden xterm"
+                />
+                <div className="px-4 py-3 bg-surface-light border-t border-surface-lighter">
                     <input
                         type="text"
-                        placeholder={canSendCommand ? "Type command..." : "Console not ready"}
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') sendCommand();
-                        }}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-black/20 text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors duration-200 font-mono"
-                        disabled={!canSendCommand}
+                        onKeyDown={handleSendCommand}
+                        placeholder="Type a command..."
+                        className="w-full bg-transparent border-none text-[12px] font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none font-mono"
                     />
                 </div>
+            </div>
+
+            <div className="grid grid-cols-4 border border-surface-lighter rounded-lg overflow-hidden mt-6">
+                {[
+                    { label: "CPU", value: `${Math.round(stats.cpu)}%`, dataKey: "cpu" },
+                    { label: "Memory", value: formatMB(stats.memory), sub: `/ ${formatMB(stats.memoryLimit)}`, dataKey: "mem" },
+                    { label: "Disk", value: formatMB(stats.disk), dataKey: "disk" },
+                    { label: "Network", value: `${formatBytes(stats.networkRx)} ↓`, sub: `${formatBytes(stats.networkTx)} ↑`, dataKey: "network" },
+                ].map((stat, i) => (
+                    <div key={i} className={`relative px-5 pt-4 pb-0 ${i > 0 ? 'border-l border-surface-lighter' : ''} overflow-hidden`}>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
+                        <div className="flex items-baseline gap-1.5 mb-4">
+                            <p className="text-[18px] font-bold text-foreground tracking-tighter leading-none">{stat.value}</p>
+                            {stat.sub && <span className="text-[11px] font-bold text-muted-foreground/40">{stat.sub}</span>}
+                        </div>
+                        <div className="h-[48px] -mx-5 -mb-px min-w-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={statsHistory} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id={`grad-${stat.dataKey}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                                        </linearGradient>
+                                        {stat.dataKey === "network" && (
+                                            <linearGradient id="grad-netTx" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.06} />
+                                                <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                                            </linearGradient>
+                                        )}
+                                    </defs>
+                                    {stat.dataKey === "network" ? (
+                                        <>
+                                            <Area
+                                                type="monotone"
+                                                dataKey="netRx"
+                                                stroke="var(--color-brand)"
+                                                strokeWidth={1.5}
+                                                fill={`url(#grad-${stat.dataKey})`}
+                                                isAnimationActive={false}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="netTx"
+                                                stroke="var(--color-brand)"
+                                                strokeWidth={1}
+                                                strokeOpacity={0.4}
+                                                fill="url(#grad-netTx)"
+                                                isAnimationActive={false}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Area
+                                            type="monotone"
+                                            dataKey={stat.dataKey}
+                                            stroke="var(--color-brand)"
+                                            strokeWidth={1.5}
+                                            fill={`url(#grad-${stat.dataKey})`}
+                                            isAnimationActive={false}
+                                        />
+                                    )}
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             <CenterModal isOpen={eulaModalOpen} onClose={() => !acceptingEula && setEulaModalOpen(false)}>
-                <div className="p-6 pb-4">
-                    <h2 className="text-lg font-semibold text-white mb-4">Minecraft EULA Agreement</h2>
-                    <p className="text-sm text-white/70 mb-6">
-                        Your server has detected that the Minecraft EULA has not been accepted. 
-                        By clicking "Accept EULA", you agree to Mojang's End User License Agreement.
+                <div className="p-6">
+                    <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">EULA Required</h2>
+                    <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-4">
+                        This server requires you to accept the Minecraft End User License Agreement before starting.
                     </p>
-                    <p className="text-xs text-white/50 mb-6">
-                        Read the full EULA at: <a href="https://account.mojang.com/documents/minecraft_eula" target="_blank" rel="noopener noreferrer" className="text-[#E0FE58] hover:underline">https://account.mojang.com/documents/minecraft_eula</a>
-                    </p>
-                    <div className="flex gap-2 justify-end">
+
+                    <a
+                        href="https://account.mojang.com/documents/minecraft_eula"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-brand hover:text-brand/80 uppercase tracking-widest transition-colors mb-5"
+                    >
+                        View Full Agreement &#8599;
+                    </a>
+
+                    <div className="flex items-center justify-end gap-2">
                         <button
                             onClick={() => {
                                 setEulaModalOpen(false);
@@ -851,26 +655,22 @@ export default function ServerOverview() {
                                 eulaCheckInFlightRef.current = false;
                             }}
                             disabled={acceptingEula}
-                            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white rounded-lg border border-white/10 hover:border-white/20 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40"
                         >
-                            Cancel
+                            Decline
                         </button>
                         <button
                             onClick={acceptEula}
                             disabled={acceptingEula}
-                            className="px-3 py-1.5 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                            style={{ backgroundColor: "#E0FE58" }}
+                            className="h-8 px-5 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-pointer disabled:opacity-40"
                         >
                             {acceptingEula ? (
                                 <>
-                                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
                                     Accepting...
                                 </>
                             ) : (
-                                'Accept EULA'
+                                'Accept'
                             )}
                         </button>
                     </div>
@@ -879,5 +679,3 @@ export default function ServerOverview() {
         </div>
     );
 }
-
-

@@ -1,43 +1,16 @@
-import { Folder, File, Ellipsis } from "lucide-react";
+import { Folder, File, Ellipsis, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 import EditorModal from "../../../components/modals/editor-modal.jsx";
+import PromptModal from "../../../components/modals/prompt-modal.jsx";
+import ImageModal from "../../../components/modals/image-modal.jsx";
+import CenterModal from "../../../components/modals/center-modal";
+import UploadModal from "../../../components/modals/upload-modal.jsx";
+import ServerNav from "../../../components/navigation/server-nav";
+import { request } from "@/lib/request.js";
 
 const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const contentType = String(res.headers.get('content-type') || '').toLowerCase();
-  const text = await res.text();
-
-  const isJson = contentType.includes('application/json');
-
-  let data = text;
-  if (isJson) {
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
-    }
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
 
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
@@ -62,19 +35,19 @@ function formatRelativeTime(value) {
   if (sec < 60) return "just now";
 
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
+  if (min < 60) return `${min}m ago`;
 
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
+  if (hr < 24) return `${hr}h ago`;
 
   const day = Math.round(hr / 24);
-  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`;
+  if (day < 30) return `${day}d ago`;
 
   const mo = Math.round(day / 30);
-  if (mo < 12) return `${mo} month${mo === 1 ? '' : 's'} ago`;
+  if (mo < 12) return `${mo}mo ago`;
 
   const yr = Math.round(mo / 12);
-  return `${yr} year${yr === 1 ? '' : 's'} ago`;
+  return `${yr}y ago`;
 }
 
 function normalizeDirectory(dir) {
@@ -131,13 +104,15 @@ function splitBreadcrumb({ base = ['home','container'], dir }) {
 }
 
 export default function ServerFiles() {
-  const { id } = useParams();
-  const serverId = Number(id);
+  const { identifier } = useParams();
+  const [serverInfo, setServerInfo] = useState(null);
 
   const [directory, setDirectory] = useState(UI_ROOT);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
@@ -153,11 +128,29 @@ export default function ServerFiles() {
   const [editorError, setEditorError] = useState('');
   const [editorNotice, setEditorNotice] = useState('');
 
+  const [promptState, setPromptState] = useState({ open: false, type: '', title: '', desc: '', initial: '', placeholder: '', submitLabel: '', context: null });
+
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageName, setImageName] = useState('');
+
+  const [deleteModalState, setDeleteModalState] = useState({ open: false, items: [] });
+
   const breadcrumb = useMemo(() => {
     const uiDir = normalizeUiDirectory(directory);
     const apiDir = uiToApiDirectory(uiDir);
     return splitBreadcrumb({ dir: apiDir });
   }, [directory]);
+
+  useEffect(() => {
+    if (!identifier) return;
+    request('/servers')
+      .then((res) => {
+        const found = (res?.servers || []).find((s) => s.identifier === identifier);
+        setServerInfo(found || null);
+      })
+      .catch(() => setServerInfo(null));
+  }, [identifier]);
 
   useEffect(() => {
     const onDocClick = () => {
@@ -181,14 +174,14 @@ export default function ServerFiles() {
   }, []);
 
   const fetchListing = async () => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!serverInfo?.id) return;
 
     setLoading(true);
     setError("");
     const apiDir = uiToApiDirectory(directory);
 
     try {
-      const res = await request(`/servers/${serverId}/files/list?directory=${encodeURIComponent(apiDir)}`);
+      const res = await request(`/servers/${serverInfo.id}/files/list?directory=${encodeURIComponent(apiDir)}`);
       const files = Array.isArray(res?.files) ? res.files : [];
       const sorted = files
         .slice()
@@ -217,7 +210,7 @@ export default function ServerFiles() {
 
   useEffect(() => {
     fetchListing();
-  }, [serverId, directory]);
+  }, [serverInfo?.id, directory]);
 
   const toggleSelectAll = () => {
     if (selectedRows.length === items.length) {
@@ -235,30 +228,37 @@ export default function ServerFiles() {
     }
   };
 
-  const deleteFilesAction = async ({ rowIndex } = {}) => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
-
-    const root = uiToApiDirectory(directory);
-
-    const selectedNames = selectedRows
-      .map(i => items?.[i]?.name)
-      .filter(Boolean);
-
+  const triggerDelete = ({ rowIndex } = {}) => {
+    const selectedNames = selectedRows.map(i => items?.[i]?.name).filter(Boolean);
     const rowName = typeof rowIndex === 'number' ? items?.[rowIndex]?.name : null;
 
-    const filesToDelete = selectedNames.length
-      ? selectedNames
-      : rowName
-      ? [rowName]
-      : [];
+    let filesToDelete = [];
+    if (typeof rowIndex === 'number' && rowName) {
+      filesToDelete = selectedNames.length ? selectedNames : [rowName];
+    } else {
+      filesToDelete = selectedNames;
+    }
 
     if (!filesToDelete.length) return;
+
+    setDeleteModalState({ open: true, items: filesToDelete });
+    setOpenMenuIndex(null);
+    setMenuPos(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!serverInfo?.id || !deleteModalState.items.length) return;
+    setDeleteModalState({ ...deleteModalState, open: false });
+
+    const root = uiToApiDirectory(directory);
+    const filesToDelete = deleteModalState.items;
 
     setError('');
     setLoading(true);
 
     try {
-      await request(`/servers/${serverId}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
+      await request(`/servers/${serverInfo.id}/files/delete`, { method: 'POST', body: { root, files: filesToDelete } });
+      setSelectedRows([]);
       await fetchListing();
     } catch (err) {
       setLoading(false);
@@ -266,25 +266,101 @@ export default function ServerFiles() {
     }
   };
 
+  const openNewFilePrompt = () => {
+    setPromptState({
+      open: true, type: 'new_file', title: 'New File',
+      desc: 'Enter a name for the new file.', initial: '',
+      placeholder: 'e.g., config.yml', submitLabel: 'Create', context: null
+    });
+  };
+
+  const openNewFolderPrompt = () => {
+    setPromptState({
+      open: true, type: 'new_folder', title: 'New Folder',
+      desc: 'Enter a name for the new folder.', initial: '',
+      placeholder: 'e.g., plugins', submitLabel: 'Create', context: null
+    });
+  };
+
+  const openRenamePrompt = (idx) => {
+    const item = items[idx];
+    if (!item) return;
+    setPromptState({
+      open: true, type: 'rename', title: 'Rename',
+      desc: 'Enter a new name for this item.', initial: item.name,
+      placeholder: 'New name...', submitLabel: 'Rename',
+      context: { oldName: item.name }
+    });
+    setOpenMenuIndex(null);
+    setMenuPos(null);
+  };
+
+  const handlePromptSubmit = async (val) => {
+    if (!serverInfo?.id) return;
+    setError('');
+
+    if (promptState.type === 'new_file') {
+      const apiDir = uiToApiDirectory(directory);
+      const filePath = joinPath(apiDir, val);
+      await request(`/servers/${serverInfo.id}/files/write?file=${encodeURIComponent(filePath)}`, { method: 'POST', body: '' });
+      await fetchListing();
+    } else if (promptState.type === 'new_folder') {
+      const root = uiToApiDirectory(directory);
+      await request(`/servers/${serverInfo.id}/files/create-folder`, { method: 'POST', body: { root, name: val } });
+      await fetchListing();
+    } else if (promptState.type === 'rename') {
+      const root = uiToApiDirectory(directory);
+      const files = [{ from: promptState.context.oldName, to: val }];
+      await request(`/servers/${serverInfo.id}/files/rename`, { method: 'PUT', body: { root, files } });
+      await fetchListing();
+    }
+  };
+
+  const handleUploadFiles = async (fileList) => {
+    if (!fileList?.length || !serverInfo?.id) return;
+
+    setError('');
+    setUploading(true);
+
+    try {
+      const urlRes = await request(`/servers/${serverInfo.id}/files/upload-url`);
+      let signedUrl = urlRes?.url;
+      if (!signedUrl) throw new Error('invalid_upload_url');
+
+      const formData = new FormData();
+      for (let i = 0; i < fileList.length; i++) {
+        formData.append('files', fileList[i]);
+      }
+
+      const apiDir = uiToApiDirectory(directory);
+      if (signedUrl.includes('?')) {
+        signedUrl += `&directory=${encodeURIComponent(apiDir)}`;
+      } else {
+        signedUrl += `?directory=${encodeURIComponent(apiDir)}`;
+      }
+
+      const uploadRes = await fetch(signedUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!uploadRes.ok) throw new Error('failed_to_upload_files');
+
+      setUploadModalOpen(false);
+      await fetchListing();
+    } catch (err) {
+      setError(err?.message || 'failed_to_upload_files');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const isTextEditable = (fileName) => {
     const n = String(fileName || '').toLowerCase();
     const allowed = [
-      'txt',
-      'log',
-      'json',
-      'yml',
-      'yaml',
-      'properties',
-      'toml',
-      'conf',
-      'cfg',
-      'ini',
-      'md',
-      'sh',
-      'env',
-      'xml'
+      'txt', 'log', 'json', 'yml', 'yaml', 'properties', 'toml',
+      'conf', 'cfg', 'ini', 'md', 'sh', 'env', 'xml'
     ];
-
     const base = n.split('/').pop() || '';
     const idx = base.lastIndexOf('.');
     const ext = idx >= 0 ? base.slice(idx + 1) : '';
@@ -292,14 +368,18 @@ export default function ServerFiles() {
     return allowed.includes(ext);
   };
 
+  const isImageViewable = (fileName) => {
+    const n = String(fileName || '').toLowerCase();
+    const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'];
+    const base = n.split('/').pop() || '';
+    const idx = base.lastIndexOf('.');
+    const ext = idx >= 0 ? base.slice(idx + 1) : '';
+    if (!ext) return false;
+    return allowed.includes(ext);
+  };
+
   const openEditor = async ({ name }) => {
-    if (!name) return;
-
-    if (!isTextEditable(name)) {
-      return;
-    }
-
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
+    if (!name || !isTextEditable(name) || !serverInfo?.id) return;
 
     const apiDir = uiToApiDirectory(directory);
     const apiFile = joinPath(apiDir, name);
@@ -314,7 +394,7 @@ export default function ServerFiles() {
     setEditorValue('');
 
     try {
-      const content = await request(`/servers/${serverId}/files/contents?file=${encodeURIComponent(apiFile)}`);
+      const content = await request(`/servers/${serverInfo.id}/files/contents?file=${encodeURIComponent(apiFile)}`);
       const raw = typeof content === 'string' ? content : String(content ?? '');
 
       const lower = String(name).toLowerCase();
@@ -337,14 +417,13 @@ export default function ServerFiles() {
   };
 
   const saveEditor = async () => {
-    if (!Number.isInteger(serverId) || serverId <= 0) return;
-    if (!editorApiFile) return;
+    if (!serverInfo?.id || !editorApiFile) return;
 
     setEditorSaving(true);
     setEditorError('');
 
     try {
-      const res = await fetch(`${API_BASE}/servers/${serverId}/files/write?file=${encodeURIComponent(editorApiFile)}`, {
+      const res = await fetch(`${API_BASE}/servers/${serverInfo.id}/files/write?file=${encodeURIComponent(editorApiFile)}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'text/plain' },
@@ -357,8 +436,7 @@ export default function ServerFiles() {
         try {
           const j = JSON.parse(text);
           msg = j?.error || j?.message || msg;
-        } catch {
-        }
+        } catch {}
         throw new Error(msg || 'failed_to_save_file');
       }
 
@@ -386,12 +464,40 @@ export default function ServerFiles() {
     }
 
     if (isFile) {
-      openEditor({ name });
+      if (isTextEditable(name)) {
+        openEditor({ name });
+      } else if (isImageViewable(name)) {
+        openImageViewer({ name });
+      }
+    }
+  };
+
+  const openImageViewer = async ({ name }) => {
+    if (!serverInfo?.id || !name) return;
+
+    setError('');
+    setImageName(name);
+    setImageUrl('');
+    setImageModalOpen(true);
+
+    try {
+      const apiDir = uiToApiDirectory(directory);
+      const apiFile = joinPath(apiDir, name);
+      const urlRes = await request(`/servers/${serverInfo.id}/files/download?file=${encodeURIComponent(apiFile)}`);
+
+      if (urlRes?.url) {
+        setImageUrl(urlRes.url);
+      } else {
+        throw new Error('invalid_image_url');
+      }
+    } catch (err) {
+      setError(err?.message || 'failed_to_load_image');
+      setImageModalOpen(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
+    <div className="bg-surface px-10 py-10">
       <EditorModal
         isOpen={editorOpen}
         onClose={() => {
@@ -411,122 +517,173 @@ export default function ServerFiles() {
         notice={editorNotice}
       />
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold text-white">File Manager</h1>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer">
-              New File
-            </button>
-            <button className="px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition-colors duration-200 cursor-pointer">
-              New Folder
+      <PromptModal
+        isOpen={promptState.open}
+        onClose={() => setPromptState({ ...promptState, open: false })}
+        title={promptState.title}
+        description={promptState.desc}
+        initialValue={promptState.initial}
+        placeholder={promptState.placeholder}
+        submitLabel={promptState.submitLabel}
+        onSubmit={handlePromptSubmit}
+      />
+
+      <ImageModal
+        isOpen={imageModalOpen}
+        onClose={() => {
+          setImageModalOpen(false);
+          setTimeout(() => setImageUrl(''), 300);
+        }}
+        url={imageUrl}
+        filename={imageName}
+      />
+
+      <UploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUpload={handleUploadFiles}
+        uploading={uploading}
+      />
+
+      <CenterModal
+        isOpen={deleteModalState.open}
+        onClose={() => setDeleteModalState({ open: false, items: [] })}
+        maxWidth="max-w-md"
+      >
+        <div className="p-6">
+          <h2 className="text-[16px] font-bold text-foreground tracking-tight mb-1">Delete Items</h2>
+          <p className="text-[11px] font-bold text-muted-foreground leading-relaxed mb-6">
+            Are you sure you want to delete {deleteModalState.items.length === 1 ? 'this item' : `these ${deleteModalState.items.length} items`}? This action cannot be undone.
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => setDeleteModalState({ open: false, items: [] })}
+              className="h-8 px-4 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+            >
+              Cancel
             </button>
             <button
-              className="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 cursor-pointer"
-              style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
+              onClick={confirmDelete}
+              className="h-8 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer"
             >
-              Upload
+              {loading ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         </div>
+      </CenterModal>
 
-        <div className="text-sm font-mono flex items-center gap-1">
-          {breadcrumb.map((c, idx) => {
-            const isLast = idx === breadcrumb.length - 1;
-            const label = c.label;
-            return (
-              <div key={`${c.path}-${idx}`} className="flex items-center gap-1">
-                <span className="text-white/30">/</span>
-                <button
-                  onClick={() => setDirectory(apiToUiDirectory(c.path))}
-                  className={isLast ? 'text-white cursor-default' : 'text-white/40 hover:text-white/70 transition-colors duration-200 cursor-pointer'}
-                  disabled={isLast}
-                >
-                  {label}
-                </button>
-              </div>
-            );
-          })}
-          <span className="text-white/30">/</span>
+      <div className="flex items-center justify-between gap-4 mb-5">
+        <div>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">File Manager</h1>
+          <p className="text-[13px] font-bold text-muted-foreground mt-2">Browse and manage your server files</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={openNewFilePrompt}
+            className="h-8 px-3.5 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+          >
+            New File
+          </button>
+          <button
+            onClick={openNewFolderPrompt}
+            className="h-8 px-3.5 border border-surface-lighter rounded-md text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-foreground/20 uppercase tracking-widest transition-all cursor-pointer"
+          >
+            New Folder
+          </button>
+          <button
+            onClick={() => setUploadModalOpen(true)}
+            className="h-8 px-4 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer"
+          >
+            Upload
+          </button>
         </div>
       </div>
 
+      <ServerNav />
+
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto no-scrollbar">
+        {breadcrumb.map((c, idx) => {
+          const isLast = idx === breadcrumb.length - 1;
+          return (
+            <div key={`${c.path}-${idx}`} className="flex items-center gap-1">
+              <button
+                onClick={() => setDirectory(apiToUiDirectory(c.path))}
+                className={`text-[11px] font-bold transition-colors ${
+                  isLast
+                    ? 'text-foreground cursor-default'
+                    : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                }`}
+                disabled={isLast}
+              >
+                {c.label}
+              </button>
+              {!isLast && <span className="text-[11px] text-muted-foreground/30">/</span>}
+            </div>
+          );
+        })}
+      </div>
+
       {error && (
-        <div className="mb-6 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/10">
-          <p className="text-sm text-red-200">{error}</p>
+        <div className="mb-6 px-3 py-2.5 rounded-md bg-red-500/5 border border-red-500/10">
+          <p className="text-[11px] font-bold text-red-500">{error}</p>
         </div>
       )}
 
-      <div className="overflow-x-auto overflow-y-visible">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="pl-4 pr-2 py-3 text-left w-10">
-                <input
-                  type="checkbox"
-                  checked={selectedRows.length === items.length && items.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#E0FE58] focus:ring-[#E0FE58] focus:ring-offset-0 cursor-pointer"
-                />
-              </th>
-              <th className="pl-2 pr-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Size</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/50 uppercase tracking-wider">Modified</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/50 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-b border-white/10 animate-pulse">
-                  <td className="pl-4 pr-2 py-4 w-10"><div className="h-4 w-4 bg-white/10 rounded" /></td>
-                  <td className="pl-2 pr-4 py-4"><div className="h-3 w-48 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4"><div className="h-3 w-16 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4"><div className="h-3 w-28 bg-white/10 rounded" /></td>
-                  <td className="px-4 py-4 text-right"><div className="h-6 w-6 bg-white/10 rounded ml-auto" /></td>
-                </tr>
-              ))
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="px-4 py-12 text-center text-sm text-white/40">
-                  This folder is empty
-                </td>
-              </tr>
-            ) : (
-              items.map((item, idx) => (
-              <tr
+      <div className="border border-surface-lighter rounded-lg">
+        <div className="grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3 border-b border-surface-lighter">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Size</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Modified</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</span>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={`grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 animate-pulse ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-surface-lighter rounded" />
+                  <div className="h-3 w-32 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="h-3 w-14 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="h-3 w-16 bg-surface-lighter rounded-md" />
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="w-6 h-6 bg-surface-lighter rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="py-16 flex items-center justify-center">
+            <span className="text-[12px] font-bold text-muted-foreground/40">This folder is empty</span>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {items.map((item, idx) => (
+              <div
                 key={idx}
                 onClick={() => handleRowClick(item)}
-                className="border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer"
+                className={`grid grid-cols-[1.5fr_1fr_1fr_0.5fr] px-6 py-3.5 hover:bg-surface-light/50 transition-colors cursor-pointer group ${idx > 0 ? 'border-t border-surface-lighter' : ''}`}
               >
-                <td className="pl-4 pr-2 py-4 w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.includes(idx)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      toggleSelectRow(idx);
-                    }}
-                    className="w-4 h-4 rounded border-white/10 bg-black/20 text-[#E0FE58] focus:ring-[#E0FE58] focus:ring-offset-0 cursor-pointer"
-                  />
-                </td>
-                <td className="pl-2 pr-4 py-4">
-                  <div className="flex items-center gap-2.5">
-                    {item?.is_file ? (
-                      <File size={16} className="text-white/40 shrink-0" />
-                    ) : (
-                      <Folder size={16} className="text-white/60 shrink-0" />
-                    )}
-                    <span className="text-sm font-medium text-white">{item?.name || '-'}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-sm text-white/60">{item?.is_file ? formatBytes(item?.size) : '-'}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-sm text-white/60">{formatRelativeTime(item?.modified_at)}</span>
-                </td>
-                <td className="px-4 py-4 text-right">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  {item?.is_file ? (
+                    <File size={15} className="text-muted-foreground/40 shrink-0" />
+                  ) : (
+                    <Folder size={15} className="text-muted-foreground/40 shrink-0" />
+                  )}
+                  <span className="text-[12px] font-bold text-foreground truncate tracking-tight">{item?.name || '-'}</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-muted-foreground">{item?.is_file ? formatBytes(item?.size) : '—'}</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-muted-foreground">{formatRelativeTime(item?.modified_at)}</span>
+                </div>
+                <div className="flex items-center justify-end">
                   <div className="relative">
                     <button
                       ref={(el) => {
@@ -534,15 +691,12 @@ export default function ServerFiles() {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-
                         const next = openMenuIndex === idx ? null : idx;
                         setOpenMenuIndex(next);
-
                         if (next === null) {
                           setMenuPos(null);
                           return;
                         }
-
                         const el = menuAnchorRefs.current[idx];
                         if (!el) return;
                         const rect = el.getBoundingClientRect();
@@ -551,65 +705,42 @@ export default function ServerFiles() {
                           right: window.innerWidth - rect.right
                         });
                       }}
-                      className="p-1.5 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer inline-flex items-center justify-center"
+                      className="p-1.5 rounded-md text-muted-foreground/30 hover:text-foreground hover:bg-surface-lighter/50 transition-all cursor-pointer"
                     >
-                      <Ellipsis size={16} className="text-white/60" />
+                      <Ellipsis size={14} />
                     </button>
 
                     {openMenuIndex === idx && menuPos && typeof document !== 'undefined' && createPortal(
                       <div
-                        className="fixed w-36 rounded-md border border-white/10 z-[99999]"
-                        style={{ backgroundColor: '#40413F', top: menuPos.top, right: menuPos.right }}
+                        className="fixed w-40 rounded-lg border border-surface-lighter shadow-xl z-[99999] overflow-hidden"
+                        style={{ top: menuPos.top, right: menuPos.right, backgroundColor: 'var(--surface)' }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="py-1.5 px-1">
+                        <div className="p-1">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                            onClick={(e) => { e.stopPropagation(); openRenamePrompt(idx); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
                           >
                             Rename
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
                           >
                             Move
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuIndex(null); setMenuPos(null); }}
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-surface-lighter/50 transition-all rounded-md"
                           >
                             Permissions
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenMenuIndex(null);
-                              setMenuPos(null);
+                              triggerDelete({ rowIndex: idx });
                             }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
-                          >
-                            Archive
-                          </button>
-                          <div className="h-px bg-white/10 my-1"></div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteFilesAction({ rowIndex: idx });
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/10 transition-colors duration-200 rounded-md"
+                            className="w-full px-3 py-2 text-left text-[11px] font-bold text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all rounded-md"
                           >
                             Delete
                           </button>
@@ -618,12 +749,11 @@ export default function ServerFiles() {
                       document.body
                     )}
                   </div>
-                </td>
-              </tr>
-            )))
-            }
-          </tbody>
-        </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

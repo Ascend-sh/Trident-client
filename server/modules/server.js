@@ -7,8 +7,9 @@ import { getLogger } from '../middlewares/logger.js';
 import { getPteroServerWebsocket } from './server/websocket.js';
 import { connectServerConsole } from './server/console.js';
 import { sendPowerSignal } from './server/state.js';
-import { listServerAllocations as listPteroServerAllocations } from './server/network.js';
-import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel } from './server/explorer.js';
+import { listServerAllocations as listPteroServerAllocations, createServerAllocation as createPteroAllocation, setAllocationAsPrimary as setPteroAllocationPrimary, updateAllocationNotes as updatePteroAllocationNotes, deleteServerAllocation as deletePteroAllocation } from './server/network.js';
+import { listDirectory, readFileContents, writeFileContents, deleteFiles as deleteServerFilesInPanel, renameFiles, createFolder, copyFile, getDownloadUrl, getUploadUrl } from './server/explorer.js';
+import { listBackups as listPteroBackups, createBackup as createPteroBackup, getBackupDetails as getPteroBackupDetails, getBackupDownloadUrl as getPteroBackupDownloadUrl, toggleBackupLock as togglePteroBackupLock, deleteBackup as deletePteroBackup } from './server/backups.js';
 
 const serverLogger = getLogger('server');
 
@@ -176,7 +177,9 @@ export async function listUserServers({ userId }) {
       limits: {
         memory: memoryLimit,
         disk: diskLimit,
-        cpu: cpuLimit
+        cpu: cpuLimit,
+        allocations: Number(s.featureAllocations) || 0,
+        backups: Number(s.featureBackups) || 0
       },
       usage: {
         memoryPercent: memoryLimit ? 0 : 0,
@@ -200,6 +203,13 @@ export async function createServer({ userId, userEmail, name, description = '', 
   if (!Number.isInteger(eId) || eId <= 0) throw new Error('eggId is required');
 
   const defaults = await getServerDefaults();
+
+  const userServers = await db.select().from(servers).where(eq(servers.userId, uid));
+  if (userServers.length >= defaults.slots) {
+    const err = new Error('server_slots_limit_reached');
+    err.status = 403;
+    throw err;
+  }
 
   const eggRow = await db.select().from(eggs).where(eq(eggs.id, eId)).limit(1);
   const importedEgg = eggRow[0] || null;
@@ -574,6 +584,111 @@ export async function deleteServerFiles({ userId, serverId, root = '/', files = 
   return { ok: true };
 }
 
+export async function renameServerFiles({ userId, serverId, root = '/', files = [] }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await renameFiles({ identifier, root, files });
+  return { ok: true };
+}
+
+export async function createServerFolder({ userId, serverId, root = '/', name }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await createFolder({ identifier, root, name });
+  return { ok: true };
+}
+
+export async function copyServerFile({ userId, serverId, location }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await copyFile({ identifier, location });
+  return { ok: true };
+}
+
+export async function getServerFileDownloadUrl({ userId, serverId, file }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  const url = await getDownloadUrl({ identifier, file });
+  return { url };
+}
+
+export async function getServerFileUploadUrl({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  const url = await getUploadUrl({ identifier });
+  return { url };
+}
+
 export async function setServerPowerState({ userId, serverId, state }) { 
   const uid = Number(userId);
   const sid = Number(serverId);
@@ -600,4 +715,212 @@ export async function setServerPowerState({ userId, serverId, state }) {
   if (!identifier) throw new Error('missing_identifier');
 
   return sendPowerSignal({ identifier, signal: s });
+}
+
+export async function listServerBackups({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return listPteroBackups({ identifier });
+}
+
+export async function createServerBackup({ userId, serverId, name, ignored, isLocked }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return createPteroBackup({ identifier, name, ignored, isLocked });
+}
+
+export async function getServerBackupDetails({ userId, serverId, backupUuid }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return getPteroBackupDetails({ identifier, uuid: backupUuid });
+}
+
+export async function getServerBackupDownloadUrl({ userId, serverId, backupUuid }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  const url = await getPteroBackupDownloadUrl({ identifier, uuid: backupUuid });
+  return { url };
+}
+
+export async function toggleServerBackupLock({ userId, serverId, backupUuid }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return togglePteroBackupLock({ identifier, uuid: backupUuid });
+}
+
+export async function deleteServerBackup({ userId, serverId, backupUuid }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  await deletePteroBackup({ identifier, uuid: backupUuid });
+  return { ok: true };
+}
+
+export async function createAllocation({ userId, serverId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return createPteroAllocation({ identifier });
+}
+
+export async function setAllocationPrimary({ userId, serverId, allocationId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return setPteroAllocationPrimary({ identifier, allocationId: allocId });
+}
+
+export async function updateAllocation({ userId, serverId, allocationId, notes }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return updatePteroAllocationNotes({ identifier, allocationId: allocId, notes });
+}
+
+export async function deleteAllocation({ userId, serverId, allocationId }) {
+  const uid = Number(userId);
+  const sid = Number(serverId);
+  const allocId = Number(allocationId);
+
+  if (!Number.isInteger(uid) || uid <= 0) throw new Error('userId is required');
+  if (!Number.isInteger(sid) || sid <= 0) throw new Error('serverId is required');
+  if (!Number.isInteger(allocId) || allocId <= 0) throw new Error('allocationId is required');
+
+  const rows = await db.select().from(servers).where(and(eq(servers.id, sid), eq(servers.userId, uid))).limit(1);
+  if (!rows.length) {
+    const err = new Error('server_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const identifier = String(rows[0].pteroIdentifier ?? '').trim();
+  if (!identifier) throw new Error('missing_identifier');
+
+  return deletePteroAllocation({ identifier, allocationId: allocId });
 }

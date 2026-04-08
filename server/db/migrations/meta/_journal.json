@@ -99,6 +99,83 @@
       "when": 1768550000000,
       "tag": "0013_golden_signal",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1773816870073,
+      "tag": "0014_wild_wasp",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1773914809460,
+      "tag": "0015_lame_colonel_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1773915102137,
+      "tag": "0016_spotty_pete_wisdom",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1773916905185,
+      "tag": "0017_regular_overlord",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1773916944159,
+      "tag": "0018_cheerful_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1774689693567,
+      "tag": "0019_whole_martin_li",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1774691469015,
+      "tag": "0020_true_blue_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1774691966361,
+      "tag": "0021_woozy_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1775059095848,
+      "tag": "0022_legal_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1775567682066,
+      "tag": "0023_sticky_carlie_cooper",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1775678478437,
+      "tag": "0024_greedy_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

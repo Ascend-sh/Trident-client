@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import fs from 'fs';
 import path from 'path';
 import { account, authCookieName, authCookieOptions, login, logout, register } from "../modules/auth.js";
+import { updateAccount } from "../modules/account.js";
 import { errorHandler, fail, forbidden, notFound, ok, send, unprocessable } from "../middlewares/error-handler.js";
 import { checkAuthRateLimit, checkRateLimit } from "../middlewares/rate-limit.js";
 import { authLogger, getLogger } from "../middlewares/logger.js";
@@ -9,8 +10,11 @@ import { appendSetCookie, parseCookies, serializeCookie } from "../utils/cookies
 import { getBalance, getEconomySettings, setCurrencyName } from "../utils/economy.js";
 import { deleteImportedNest, importNestToDb, listImportedNests, listNests } from "../modules/nests.js";
 import { deleteImportedLocation, importLocationToDb, listImportedLocations, listLocations } from "../modules/locations.js";
-import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, listServerFiles, getServerFile, writeServerFile, deleteServerFiles } from "../modules/server.js";
+import { createServer, deleteServer, editServer, getServerWebsocket, listUserServers, setServerPowerState, getServerAllocations, createAllocation, setAllocationPrimary, updateAllocation, deleteAllocation, listServerFiles, getServerFile, writeServerFile, deleteServerFiles, renameServerFiles, createServerFolder, copyServerFile, getServerFileDownloadUrl, getServerFileUploadUrl, listServerBackups, createServerBackup, getServerBackupDetails, getServerBackupDownloadUrl, toggleServerBackupLock, deleteServerBackup } from "../modules/server.js";
 import { getServerDefaults, updateServerDefaults } from "../utils/configuration.js";
+import { createPayPalPayment, executePayPalPayment, getPayments, getPayment, createUPIPayment, submitUPIUTR, adminGetAllPayments, adminProcessPayment } from "../modules/payments.js";
+import { getCustomization, updateCustomization } from "../utils/customization.js";
+import { listLocalUsers, getLocalUser } from "../modules/get-users.js";
 
 const wsLogger = getLogger('ws');
 
@@ -176,6 +180,32 @@ export const clientApi = new Elysia({ name: "client-api" })
     set.status = out.status;
     return out.body;
   })
+  .patch("/account", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const updateRes = await updateAccount({
+      userId,
+      username: body?.username,
+      email: body?.email,
+      password: body?.password
+    });
+
+    set.status = updateRes.status;
+    return updateRes.body;
+  })
   .get("/recent-activity", async ({ request, set, query }) => {
     const limited = checkRateLimit({ request, set });
     if (limited) return limited;
@@ -247,8 +277,6 @@ export const clientApi = new Elysia({ name: "client-api" })
           });
           continue;
         }
-
-        continue;
 
         if (items.length >= limit) break;
       }
@@ -383,6 +411,65 @@ export const clientApi = new Elysia({ name: "client-api" })
 
     const updated = await updateServerDefaults(body || {});
     const out = ok({ ...updated }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/customization", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const customization = await getCustomization();
+    const out = ok({ customization }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .patch("/admin/customization", async ({ request, set, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const updated = await updateCustomization(body || {});
+    const out = ok({ ...updated }, 200);
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/site-settings", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const customization = await getCustomization();
+    const out = ok({ customization }, 200);
     set.status = out.status;
     return out.body;
   })
@@ -636,7 +723,8 @@ export const clientApi = new Elysia({ name: "client-api" })
     }
 
     const servers = await listUserServers({ userId: res.body.user.id });
-    const out = ok({ servers }, 200);
+    const defaults = await getServerDefaults();
+    const out = ok({ servers, slots: defaults.slots }, 200);
     set.status = out.status;
     return out.body;
   })
@@ -729,6 +817,132 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'server_allocations_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await createAllocation({ userId: res.body.user.id, serverId: id });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'create_allocation_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations/:allocationId/primary", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await setAllocationPrimary({ userId: res.body.user.id, serverId: id, allocationId });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'set_primary_failed', set.status));
+    }
+  })
+  .post("/servers/:id/network/allocations/:allocationId", async ({ request, set, params, body }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const outData = await updateAllocation({ userId: res.body.user.id, serverId: id, allocationId, notes: body?.notes });
+      const out = ok({ ...outData }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'update_allocation_failed', set.status));
+    }
+  })
+  .delete("/servers/:id/network/allocations/:allocationId", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    const allocationId = Number(params?.allocationId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(allocationId) || allocationId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await deleteAllocation({ userId: res.body.user.id, serverId: id, allocationId });
+      set.status = 204;
+      return null;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'delete_allocation_failed', set.status));
     }
   })
   .get("/servers/:id/files/list", async ({ request, set, params, query }) => {
@@ -882,6 +1096,208 @@ export const clientApi = new Elysia({ name: "client-api" })
     } catch (err) {
       set.status = err?.status || 500;
       return send(set, fail(err?.message || 'server_files_delete_failed', set.status));
+    }
+  })
+  .put("/servers/:id/files/rename", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const root = typeof body?.root === 'string' ? body.root : '/';
+    const files = Array.isArray(body?.files) ? body.files : [];
+
+    if (!files.length) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await renameServerFiles({ userId: res.body.user.id, serverId: id, root, files });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_rename_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/create-folder", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const root = typeof body?.root === 'string' ? body.root : '/';
+    const name = typeof body?.name === 'string' ? body.name : '';
+
+    if (!name.trim()) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await createServerFolder({ userId: res.body.user.id, serverId: id, root, name });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_create_folder_failed', set.status));
+    }
+  })
+  .post("/servers/:id/files/copy", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+
+    const location = typeof body?.location === 'string' ? body.location : '';
+
+    if (!location.trim()) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await copyServerFile({ userId: res.body.user.id, serverId: id, location });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_copy_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/download", async ({ request, set, params, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const file = typeof query?.file === 'string' ? query.file : '';
+    if (!file) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getServerFileDownloadUrl({ userId: res.body.user.id, serverId: id, file });
+      const out = ok({ url: data.url }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_download_failed', set.status));
+    }
+  })
+  .get("/servers/:id/files/upload-url", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getServerFileUploadUrl({ userId: res.body.user.id, serverId: id });
+      const out = ok({ url: data.url }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'server_files_upload_url_failed', set.status));
     }
   })
   .post("/servers/:id/power", async ({ request, set, params }) => {
@@ -1046,5 +1462,487 @@ export const clientApi = new Elysia({ name: "client-api" })
     const out = ok({ ...imported }, 200);
     set.status = out.status;
     return out.body;
+  })
+  .get("/payments", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const items = await getPayments(userId);
+    set.status = items.status;
+    return items.body;
+  })
+  .post("/payments/create", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await createPayPalPayment({ userId, amount: body?.amount });
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/payments/execute", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await executePayPalPayment({ 
+      paymentId: body?.paymentId, 
+      payerId: body?.payerId, 
+      userId 
+    });
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/payments/:id/invoice", async ({ params, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await getPayment(userId, params.id);
+    if (!out.ok) {
+        set.status = out.status;
+        return out.body;
+    }
+
+    set.status = 200;
+    return out.body;
+  })
+  .post("/payments/upi/create", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await createUPIPayment({ userId, amount: body?.amount });
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/payments/upi/submit", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const userId = res.body?.user?.id;
+    const out = await submitUPIUTR({ 
+      userId, 
+      paymentId: body?.paymentId, 
+      utr: body?.utr 
+    });
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/admin/payments", async ({ request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const out = await adminGetAllPayments();
+    set.status = out.status;
+    return out.body;
+  })
+  .post("/admin/payments/process", async ({ body, request, set }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const out = await adminProcessPayment({ 
+      paymentId: body?.paymentId, 
+      action: body?.action 
+    });
+    set.status = out.status;
+    return out.body;
+  })
+  .get("/servers/:id/backups", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await listServerBackups({ userId: res.body.user.id, serverId: id });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backups_list_failed', set.status));
+    }
+  })
+  .post("/servers/:id/backups", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    let body = null;
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    try {
+      const backup = await createServerBackup({
+        userId: res.body.user.id,
+        serverId: id,
+        name: body?.name,
+        ignored: body?.ignored,
+        isLocked: body?.isLocked
+      });
+      const out = ok({ backup }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backup_create_failed', set.status));
+    }
+  })
+  .get("/servers/:id/backups/:uuid", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const uuid = String(params?.uuid ?? '').trim();
+    if (!uuid) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const backup = await getServerBackupDetails({ userId: res.body.user.id, serverId: id, backupUuid: uuid });
+      const out = ok({ backup }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backup_details_failed', set.status));
+    }
+  })
+  .get("/servers/:id/backups/:uuid/download", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const uuid = String(params?.uuid ?? '').trim();
+    if (!uuid) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getServerBackupDownloadUrl({ userId: res.body.user.id, serverId: id, backupUuid: uuid });
+      const out = ok({ url: data.url }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backup_download_failed', set.status));
+    }
+  })
+  .post("/servers/:id/backups/:uuid/lock", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const uuid = String(params?.uuid ?? '').trim();
+    if (!uuid) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const backup = await toggleServerBackupLock({ userId: res.body.user.id, serverId: id, backupUuid: uuid });
+      const out = ok({ backup }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backup_lock_failed', set.status));
+    }
+  })
+  .delete("/servers/:id/backups/:uuid", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    const id = Number(params?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    const uuid = String(params?.uuid ?? '').trim();
+    if (!uuid) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      await deleteServerBackup({ userId: res.body.user.id, serverId: id, backupUuid: uuid });
+      set.status = 204;
+      return;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'backup_delete_failed', set.status));
+    }
+  })
+  .get("/admin/users", async ({ request, set, query }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    try {
+      const filter = {};
+      if (query?.email) filter.email = query.email;
+      if (query?.username) filter.username = query.username;
+      if (query?.uuid) filter.uuid = query.uuid;
+
+      const data = await listLocalUsers({
+        page: Number(query?.page) || 1,
+        perPage: Number(query?.per_page ?? query?.perPage) || 50,
+        filter: Object.keys(filter).length ? filter : undefined,
+        sort: query?.sort || undefined
+      });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'list_users_failed', set.status));
+    }
+  })
+  .get("/admin/users/:userId", async ({ request, set, params }) => {
+    const limited = checkRateLimit({ request, set });
+    if (limited) return limited;
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const res = await account({
+      authorization: request.headers.get("authorization"),
+      cookieToken: cookies?.[authCookieName()],
+    });
+
+    if (!res.ok) {
+      set.status = res.status;
+      return res.body;
+    }
+
+    if (!res.body?.user?.isAdmin) {
+      set.status = 403;
+      return forbidden('forbidden').body;
+    }
+
+    const userId = Number(params?.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      set.status = 422;
+      return unprocessable('validation_error').body;
+    }
+
+    try {
+      const data = await getLocalUser({ userId });
+      const out = ok({ ...data }, 200);
+      set.status = out.status;
+      return out.body;
+    } catch (err) {
+      set.status = err?.status || 500;
+      return send(set, fail(err?.message || 'get_user_failed', set.status));
+    }
   })
   .all("*", ({ set }) => send(set, notFound("not_found")));

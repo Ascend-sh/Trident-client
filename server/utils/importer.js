@@ -21,6 +21,10 @@ function buildHeaders(apiKey, extra) {
   };
 }
 
+const cache = new Map();
+const inflight = new Map();
+const TTL = 10000;
+
 async function request({ url, method = 'GET', headers, query, body, signal }) {
   const u = new URL(url);
   if (query && typeof query === 'object') {
@@ -30,27 +34,61 @@ async function request({ url, method = 'GET', headers, query, body, signal }) {
     }
   }
 
-  const init = {
-    method,
-    headers,
-    signal
-  };
-
-  if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
-
-  const res = await fetch(u, init);
-  const contentType = res.headers.get('content-type') ?? '';
-  const isJson = contentType.includes('application/json');
-  const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => '');
-
-  if (!res.ok) {
-    const err = new Error(`Pterodactyl request failed: ${res.status} ${res.statusText}`);
-    err.status = res.status;
-    err.payload = payload;
-    throw err;
+  const cacheKey = `${method}:${u.toString()}:${JSON.stringify(headers)}:${JSON.stringify(body)}`;
+  
+  if (method !== 'GET') {
+    cache.clear();
   }
 
-  return payload;
+  if (method === 'GET') {
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < TTL) {
+      return cached.data;
+    }
+
+    const pending = inflight.get(cacheKey);
+    if (pending) return pending;
+  }
+
+  const execute = async () => {
+    try {
+      const init = {
+        method,
+        headers,
+        signal
+      };
+
+      if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
+
+      const res = await fetch(u, init);
+      const contentType = res.headers.get('content-type') ?? '';
+      const isJson = contentType.includes('application/json');
+      const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => '');
+
+      if (!res.ok) {
+        const err = new Error(`Pterodactyl request failed: ${res.status} ${res.statusText}`);
+        err.status = res.status;
+        err.payload = payload;
+        throw err;
+      }
+
+      if (method === 'GET') {
+        cache.set(cacheKey, { ts: Date.now(), data: payload });
+      }
+
+      return payload;
+    } finally {
+      if (method === 'GET') inflight.delete(cacheKey);
+    }
+  };
+
+  if (method === 'GET') {
+    const promise = execute();
+    inflight.set(cacheKey, promise);
+    return promise;
+  }
+
+  return execute();
 }
 
 export function pteroApplicationRequest({ path, method, query, body, signal, headers }) {

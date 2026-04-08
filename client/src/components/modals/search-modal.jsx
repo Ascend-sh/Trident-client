@@ -96,13 +96,12 @@ export default function SearchModal({ isOpen, onClose }) {
         onClick={onClose}
       >
         <div 
-          className={`w-full max-w-2xl mx-4 rounded-lg border border-white/10 shadow-2xl overflow-hidden transition-all duration-200 ${
+          className={`w-full max-w-2xl mx-4 rounded-lg border border-surface-light shadow-2xl overflow-hidden transition-all duration-200 bg-surface ${
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
-          style={{ backgroundColor: '#1F1F1E' }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-light">
             <Search size={18} className="text-white/40 flex-shrink-0" />
             <input
               ref={inputRef}
@@ -115,7 +114,7 @@ export default function SearchModal({ isOpen, onClose }) {
             />
             <button
               onClick={onClose}
-              className="p-1 rounded hover:bg-white/5 transition-colors duration-200"
+              className="p-1 rounded hover:bg-surface-light transition-colors duration-200"
             >
               <X size={16} className="text-white/40" />
             </button>
@@ -141,14 +140,14 @@ export default function SearchModal({ isOpen, onClose }) {
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors duration-200 ${
                       selectedIndex === index
-                        ? 'bg-white/10'
-                        : 'hover:bg-white/5'
+                        ? 'bg-surface-light'
+                        : 'hover:bg-surface-light/50'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-sm font-medium text-white truncate">{item.title}</p>
-                        <span className="text-[10px] text-white/40 px-1.5 py-0.5 rounded bg-white/5 flex-shrink-0">
+                        <span className="text-[10px] text-white/40 px-1.5 py-0.5 rounded bg-surface-light flex-shrink-0">
                           {item.category}
                         </span>
                       </div>
@@ -160,18 +159,18 @@ export default function SearchModal({ isOpen, onClose }) {
             )}
           </div>
 
-          <div className="px-4 py-2 border-t border-white/10 flex items-center justify-between bg-black/20">
+          <div className="px-4 py-2 border-t border-surface-light flex items-center justify-between bg-surface-light/30">
             <div className="flex items-center gap-3 text-[10px] text-white/40">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">↑↓</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-surface-light bg-surface-light/50">↑↓</kbd>
                 Navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">↵</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-surface-light bg-surface-light/50">↵</kbd>
                 Select
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">esc</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-surface-light bg-surface-light/50">esc</kbd>
                 Close
               </span>
             </div>

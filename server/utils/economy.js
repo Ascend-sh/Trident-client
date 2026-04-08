@@ -43,3 +43,39 @@ export async function getBalance(userId) {
   const balance = Number(walletRows[0]?.balance ?? 0);
   return { ...settings, balance };
 }
+
+export async function addBalance(userId, amount) {
+    const id = Number(userId);
+    const val = Math.floor(Number(amount));
+    if (val <= 0) return { ok: false, error: 'invalid_amount' };
+
+    await ensureWallet(id);
+    const rows = await db.select().from(wallets).where(eq(wallets.userId, id)).limit(1);
+    const current = rows[0]?.balance ?? 0;
+    
+    await db.update(wallets).set({ 
+        balance: current + val,
+        updatedAt: new Date()
+    }).where(eq(wallets.userId, id));
+
+    return { ok: true, newBalance: current + val };
+}
+
+export async function subtractBalance(userId, amount) {
+    const id = Number(userId);
+    const val = Math.floor(Number(amount));
+    if (val <= 0) return { ok: false, error: 'invalid_amount' };
+
+    await ensureWallet(id);
+    const rows = await db.select().from(wallets).where(eq(wallets.userId, id)).limit(1);
+    const current = rows[0]?.balance ?? 0;
+    
+    if (current < val) return { ok: false, error: 'insufficient_funds' };
+
+    await db.update(wallets).set({ 
+        balance: current - val,
+        updatedAt: new Date()
+    }).where(eq(wallets.userId, id));
+
+    return { ok: true, newBalance: current - val };
+}

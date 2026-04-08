@@ -1,0 +1,10 @@
+# Robots.txt for LodgicHost
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://lodgichost.pro/sitemap.xml
+
+# Disallow admin/private areas (add paths as needed)
+# Disallow: /admin/
+# Disallow: /api/

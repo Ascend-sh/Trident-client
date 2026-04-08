@@ -1,0 +1,23 @@
+{
+  "name": "LodgicHost - Affordable Minecraft Server Hosting",
+  "short_name": "LodgicHost",
+  "description": "Affordable Minecraft server hosting with instant setup and DDoS protection",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#b0f97d",
+  "background_color": "#18181b",
+  "display": "standalone"
+}

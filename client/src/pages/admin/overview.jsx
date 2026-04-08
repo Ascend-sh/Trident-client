@@ -1,95 +1,31 @@
-import { Users, Server, Package, Activity, Download, RefreshCw, CheckCircle, AlertCircle, MoveUpRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import {
+    RefreshCw,
+    AlertCircle
+} from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import CenterModal from "../../components/modals/center-modal";
-
-const API_BASE = "/api/v1/client";
-
-async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include"
-  });
-
-  const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const message = typeof data === "string" ? data : data?.error || data?.message || "request_failed";
-    const error = new Error(message);
-    error.status = res.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
-}
+import { Button } from "@/components/ui/button";
+import { request } from "@/lib/request.js";
 
 export default function AdminOverview() {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [serverDefaults, setServerDefaults] = useState({
-    memory: 1024,
-    swap: 0,
-    disk: 2048,
-    cpu: 100,
-    io: 0,
-    databases: 0,
-    backups: 0,
-    allocations: 0
-  });
-  const [defaultsLoading, setDefaultsLoading] = useState(false);
-  const [defaultsSaving, setDefaultsSaving] = useState(false);
-  const [defaultsError, setDefaultsError] = useState("");
-  const [defaultsSaved, setDefaultsSaved] = useState(false);
+  const [trafficRange, setTrafficRange] = useState("7d");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    setDefaultsLoading(true);
-    setDefaultsError("");
-
-    request('/admin/server-defaults')
-      .then((res) => {
-        if (cancelled) return;
-        const d = res?.defaults || {};
-        setServerDefaults({
-          memory: Number(d.memory ?? 1024),
-          swap: Number(d.swap ?? 0),
-          disk: Number(d.disk ?? 2048),
-          cpu: Number(d.cpu ?? 100),
-          io: Number(d.io ?? 0),
-          databases: Number(d.databases ?? 0),
-          backups: Number(d.backups ?? 0),
-          allocations: Number(d.allocations ?? 0)
-        });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setDefaultsError(err?.message || 'Failed to load server defaults');
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setDefaultsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
+  const trafficData = useMemo(() => {
+    const ranges = {
+      "24h": { count: 24, label: (i) => `${String(i).padStart(2, "0")}:00`, base: 40, variance: 30 },
+      "7d": { count: 7, label: (i) => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i], base: 120, variance: 80 },
+      "30d": { count: 30, label: (i) => `${i + 1}`, base: 200, variance: 150 }
     };
-  }, []);
-
-  const stats = [
-    { label: "Total Users", value: "127", icon: Users, color: "#E0FE58" },
-    { label: "Active Servers", value: "42", icon: Server, color: "#E0FE58" },
-    { label: "Total Nests", value: "8", icon: Package, color: "#E0FE58" },
-    { label: "System Status", value: "Healthy", icon: Activity, color: "#E0FE58" },
-  ];
+    const r = ranges[trafficRange];
+    return Array.from({ length: r.count }, (_, i) => ({
+      name: r.label(i),
+      requests: Math.floor(r.base + Math.random() * r.variance),
+      visitors: Math.floor((r.base + Math.random() * r.variance) * 0.4)
+    }));
+  }, [trafficRange]);
 
   const handleUpdate = () => {
     setIsUpdating(true);
@@ -100,448 +36,220 @@ export default function AdminOverview() {
   };
 
   return (
-    <div className="min-h-screen p-6 rounded-xl" style={{ backgroundColor: "#121212" }}>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-white mb-1">Admin Overview</h1>
-        <p className="text-white/60 text-xs">Dashboard statistics and system information</p>
+    <div className="bg-surface px-10 py-10">
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-[20px] font-bold text-foreground tracking-tight leading-none">Overview</h1>
+          <p className="text-[13px] font-bold text-muted-foreground mt-2">Monitor platform health and manage global server configuration</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
-        <div className="lg:col-span-2 rounded-lg border border-white/10 bg-white/5 p-4 relative overflow-hidden">
-          <div 
-            className="absolute inset-0 pointer-events-none" 
-            style={{ 
-              backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(173, 229, 218, 0.03) 10px, rgba(173, 229, 218, 0.03) 11px)",
-              maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,1) 100%)",
-              WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,1) 100%)"
-            }}
-          />
-          <div className="relative flex items-start justify-between">
+      <div className="border border-surface-lighter rounded-lg p-6 mb-10 flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <img src="/Logo-dark.png" alt="Torqen" className="h-7 dark:invert" />
+          <div className="h-8 w-px bg-surface-lighter" />
+          <div className="flex items-center gap-8">
             <div>
-              <img src="/Logo.png" alt="Torqen" className="h-12 mb-3" />
-              <h2 className="text-sm font-semibold text-white mb-2">Torqen Dashboard</h2>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Version</span>
-                  <span className="text-sm font-semibold" style={{ color: "#E0FE58" }}>v0.5.0-beta</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Build</span>
-                  <span className="text-xs font-medium text-white">Swell</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-              <Download size={20} className="text-white/60" />
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Version</p>
+              <p className="text-[13px] font-bold text-foreground tracking-tight">v0.5.0</p>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Update Available</h3>
-              <p className="text-xs text-white/40">v0.6.0-beta</p>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Channel</p>
+              <p className="text-[13px] font-bold text-foreground tracking-tight">Beta</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Build</p>
+              <p className="text-[13px] font-bold text-foreground tracking-tight">Swell</p>
             </div>
           </div>
-
-          <p className="text-xs text-white/60 mb-4">
-            A new version is available. Update from source to get the latest features and bug fixes.
-          </p>
-
-          <button
-            onClick={() => setUpdateModalOpen(true)}
-            className="w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 flex items-center justify-center gap-1.5"
-            style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
-          >
-            <RefreshCw size={14} />
-            Update from Source
-          </button>
         </div>
+        <button
+          onClick={() => setUpdateModalOpen(true)}
+          className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer"
+        >
+          <RefreshCw size={12} className={isUpdating ? "animate-spin" : ""} />
+          Check for Updates
+        </button>
       </div>
 
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-3">Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col"
-            >
-              <p className="text-lg font-semibold text-white mb-0.5">{stat.value}</p>
-              <p className="text-[10px] text-white/60 mb-2">{stat.label}</p>
-              <a
-                href="#"
-                className="flex items-center gap-1 text-[10px] text-white/40 hover:text-white transition-colors duration-200 mt-auto group"
-              >
-                <span className="group-hover:underline">
-                  {stat.label === "System Status" ? "Update system status" : `View all ${stat.label.toLowerCase()}`}
-                </span>
-                <MoveUpRight size={10} />
-              </a>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-white mb-3">Configuration</h2>
-        
-        <div className="space-y-3">
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">Authentication Providers</h3>
-            <p className="text-[10px] text-white/50 mb-3">Enable OAuth providers for user authentication</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-white flex items-center justify-center">
-                    <span className="text-xs font-bold">G</span>
-                  </div>
-                  <span className="text-xs text-white">Google OAuth</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0FE58]"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-[#5865F2] flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                    </svg>
-                  </div>
-                  <span className="text-xs text-white">Discord OAuth</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0FE58]"></div>
-                </label>
-              </div>
-            </div>
+      <div className="grid grid-cols-4 border border-surface-lighter rounded-lg overflow-hidden mb-10">
+        {[
+          { label: "Users", value: "127" },
+          { label: "Servers", value: "42" },
+          { label: "Nests", value: "8" },
+          { label: "Status", value: "Up-to-Date" },
+        ].map((stat, i) => (
+          <div key={i} className={`px-6 py-5 ${i > 0 ? 'border-l border-surface-lighter' : ''}`}>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">{stat.label}</p>
+            <p className="text-[24px] font-bold text-foreground tracking-tighter leading-none">{stat.value}</p>
           </div>
+        ))}
+      </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">Economy System</h3>
-            <p className="text-[10px] text-white/50 mb-3">Enable virtual currency for your dashboard</p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white">Enable Economy</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0FE58]"></div>
-                </label>
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Currency Name</label>
-                <input
-                  type="text"
-                  placeholder="TQN"
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-white/10">
-              <p className="text-[10px] text-white/60 uppercase tracking-wider mb-2">Grant Currency to User</p>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="User email"
-                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  className="w-24 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
+      <div className="mb-10">
+        <div className="border border-surface-lighter rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-[16px] font-bold text-foreground/70 tracking-tight">Traffic Analytics</h2>
+            <div className="flex items-center gap-1 bg-surface-light rounded-md p-0.5 border border-surface-lighter">
+              {[
+                { label: "24H", value: "24h" },
+                { label: "7D", value: "7d" },
+                { label: "30D", value: "30d" },
+              ].map((opt) => (
                 <button
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90"
-                  style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
+                  key={opt.value}
+                  onClick={() => setTrafficRange(opt.value)}
+                  className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all cursor-pointer ${trafficRange === opt.value ? 'bg-surface text-foreground shadow-sm border border-surface-lighter' : 'text-muted-foreground hover:text-foreground border border-transparent'}`}
                 >
-                  Grant
+                  {opt.label}
                 </button>
-              </div>
+              ))}
             </div>
           </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">Registration</h3>
-            <p className="text-[10px] text-white/50 mb-3">Control user registration settings</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white">Disable Registration</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0FE58]"></div>
-              </label>
-            </div>
+          <div className="h-[220px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trafficData} margin={{ top: 0, right: 5, left: 5, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="reqGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.12} />
+                    <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="visGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.05} />
+                    <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: "var(--muted-foreground)" }}
+                  dy={8}
+                  padding={{ left: 10, right: 10 }}
+                  interval={0}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--surface-lighter)",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
+                  }}
+                  itemStyle={{ color: "var(--foreground)", padding: "1px 0" }}
+                  labelStyle={{ color: "var(--muted-foreground)", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}
+                />
+                <Area type="monotone" dataKey="requests" stroke="var(--color-brand)" strokeWidth={1.5} fill="url(#reqGrad)" />
+                <Area type="monotone" dataKey="visitors" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.3} fill="url(#visGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
+        </div>
+      </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div>
-                <h3 className="text-xs font-semibold text-white mb-1">Default Server Resources</h3>
-                <p className="text-[10px] text-white/50">Set default resource limits for new servers</p>
-              </div>
-              {defaultsSaved && (
-                <span className="text-[10px] text-green-400">Saved</span>
-              )}
-            </div>
 
-            {defaultsError && (
-              <div className="mb-3 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10">
-                <p className="text-[10px] text-red-200">{defaultsError}</p>
-              </div>
-            )}
-
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${defaultsLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Memory (MB)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.memory}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, memory: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Swap (MB)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.swap}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, swap: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Disk (MB)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.disk}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, disk: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">CPU (%)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.cpu}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, cpu: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">IO Weight</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.io}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, io: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Databases</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.databases}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, databases: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Backups</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.backups}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, backups: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-white/60 uppercase tracking-wider mb-1.5 block">Allocations</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={serverDefaults.allocations}
-                  onChange={(e) => setServerDefaults({ ...serverDefaults, allocations: Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
-                />
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-white/10 flex justify-end">
-              <button
-                onClick={async () => {
-                  const values = Object.values(serverDefaults);
-                  const invalid = values.some(v => !Number.isFinite(v) || !Number.isInteger(v));
-                  if (invalid) {
-                    setDefaultsError('Enter proper values');
-                    return;
-                  }
-
-                  setDefaultsSaving(true);
-                  setDefaultsError("");
-                  setDefaultsSaved(false);
-
-                  try {
-                    const res = await request('/admin/update-defaults', { method: 'PATCH', body: serverDefaults });
-                    const d = res?.defaults || serverDefaults;
-                    setServerDefaults({
-                      memory: Number(d.memory ?? serverDefaults.memory),
-                      swap: Number(d.swap ?? serverDefaults.swap),
-                      disk: Number(d.disk ?? serverDefaults.disk),
-                      cpu: Number(d.cpu ?? serverDefaults.cpu),
-                      io: Number(d.io ?? serverDefaults.io),
-                      databases: Number(d.databases ?? serverDefaults.databases),
-                      backups: Number(d.backups ?? serverDefaults.backups),
-                      allocations: Number(d.allocations ?? serverDefaults.allocations)
-                    });
-                    setDefaultsSaved(true);
-                    setTimeout(() => setDefaultsSaved(false), 1500);
-                  } catch (err) {
-                    setDefaultsError(err?.message || 'Failed to save server defaults');
-                  } finally {
-                    setDefaultsSaving(false);
-                  }
-                }}
-                disabled={defaultsLoading || defaultsSaving}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
-              >
-                {defaultsSaving ? 'Saving...' : 'Save Resources'}
+      <div className="mb-10">
+        <h2 className="text-[14px] font-bold text-foreground/60 tracking-tight mb-4">User Blacklist</h2>
+        <div className="border border-surface-lighter rounded-lg">
+          <div className="px-6 py-4 border-b border-surface-lighter">
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="Enter email address..."
+                className="flex-1 h-9 px-3 bg-surface-light/50 border border-surface-lighter rounded-md text-[12px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/20 transition-all"
+              />
+              <button className="h-9 px-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-md font-bold text-[10px] uppercase tracking-widest cursor-pointer">
+                Ban User
               </button>
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">Maintenance Mode</h3>
-            <p className="text-[10px] text-white/50 mb-3">Temporarily disable access to the dashboard</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white">Enable Maintenance Mode</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0FE58]"></div>
-              </label>
-            </div>
+          <div className="grid grid-cols-[2fr_1fr_auto] px-6 py-3 border-b border-surface-lighter">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">User</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Banned</span>
+            <span className="w-16" />
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="text-xs font-semibold text-white mb-1">User Blacklist</h3>
-            <p className="text-[10px] text-white/50 mb-3">Manage banned users and restrict access</p>
-            
-            <div className="space-y-2 mb-3">
-              <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/20 border border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-red-400">JD</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white">john.doe@example.com</p>
-                    <p className="text-[10px] text-white/40">Banned on 2024-01-15</p>
-                  </div>
-                </div>
-                <button className="text-xs text-white/60 hover:text-white transition-colors duration-200">
-                  Unban
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/20 border border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-red-400">AB</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white">alice.baker@example.com</p>
-                    <p className="text-[10px] text-white/40">Banned on 2024-01-12</p>
-                  </div>
-                </div>
-                <button className="text-xs text-white/60 hover:text-white transition-colors duration-200">
-                  Unban
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-white/10">
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Enter email to blacklist"
-                  className="flex-1 px-3 py-1.5 text-xs text-white bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-[#E0FE58]/50"
+          {[
+            { email: "john.doe@example.com", date: "Jan 15, 2024" },
+            { email: "alice.baker@example.com", date: "Jan 12, 2024" },
+          ].map((user, i) => (
+            <div key={i} className={`group grid grid-cols-[2fr_1fr_auto] px-6 py-4 hover:bg-surface-light/50 transition-colors ${i > 0 ? 'border-t border-surface-lighter' : ''}`}>
+              <div className="flex items-center gap-3">
+                <img
+                  src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(user.email)}&backgroundColor=b6e3f4,c0aede,d1d4f9`}
+                  alt={user.email}
+                  className="w-8 h-8 rounded-full border border-surface-lighter bg-surface-light shrink-0"
                 />
-                <button
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-90"
-                  style={{ backgroundColor: "#E0FE58", color: "#18181b" }}
-                >
-                  Add to Blacklist
+                <span className="text-[13px] font-bold text-foreground tracking-tight">{user.email}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-[11px] font-bold text-muted-foreground">{user.date}</span>
+              </div>
+              <div className="flex items-center justify-end">
+                <button className="text-[10px] font-bold text-muted-foreground/20 hover:text-red-500 uppercase tracking-widest transition-all cursor-pointer opacity-0 group-hover:opacity-100">
+                  Unban
                 </button>
               </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
       <CenterModal
         isOpen={updateModalOpen}
         onClose={() => !isUpdating && setUpdateModalOpen(false)}
-        title="Update from Source"
         maxWidth="max-w-md"
       >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-white/10 bg-white/5">
-            <AlertCircle size={18} className="text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-white/70 mb-1">This will pull the latest changes from the source repository.</p>
-              <p className="text-xs text-white/50">Make sure you have committed any local changes before proceeding.</p>
+        <div className="p-4">
+          <h2 className="text-[16px] font-bold text-foreground mb-4 tracking-tight">Check for Updates</h2>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-light border border-surface-lighter">
+              <AlertCircle size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-bold text-foreground mb-1">Source Repository Update</p>
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight leading-relaxed">This will pull the latest version of Torqen from the main branch. Local changes may be overwritten.</p>
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-            <p className="text-xs text-white/40 mb-2">Update command:</p>
-            <code className="text-xs text-white font-mono">git pull origin main && bun install && bun run db:migrate</code>
-          </div>
+            <div className="rounded-lg border border-surface-lighter bg-surface-light p-4">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Update Sequence</p>
+              <code className="text-[11px] font-bold text-foreground/60 font-mono break-all leading-relaxed tracking-tight">
+                git pull origin main && bun install && bun run db:migrate
+              </code>
+            </div>
 
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={() => setUpdateModalOpen(false)}
-              disabled={isUpdating}
-              className="px-4 py-2 text-xs font-medium text-white rounded-lg border border-white/10 hover:bg-white/5 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleUpdate}
-              disabled={isUpdating}
-              className="px-4 py-2 text-xs font-medium text-black rounded-lg transition-all duration-200 hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "#E0FE58" }}
-            >
-              {isUpdating ? (
-                <>
-                  <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={14} />
-                  Start Update
-                </>
-              )}
-            </button>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-lighter">
+              <button
+                onClick={() => setUpdateModalOpen(false)}
+                disabled={isUpdating}
+                className="px-4 py-2 text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <Button
+                onClick={handleUpdate}
+                disabled={isUpdating}
+                className="h-9 px-6 bg-brand text-surface hover:bg-brand/90 transition-all rounded-md font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-none cursor-pointer disabled:opacity-50"
+              >
+                {isUpdating ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-surface/20 border-t-surface rounded-full animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={14} />
+                    Execute Update
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </CenterModal>
     </div>
   );
 }
-
-

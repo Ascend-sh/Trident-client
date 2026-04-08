@@ -61,12 +61,12 @@ function toInt(value) {
 }
 
 function envRpm() {
-  const n = toInt(process.env.TORQEN_RATE_LIMIT_RPM);
+  const n = toInt(process.env.TRIDENT_RATE_LIMIT_RPM);
   return n && n > 0 ? n : 240;
 }
 
 function envWindowMs() {
-  const n = toInt(process.env.TORQEN_RATE_LIMIT_WINDOW_MS);
+  const n = toInt(process.env.TRIDENT_RATE_LIMIT_WINDOW_MS);
   return n && n > 0 ? n : 60_000;
 }
 

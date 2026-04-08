@@ -1,51 +1,31 @@
 import { useState, useEffect } from 'react';
-
-const loadingMessages = [
-  "Preparing your dashboard...",
-  "Loading resources...",
-  "Fetching server data...",
-  "Almost there...",
-  "Setting things up...",
-  "Initializing components...",
-  "Getting everything ready...",
-  "Loading your workspace...",
-  "Syncing with servers...",
-  "Establishing connection...",
-  "Retrieving information...",
-  "Processing request...",
-];
+import { useTheme } from '@/hooks/use-theme';
 
 export default function GlobalLoader({ onLoadingComplete }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [message] = useState(() => loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const { isDark } = useTheme();
 
   useEffect(() => {
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + Math.random() * 15;
-      });
-    }, 80);
+    const duration = 600;
+    
+    requestAnimationFrame(() => {
+      setIsAnimating(true);
+    });
 
     const fadeTimer = setTimeout(() => {
-      setProgress(100);
       setIsFadingOut(true);
-    }, 500);
+    }, duration);
 
     const hideTimer = setTimeout(() => {
       setIsVisible(false);
       if (onLoadingComplete) {
         onLoadingComplete();
       }
-    }, 800);
+    }, duration + 300);
 
     return () => {
-      clearInterval(progressInterval);
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
@@ -54,25 +34,23 @@ export default function GlobalLoader({ onLoadingComplete }) {
   if (!isVisible) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-300" 
-      style={{ 
-        backgroundColor: "#121212",
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity duration-300 bg-surface"
+      style={{
         opacity: isFadingOut ? 0 : 1
       }}
     >
-      <img src="/Logo.png" alt="Torqen" className="h-12 mb-6" />
-      
-      <div className="flex flex-col items-center gap-3">
-        <p className="text-sm text-white/80 font-medium">{message}</p>
+      <div className="flex flex-col items-center w-full max-w-[200px] gap-6">
+        <img
+          src={isDark ? "/Logo.png" : "/Logo-dark.png"}
+          alt="Torqen"
+          className="h-6 opacity-40"
+        />
 
-        <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="w-full h-[2px] bg-brand/5 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-300 ease-out"
-            style={{
-              width: `${Math.min(progress, 100)}%`,
-              backgroundColor: "#E0FE58",
-            }}
+            className="h-full bg-brand/40 transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+            style={{ width: isAnimating ? '100%' : '0%' }}
           />
         </div>
       </div>

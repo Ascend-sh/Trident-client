@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  has2fa: integer('has_2fa', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date())
@@ -29,7 +30,8 @@ export const serverDefaults = sqliteTable('server_defaults', {
   io: integer('io').notNull().default(0),
   databases: integer('databases').notNull().default(0),
   allocations: integer('allocations').notNull().default(0),
-  backups: integer('backups').notNull().default(0)
+  backups: integer('backups').notNull().default(0),
+  slots: integer('slots').notNull().default(1)
 });
 
 export const economySettings = sqliteTable('economy_settings', {
@@ -39,7 +41,10 @@ export const economySettings = sqliteTable('economy_settings', {
 
 export const wallets = sqliteTable('wallets', {
   userId: integer('user_id').primaryKey(),
-  balance: integer('balance').notNull().default(0)
+  balance: real('balance').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
 });
 
 export const nests = sqliteTable('nests', {
@@ -117,3 +122,53 @@ export const servers = sqliteTable('servers', {
     .$defaultFn(() => new Date())
 });
 
+export const payments = sqliteTable('payments', {
+  id: text('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  amount: real('amount').notNull(), // Amount in USD
+  fee: real('fee').notNull().default(0), // Fee in USD
+  credits: real('credits').notNull(),
+  localAmount: text('local_amount'), // e.g. "8500.00"
+  localCurrency: text('local_currency'), // e.g. "INR"
+  status: text('status').notNull().default('pending'),
+  provider: text('provider').notNull().default('paypal'),
+  providerId: text('provider_id'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});
+
+export const customization = sqliteTable('customization', {
+  id: integer('id').primaryKey(), // Always 1
+  siteName: text('site_name').notNull().default('Trident Cloud'),
+  logoUrl: text('logo_url').notNull().default('/Logo-dark.png'),
+  brandColor: text('brand_color').notNull().default('#18181b'),
+  brandColorDark: text('brand_color_dark').notNull().default('#ffffff'),
+  brandHover: text('brand_hover').notNull().default('#27272a'),
+  brandHoverDark: text('brand_hover_dark').notNull().default('#f4f4f5'),
+  surface: text('surface').notNull().default('#ffffff'),
+  surfaceDark: text('surface_dark').notNull().default('#121212'),
+  surfaceLight: text('surface_light').notNull().default('#f4f4f5'),
+  surfaceLightDark: text('surface_light_dark').notNull().default('#18181b'),
+  surfaceHighlight: text('surface_highlight').notNull().default('#e5e5e5'),
+  surfaceHighlightDark: text('surface_highlight_dark').notNull().default('#27272a'),
+  surfaceLighter: text('surface_lighter').notNull().default('#e4e4e7'),
+  surfaceLighterDark: text('surface_lighter_dark').notNull().default('#3f3f46'),
+  mutedForeground: text('muted_foreground').notNull().default('#71717a'),
+  mutedForegroundDark: text('muted_foreground_dark').notNull().default('#a1a1aa'),
+  foreground: text('foreground').notNull().default('#18181b'),
+  foregroundDark: text('foreground_dark').notNull().default('#ffffff'),
+  borderColor: text('border_color').notNull().default('#e4e4e7'),
+  borderColorDark: text('border_color_dark').notNull().default('#3f3f46'),
+  borderRadius: text('border_radius').notNull().default('0.625rem'),
+  fontFamily: text('font_family').notNull().default("'Satoshi', sans-serif"),
+
+  isCompact: integer('is_compact', { mode: 'boolean' }).notNull().default(true),
+  isDark: integer('is_dark', { mode: 'boolean' }).notNull().default(true),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});
