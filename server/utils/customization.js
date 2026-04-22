@@ -49,7 +49,7 @@ export async function ensureCustomization() {
       borderRadius: '0.625rem',
       fontFamily: "'Satoshi', sans-serif",
       isCompact: true,
-      isDark: true
+      isDark: false
     });
   } catch {
   }
